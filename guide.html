@@ -274,15 +274,35 @@
   <main id="main-content">
     <div id="loading">
       <h1>SLAM History Book</h1>
-      <p class="placeholder">
-        20챕터 원고는 현재 작성 중.<br>
-        <code>chapter_XX_*.md</code> 파일이 준비되면 이 페이지가 렌더링한다.
-      </p>
+      <p class="placeholder">Spatial AI 계보 추적 — 20챕터. 사이드바에서 챕터를 선택하세요.</p>
     </div>
     <div id="content" style="display:none;"></div>
   </main>
 
   <script>
+    var CHAPTERS = {
+      'ch0':  'chapter_00_prologue.md',
+      'ch1':  'chapter_01_photogrammetry.md',
+      'ch2':  'chapter_02_classical_cv.md',
+      'ch3':  'chapter_03_sfm.md',
+      'ch4':  'chapter_04_ekf_slam.md',
+      'ch5':  'chapter_05_monoslam_ptam.md',
+      'ch6':  'chapter_06_graph_slam.md',
+      'ch7':  'chapter_07_orb_slam.md',
+      'ch8':  'chapter_08_direct.md',
+      'ch9':  'chapter_09_rgbd.md',
+      'ch10': 'chapter_10_place_recognition.md',
+      'ch11': 'chapter_11_monodepth.md',
+      'ch12': 'chapter_12_end_to_end.md',
+      'ch13': 'chapter_13_hybrid.md',
+      'ch14': 'chapter_14_nerf_slam.md',
+      'ch15': 'chapter_15_gaussian_splatting.md',
+      'ch16': 'chapter_16_foundation_3d.md',
+      'ch17': 'chapter_17_lidar.md',
+      'ch18': 'chapter_18_dead_ends.md',
+      'ch19': 'chapter_19_open_problems.md'
+    };
+
     marked.setOptions({
       highlight: function(code, lang) {
         if (lang && hljs.getLanguage(lang)) {
@@ -292,6 +312,82 @@
         return code;
       }
     });
+
+    // 수식 보호: marked가 $..$ 내 _를 이탤릭으로 해석하지 않도록
+    function protectMath(src) {
+      var placeholders = [];
+      var protectedSrc = src
+        .replace(/\$\$([\s\S]+?)\$\$/g, function(_, m) {
+          placeholders.push({ type: 'display', content: m });
+          return '@@MATH_DISPLAY_' + (placeholders.length - 1) + '@@';
+        })
+        .replace(/\$([^\$\n]+?)\$/g, function(_, m) {
+          placeholders.push({ type: 'inline', content: m });
+          return '@@MATH_INLINE_' + (placeholders.length - 1) + '@@';
+        });
+      return { src: protectedSrc, placeholders: placeholders };
+    }
+    function restoreMath(html, placeholders) {
+      return html.replace(/@@MATH_(DISPLAY|INLINE)_(\d+)@@/g, function(_, type, idx) {
+        var p = placeholders[parseInt(idx)];
+        try {
+          return katex.renderToString(p.content, {
+            displayMode: type === 'DISPLAY',
+            throwOnError: false
+          });
+        } catch (e) {
+          return type === 'DISPLAY' ? '$$' + p.content + '$$' : '$' + p.content + '$';
+        }
+      });
+    }
+
+    var loadingEl = document.getElementById('loading');
+    var contentEl = document.getElementById('content');
+
+    function loadChapter(chId) {
+      var file = CHAPTERS[chId];
+      if (!file) {
+        contentEl.style.display = 'none';
+        loadingEl.style.display = '';
+        return;
+      }
+      fetch(file)
+        .then(function(r) {
+          if (!r.ok) throw new Error('fetch failed: ' + r.status);
+          return r.text();
+        })
+        .then(function(md) {
+          var protectedData = protectMath(md);
+          var html = marked.parse(protectedData.src);
+          html = restoreMath(html, protectedData.placeholders);
+          contentEl.innerHTML = html;
+          contentEl.style.display = '';
+          loadingEl.style.display = 'none';
+          window.scrollTo(0, 0);
+          updateActiveLink(chId);
+        })
+        .catch(function(err) {
+          contentEl.innerHTML = '<p style="color: #c00;">챕터 로드 실패: ' + err.message + '</p>';
+          contentEl.style.display = '';
+          loadingEl.style.display = 'none';
+        });
+    }
+
+    function updateActiveLink(chId) {
+      document.querySelectorAll('#sidebar a').forEach(function(a) {
+        if (a.getAttribute('href') === '#' + chId) a.classList.add('active');
+        else a.classList.remove('active');
+      });
+    }
+
+    function routeFromHash() {
+      var hash = window.location.hash.slice(1);
+      if (hash && CHAPTERS[hash]) loadChapter(hash);
+      else loadChapter('ch0');
+    }
+
+    window.addEventListener('hashchange', routeFromHash);
+    routeFromHash();
 
     // 스크롤 진행률
     function updateProgress() {
@@ -304,9 +400,6 @@
     }
     window.addEventListener('scroll', updateProgress);
     window.addEventListener('resize', updateProgress);
-
-    // TODO: 챕터 로더. 초기 skeleton에서는 placeholder 유지.
-    // 구현 시 각 chapter_XX_*.md를 fetch → marked → renderMathInElement.
   </script>
 </body>
 </html>
