@@ -2,17 +2,17 @@
 
 11장에서 단안 카메라 하나로 depth를 복원하는 일이 가능해졌다. Eigen의 망은 픽셀에서 metric depth를 꺼냈고, SfMLearner는 라벨 없이도 기하학적 supervision을 만들어냈다. 학습이 형태를 본다는 것이 증명된 순간이었다. 그렇다면 더 나아갈 수 있지 않을까. pose 추정도, 루프 클로저도—SLAM 전체를 하나의 망으로 끝낼 수 있지 않을까. 2015년부터 2018년 사이, 이 물음은 답을 찾지 못했다.
 
-2015년, Cambridge 공과대학의 한 박사과정 학생이 Google Street View 이미지로 학습한 신경망에 사진 한 장을 넣고 6-DoF pose를 출력하는 논문을 발표했다. Alex Kendall이 [Kendall et al. 2015. PoseNet](https://doi.org/10.1109/ICCV.2015.336)이라 명명한 이 작업은 ICCV에서 즉각 반향을 일으켰다. SLAM의 30년짜리 방정식—특징 추출, 매칭, 최적화, 지도 관리—을 단일 CNN으로 압축할 수 있다면? 이 물음은 2015년부터 2018년까지 수십 편의 논문을 낳았다. 그리고 거의 예외 없이, 같은 결론을 반복했다.
+2015년, Cambridge Computer Laboratory 박사과정 학생 Alex Kendall은 Roberto Cipolla 지도교수 아래 Google Street View 이미지로 학습한 신경망에 사진 한 장을 넣고 6-DoF pose를 출력하는 연구를 완성했다. [Kendall et al. 2015. PoseNet](https://doi.org/10.1109/ICCV.2015.336)이라 명명한 이 논문은 Santiago de Chile에서 열린 ICCV에서 즉각 반향을 일으켰다. SLAM의 30년짜리 방정식—특징 추출, 매칭, 최적화, 지도 관리—을 단일 CNN으로 압축할 수 있다면? 이 물음은 2015년부터 2018년까지 수십 편의 논문을 낳았다. 그리고 거의 예외 없이, 같은 결론을 반복했다.
 
 ---
 
 ## 12.1 PoseNet: 압축의 유혹
 
-PoseNet이 물려받은 것은 AlexNet(2012)이었다. ImageNet에서 분류 task로 학습된 깊은 CNN이 고수준 시각 표현을 형성한다는 사실을 Kendall은 pose estimation으로 전용했다.
+PoseNet이 물려받은 것은 AlexNet(2012)이었다. Kendall은 ImageNet에서 분류 task로 학습된 깊은 CNN이 고수준 시각 표현을 형성한다는 사실을 확인하고, 그 feature hierarchy를 pose estimation으로 전용했다.
 
 > 🔗 **차용.** PoseNet의 backbone은 GoogleNet(Inception) 구조다. Classification head를 제거하고 7차원 회귀 head(x, y, z, quaternion 4개)를 붙인 것이 전부다. ImageNet 학습으로 얻은 feature hierarchy를 localization에 이식한 직접 차용.
 
-Cambridge Landmarks 데이터셋—킹스 칼리지 예배당, 거리, 옛 병원 등 6개 야외 장면—에서 PoseNet은 평균 위치 오차 1.92 m, 방향 오차 5.40°를 기록했다. 2015년 기준으로는 인상적인 수치였다. GPU 한 장으로 5 ms 이내에 답이 나왔다. 특징 추출도, RANSAC도, 지도 조회도 없었다.
+Kendall이 직접 수집한 Cambridge Landmarks 데이터셋—킹스 칼리지 예배당, 거리, 옛 병원 등 6개 야외 장면—에서 PoseNet은 평균 위치 오차 1.92 m, 방향 오차 5.40°를 기록했다. 2015년 기준으로는 인상적인 수치였다. GPU 한 장으로 5 ms 이내에 답이 나왔다. 특징 추출도, RANSAC도, 지도 조회도 없었다.
 
 논문은 즉각적인 후속을 촉발했다. Bayesian PoseNet(2016)은 Monte Carlo Dropout으로 자세 불확실성을 추정하려 했다. LSTM PoseNet은 시퀀스 정보를 통합했다. Geometric loss를 추가한 변형이 등장했다. Kendall 자신도 2017년에 재귀 구조와 photometric loss를 결합한 버전을 냈다.
 
@@ -50,21 +50,21 @@ Tinghui Zhou(UC Berkeley)가 같은 해에 발표한 [Zhou et al. 2017. SfMLearn
 
 ## 12.4 반성의 기록
 
-Kendall은 이 실패를 외면하지 않았다. 2019년 이후 Wayve로 자리를 옮긴 그는 자율주행을 위한 imitation learning과 world model 연구로 방향을 틀었다. 학습 기반 localization을 포기한 것이 아니라, "이미지 한 장에서 절대 pose를 회귀하는 것"이라는 문제 정의가 틀렸음을 받아들인 것이었다.
+Kendall은 이 실패를 외면하지 않았다. 박사학위를 마친 2019년, 그는 Wayve로 자리를 옮겨 자율주행용 imitation learning과 world model 연구로 방향을 틀었다. 학습 기반 localization을 포기한 것이 아니라, "이미지 한 장에서 절대 pose를 회귀한다"는 문제 정의가 틀렸다고 판단한 것이었다.
 
-Federico Tombari 그룹(TU Munich, 이후 Google)도 같은 시기에 DenseSLAMNet을 시도했다. dense depth 추정과 pose regression을 하나의 망으로 결합하려는 시도였으나, 결과는 비슷했다. 고전 dense SLAM 대비 정확도가 낮았고, 연산 비용은 오히려 높았다. "denseness"가 보완책이 되지 못했다는 것이 확인됐다.
+Federico Tombari 그룹(TU Munich, 이후 Google)도 같은 시기에 DenseSLAMNet을 시도했다. dense depth 추정과 pose regression을 하나의 망으로 결합하려는 시도였으나, 결과는 비슷했다. 고전 dense SLAM 대비 정확도가 낮았고, 연산 비용은 오히려 높았다. "denseness"는 보완책이 되지 못했다.
 
-> 📜 **예언 vs 실제.** Kendall은 PoseNet 논문(2015) §6 Future Work에서 "불확실성 추정, temporal 정보 통합, 더 넓은 규모의 장면으로의 확장"을 다음 과제로 적었다. 세 방향 모두 실행되었다—Bayesian PoseNet(2016), LSTM PoseNet(2016), 복수의 outdoor 확장 실험들. 그러나 각 시도가 새 벽에 부딪혔고, 이 접근법 전체가 결국 폐기되었다. 예언이 합리적이었어도 플랫폼 자체가 틀렸으면 소용없다. `[무산]`
+> 📜 **예언 vs 실제.** Kendall은 PoseNet 논문(2015) §6 Future Work에서 "불확실성 추정, temporal 정보 통합, 더 넓은 규모의 장면으로의 확장"을 다음 과제로 적었다. 세 방향 모두 실행되었다—Bayesian PoseNet(2016), LSTM PoseNet(2016), 복수의 outdoor 확장 실험들. 그러나 각 시도가 새 벽에 부딪혔고, 연구자들은 결국 이 접근법 전체를 포기했다. 예언이 합리적이었어도 플랫폼 자체가 틀렸으면 소용없다. `[무산]`
 
 일부 시도는 다른 방향으로 살아남았다. SfMLearner의 photometric self-supervision은 MonoDepth2(Godard 2019), 나아가 DROID-SLAM(Teed & Deng 2021)의 훈련 전략 안에 흡수되었다. DeepVO가 보여준 LSTM 기반 temporal modeling은 시각-관성 학습 연구에서 변형된 형태로 재등장했다. 아이디어가 사라진 것이 아니었다. 사용법이 바뀐 것이었다.
 
-> 📜 **예언 vs 실제.** Zhou는 SfMLearner 논문(2017) §7 Future Work에서 "dynamic object 처리와 photometric noise에 대한 강건성"을 남은 과제로 적었다. GeoNet(Yin & Shi 2018), DFNet(Zhao et al. 2020) 등이 부분적으로 이 방향을 밀었다. 그러나 self-supervised VO 단독으로 SLAM을 대체하는 경로는 주류가 되지 못했다. photometric self-supervision 자체는 계보를 이어갔지만, end-to-end VO라는 목표는 기각되었다. `[기술변화]`
+> 📜 **예언 vs 실제.** Zhou는 SfMLearner 논문(2017) §7 Future Work에서 "dynamic object 처리와 photometric noise에 대한 강건성"을 남은 과제로 적었다. GeoNet(Yin & Shi 2018), DFNet(Zhao et al. 2020) 등이 부분적으로 이 방향을 밀었다. 그러나 self-supervised VO 단독으로 SLAM을 대체하는 경로는 주류에 합류하지 못했다. photometric self-supervision 자체는 계보를 이어갔지만, end-to-end VO라는 목표는 분야가 기각했다. `[기술변화]`
 
 ---
 
 ## 12.5 교훈의 정착
 
-2020년을 전후해 합의가 형성되었다. 한 줄로 압축하면: "geometry는 알고리즘, learning은 feature와 prior."
+2020년을 전후해 이 분야는 하나의 합의에 도달했다. 한 줄로 압축하면: "geometry는 알고리즘, learning은 feature와 prior."
 
 > 🔗 **차용.** 이 원칙의 실천은 13장에서 다루는 CodeSLAM(Bloesch 2018)과 DROID-SLAM(Teed & Deng 2021)에서 구체화된다. 두 시스템 모두 factor graph 또는 bundle adjustment라는 기하학적 뼈대를 유지하고, 학습 부분은 feature 추출이나 depth prior 형성에 국한한다. PoseNet이 버린 뼈대가 사실 포기할 수 없는 것이었다는 확인이다.
 
@@ -82,4 +82,4 @@ Federico Tombari 그룹(TU Munich, 이후 Google)도 같은 시기에 DenseSLAMN
 
 **"End-to-end"의 의미 재정의.** PoseNet이 정의한 end-to-end(이미지→pose, 학습만으로)는 실패했다. 그러나 foundation model이 등장한 2023년 이후 end-to-end의 의미가 바뀌고 있다. SLAM의 어느 모듈을 학습으로 채우고 어느 모듈을 알고리즘으로 유지할 것인가—이 분할선 자체가 재협상 중이다.
 
-좌절이 남긴 것은 폐허가 아니었다. "geometry는 알고리즘으로, learning은 feature로"라는 원칙이 굳어졌다. 2018년, Andrew Davison의 연구실에서 그 원칙의 첫 실질적 구현이 나왔다. 장소는 Kensington, Imperial College London. 이름은 CodeSLAM이었다.
+"geometry는 알고리즘으로, learning은 feature로"라는 원칙이 이 시기에 굳어졌다. 2018년, Andrew Davison의 연구실에서 그 원칙의 첫 실질적 구현이 나왔다. 장소는 Kensington, Imperial College London. 이름은 CodeSLAM이었다.

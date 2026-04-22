@@ -66,15 +66,15 @@ Ranftl의 해법은 **affine-invariant loss**였다. 각 이미지의 depth pred
 
 ## 5. SLAM으로의 역수입
 
-Monocular depth 추정이 성숙하자 SLAM 커뮤니티는 이것을 초기화 도구로 쓰기 시작했다. Monocular SLAM의 구조적 약점 중 하나는 초기화다. 두 프레임에서 triangulation이 가능하려면 baseline이 충분해야 하고, scale은 첫 단계부터 모호하다.
+2021년쯤부터 SLAM 연구자들이 monocular depth 모델을 파이프라인 안으로 끌어들이기 시작했다. 진입로는 초기화였다. Monocular SLAM은 구조상 초기화가 까다롭다. 두 프레임에서 triangulation을 하려면 baseline이 충분해야 하고, scale은 첫 단계부터 모호하다.
 
-depth prior를 첫 프레임에 주입하면 초기화가 빨라지고 scale을 대략 고정할 수 있다. DROID-SLAM(Teed & Deng, 2021)은 recurrent optical flow와 BA를 결합한 구조인데, 이 계통의 후속 연구들은 monocular depth prior를 geometric initialization에 활용한다.
+depth prior를 첫 프레임에 주입하면 초기화가 빨라지고 scale을 대략 고정할 수 있다. Teed와 Deng이 2021년 발표한 DROID-SLAM은 recurrent optical flow와 BA를 묶은 구조인데, 이 계통에서 나온 후속 연구들이 monocular depth prior를 geometric initialization에 붙이는 방식을 실험했다.
 
-더 직접적인 역수입은 scale recovery다. monocular visual odometry(VO)는 움직이면서 scale drift가 누적된다. depth network의 예측을 periodic한 scale anchor로 쓰면 drift를 완화할 수 있다. 완벽한 해법이 아니라 실용적 패치지만, 순수 VO보다 훨씬 긴 거리에서 작동한다.
+scale recovery 쪽은 더 직접적이었다. monocular visual odometry(VO)는 달리면서 scale drift가 쌓인다. depth network 예측을 주기적인 scale anchor로 쓰면 이 drift를 억제할 수 있다. 완벽한 해법이 아니라 실용적 패치지만, 순수 VO보다 훨씬 긴 거리에서 버텼다.
 
 > 📜 **예언 vs 실제.** Eigen은 2014년 논문 §5에서 "depth와 다른 scene property — surface normal, segmentation — 의 joint estimation이 자연스러운 확장"이라 적었다. joint multi-task learning은 이후 PAD-Net·VPD 등으로 부분 실현됐다. 그러나 2024년 시점 실질적 영향은 task를 합친 것보다 ViT backbone 공유로 왔다. 예측한 방향과 실제 경로는 달랐다. `[기술변화]`
 
-> 📜 **예언 vs 실제.** Ranftl은 MiDaS 논문(2020) §6에서 "metric depth는 여전히 카메라 파라미터를 필요로 하며, 카메라 독립적 metric depth는 미해결 문제"라고 정확히 진단했다. 2024년 Depth Anything v2와 Metric3D v2가 이 방향을 직접 공략했다. camera intrinsic을 입력으로 받는 방식으로 in-the-wild metric이 실용 수준에 가까워졌으나 "완전한 카메라 독립"은 아직 아니다. `[진행형]`
+> 📜 **예언 vs 실제.** Ranftl은 MiDaS 논문(2020) §6에서 "metric depth는 여전히 카메라 파라미터가 필요하며, 카메라 독립적 metric depth는 미해결 문제"라고 정확히 짚었다. 2024년 Depth Anything v2와 Metric3D v2가 이 방향을 직접 공략했다. camera intrinsic을 입력으로 받는 방식으로 in-the-wild metric이 실용 수준에 가까워졌으나 "완전한 카메라 독립"은 아직 아니다. `[진행형]`
 
 ---
 
