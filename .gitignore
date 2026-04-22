@@ -1,0 +1,9 @@
+.git.nosync
+.DS_Store
+node_modules/
+*.log
+
+# 내부 작업용 (워크스페이스 로컬 전용)
+CLAUDE.md
+writing-status.json
+outlines/

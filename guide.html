@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SLAM History Book — Spatial AI 계보 추적</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap">
+
+  <!-- Highlight.js (atom-one-light) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #f5f5f7;
+      --bg-sidebar: #f5f5f7;
+      --bg-code: #f5f5f7;
+      --bg-surface: #f5f5f7;
+      --text: #1d1d1f;
+      --text-body: rgba(0, 0, 0, 0.8);
+      --text-muted: rgba(0, 0, 0, 0.56);
+      --text-tertiary: rgba(0, 0, 0, 0.48);
+      --text-heading: #1d1d1f;
+      --accent: #0071e3;
+      --link: #0066cc;
+      --border: rgba(0, 0, 0, 0.08);
+      --border-strong: rgba(0, 0, 0, 0.16);
+      --sidebar-width: 300px;
+      --topbar-height: 52px;
+      --progress-height: 3px;
+      --shadow-elev: rgba(0, 0, 0, 0.22) 3px 5px 30px 0px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      font-size: 17px;
+      line-height: 1.47;
+      letter-spacing: -0.022em;
+      font-feature-settings: "kern", "liga", "calt";
+      word-break: keep-all;
+      overflow-wrap: break-word;
+      color: var(--text-body);
+      background: var(--bg);
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', sans-serif;
+      color: var(--text-heading);
+      font-weight: 600;
+    }
+
+    h1 { font-size: 48px; line-height: 1.08; letter-spacing: -0.018em; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+    h2 { font-size: 34px; line-height: 1.10; letter-spacing: -0.014em; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-top: 2.5em; }
+    h3 { font-size: 24px; line-height: 1.16; letter-spacing: -0.012em; margin-top: 2em; }
+    h4 { font-size: 19px; margin-top: 1.5em; }
+
+    #content h1, #content h2, #content h3, #content h4, #content h5, #content h6 {
+      scroll-margin-top: 72px;
+    }
+
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: var(--progress-height);
+      width: 0%;
+      background: linear-gradient(90deg, #0071e3, #2997ff);
+      z-index: 1000;
+      transition: width 0.05s linear;
+    }
+
+    #topbar {
+      position: fixed;
+      top: var(--progress-height);
+      left: 0; right: 0;
+      height: var(--topbar-height);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      font-size: 15px;
+    }
+
+    #topbar .title {
+      font-weight: 600;
+      color: var(--text-heading);
+    }
+
+    #topbar .back-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-right: 16px;
+    }
+
+    #sidebar {
+      position: fixed;
+      top: calc(var(--topbar-height) + var(--progress-height));
+      left: 0;
+      width: var(--sidebar-width);
+      height: calc(100vh - var(--topbar-height) - var(--progress-height));
+      overflow-y: auto;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      padding: 24px 20px;
+      font-size: 14px;
+    }
+
+    #sidebar .sidebar-part {
+      font-weight: 600;
+      color: var(--text-heading);
+      margin-top: 20px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    #sidebar .sidebar-part:first-child {
+      margin-top: 0;
+    }
+
+    #sidebar a {
+      display: block;
+      padding: 6px 10px;
+      color: var(--text-body);
+      text-decoration: none;
+      border-radius: 6px;
+      margin-bottom: 2px;
+    }
+
+    #sidebar a:hover { background: rgba(0, 0, 0, 0.04); }
+    #sidebar a.active { color: var(--accent); background: rgba(0, 113, 227, 0.08); }
+
+    #main-content {
+      margin-left: var(--sidebar-width);
+      margin-top: calc(var(--topbar-height) + var(--progress-height));
+      padding: 40px 60px 120px 60px;
+      max-width: 880px;
+    }
+
+    #content code {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+      font-size: 0.82em;
+      background: var(--bg-code);
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0;
+    }
+
+    #content pre {
+      background: var(--bg-code);
+      border-radius: 8px;
+      padding: 16px 20px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    #content pre code {
+      font-size: inherit;
+      background: none;
+      padding: 0;
+    }
+
+    #content a { color: var(--link); }
+
+    #content blockquote {
+      border-left: 3px solid var(--accent);
+      padding: 8px 16px;
+      margin: 1em 0;
+      color: var(--text-body);
+      background: var(--bg-alt);
+      border-radius: 0 6px 6px 0;
+    }
+
+    #content table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: 15px;
+    }
+
+    #content th, #content td {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+
+    #content th {
+      background: var(--bg-alt);
+      font-weight: 600;
+    }
+
+    #loading {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .placeholder {
+      padding: 40px 0;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 900px) {
+      #sidebar { display: none; }
+      #main-content { margin-left: 0; padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="progress-bar"></div>
+
+  <header id="topbar">
+    <a href="../" class="back-link">← repos</a>
+    <span class="title">SLAM History Book</span>
+  </header>
+
+  <nav id="sidebar">
+    <div class="sidebar-part">0 서문</div>
+    <a href="#ch0">Ch.0 풀렸다고 여기는 시대에서</a>
+
+    <div class="sidebar-part">1 선사시대</div>
+    <a href="#ch1">Ch.1 사진측량과 번들 조정</a>
+    <a href="#ch2">Ch.2 Classical CV 도구상자</a>
+    <a href="#ch3">Ch.3 Structure from Motion</a>
+
+    <div class="sidebar-part">2 고전 SLAM</div>
+    <a href="#ch4">Ch.4 EKF-SLAM의 흥망</a>
+    <a href="#ch5">Ch.5 MonoSLAM → PTAM</a>
+    <a href="#ch6">Ch.6 Graph SLAM 혁명</a>
+
+    <div class="sidebar-part">3 성숙기</div>
+    <a href="#ch7">Ch.7 Feature-based 계보</a>
+    <a href="#ch8">Ch.8 Direct 계보</a>
+    <a href="#ch9">Ch.9 Dense/RGB-D</a>
+    <a href="#ch10">Ch.10 Place Recognition</a>
+
+    <div class="sidebar-part">4 러닝 융합기</div>
+    <a href="#ch11">Ch.11 깊이 추정의 부활</a>
+    <a href="#ch12">Ch.12 End-to-end 좌절</a>
+    <a href="#ch13">Ch.13 Hybrid 승리</a>
+
+    <div class="sidebar-part">5 표현의 혁명</div>
+    <a href="#ch14">Ch.14 NeRF 충격</a>
+    <a href="#ch15">Ch.15 Gaussian Splatting</a>
+    <a href="#ch16">Ch.16 Foundation 3D</a>
+
+    <div class="sidebar-part">6 옆길과 결론</div>
+    <a href="#ch17">Ch.17 LiDAR 평행 우주</a>
+    <a href="#ch18">Ch.18 실패와 사라진 계보</a>
+    <a href="#ch19">Ch.19 오늘의 지도</a>
+  </nav>
+
+  <main id="main-content">
+    <div id="loading">
+      <h1>SLAM History Book</h1>
+      <p class="placeholder">
+        20챕터 원고는 현재 작성 중.<br>
+        <code>chapter_XX_*.md</code> 파일이 준비되면 이 페이지가 렌더링한다.
+      </p>
+    </div>
+    <div id="content" style="display:none;"></div>
+  </main>
+
+  <script>
+    marked.setOptions({
+      highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          try { return hljs.highlight(code, { language: lang }).value; } catch (e) {}
+        }
+        try { return hljs.highlightAuto(code).value; } catch (e) {}
+        return code;
+      }
+    });
+
+    // 스크롤 진행률
+    function updateProgress() {
+      var h = document.documentElement;
+      var b = document.body;
+      var st = 'scrollTop';
+      var sh = 'scrollHeight';
+      var scrolled = (h[st] || b[st]) / ((h[sh] || b[sh]) - h.clientHeight) * 100;
+      document.getElementById('progress-bar').style.width = Math.min(scrolled, 100) + '%';
+    }
+    window.addEventListener('scroll', updateProgress);
+    window.addEventListener('resize', updateProgress);
+
+    // TODO: 챕터 로더. 초기 skeleton에서는 placeholder 유지.
+    // 구현 시 각 chapter_XX_*.md를 fetch → marked → renderMathInElement.
+  </script>
+</body>
+</html>
