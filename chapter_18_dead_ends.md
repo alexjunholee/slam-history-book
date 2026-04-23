@@ -48,9 +48,11 @@ Patrick Lichtsteiner, Christoph Posch, Tobi Delbruck가 ETH Zürich Institute of
 
 2014년부터 2018년까지 event SLAM은 controlled 환경과 low-texture 조건에서 좋은 결과를 냈지만, 일반 환경에서 기존 visual-inertial odometry를 앞서지 못했다.
 
+그 사이에도 event 접근의 적용 범위는 odometry 바깥으로 조용히 번졌다. [EventVLAD](https://ieeexplore.ieee.org/document/9635907/)(Lee & Kim, IROS 2021)는 event stream에서 복원한 edge 이미지를 NetVLAD descriptor로 묶어, 급격한 조명 변화와 모션 블러 조건에서도 장소 재인식이 가능함을 보였다. frame 기반 VPR이 어려워하던 환경을 event가 대신 건드리는 시도였다.
+
 ---
 
-## 18.4 Semantic SLAM — 2017-2019년 과열과 실패
+## 18.4 Semantic SLAM — object-as-landmark 경로의 축소
 
 2017년부터 2019년까지 CVPR, ECCV, IROS 세션 제목에는 "semantic"이 빠지지 않았다. 딥러닝이 instance segmentation과 object detection에서 연속으로 돌파구를 열던 시기였다. SLAM 연구자들은 질문을 던졌다. "이 semantic 이해를 SLAM에 통합하면 무슨 일이 일어날까?" 질문 자체가 틀린 것은 아니었는데, 실행이 담론을 따라가지 못했다.
 
@@ -62,9 +64,11 @@ SLAM++ 이후 2017-2019년 사이에 [SemanticFusion](https://arxiv.org/abs/1609
 
 실제 전개는 달랐다. 2019년까지 autonomous driving benchmark에서 성능을 끌어올린 것은 ORB-SLAM2, VINS-Mono, LIO-SAM 같은 전통적 geometric 파이프라인이었다. Deep semantic feature를 통합한 시스템들은 특정 실내 환경과 고정된 객체 클래스에서만 경쟁력이 있었다. 새로운 객체 카테고리나 처음 보는 환경에서 semantic prior가 오히려 drift를 키우는 사례도 나왔다.
 
-> 📜 **예언 vs 실제.** Salas-Moreno는 SLAM++ 논문 Conclusion에서 자신들의 방식이 "보다 일반적(generic) SLAM 방법으로 가는 첫 걸음"이라며, 낮은 차원의 형상 변이를 갖는 객체, 나아가 장기적으로는 스스로 객체 클래스를 분할·정의하는 시스템으로 확장되기를 기대했다. 논문 도입부는 이에 더해 객체 단위 표현이 "맵 저장량의 큰 압축"과 "효율성·견고성 이득"을 준다고 주장했다. 실제 전개는 일부만 적중했다. Object-level map은 AR과 특정 manipulation 응용에서 자리를 찾았고, 압축·효율 측면의 이점은 실내 반복 객체 환경에서 재확인됐다. 그러나 주류 geometric SLAM은 2026년 기준에도 sparse point와 keyframe 기반 graph를 유지하고 있고, 객체를 스스로 segmentation·정의하는 단계는 도달하지 못했다. Semantic은 결국 SLAM의 내부가 아니라 하류(downstream) 태스크—semantic mapping, task planning—에 자리를 잡았다. `[부분적중+무산]`
+> 📜 **예언 vs 실제.** Salas-Moreno는 SLAM++ 논문 Conclusion에서 자신들의 방식이 "보다 일반적(generic) SLAM 방법으로 가는 첫 걸음"이라며, 낮은 차원의 형상 변이를 갖는 객체, 나아가 장기적으로는 스스로 객체 클래스를 분할·정의하는 시스템으로 확장되기를 기대했다. 논문 도입부는 이에 더해 객체 단위 표현이 "맵 저장량의 큰 압축"과 "효율성·견고성 이득"을 준다고 주장했다. 실제 전개는 일부만 적중했다. Object-level map은 AR과 특정 manipulation 응용에서 자리를 찾았고, 압축·효율 측면의 이점은 실내 반복 객체 환경에서 재확인됐다. 그러나 주류 geometric SLAM은 2026년 기준에도 sparse point와 keyframe 기반 graph를 유지하고 있고, 객체를 스스로 segmentation·정의하는 단계는 도달하지 못했다. Semantic은 결국 SLAM의 내부가 아니라 하류(downstream) 태스크—semantic mapping, task planning—에 자리를 잡았다. `[부분 적중+경로 전환]`
 
 왜 semantic-first SLAM은 주류가 되지 못했나. 원인은 두 곳에 있었다. 하나는 의존성이었다. Semantic SLAM은 segmentation이 정확해야 했는데, segmentation이 틀리면 지도 전체가 오염됐다. 기하학적 파이프라인은 feature matching이 부분적으로 실패해도 robust estimation으로 버텼다. 다른 하나는 일반화였다. 특정 객체 클래스로 훈련한 semantic prior는 그 클래스 밖에서 쓸모가 없었다. SLAM이 들어가야 할 환경은 그 prior가 상정한 세계보다 훨씬 넓었다.
+
+축소된 것은 object-as-landmark 경로였지, semantic 자체는 아니었다. 같은 시기 다른 경로가 살아남았다. [SuMa++](https://doi.org/10.1109/IROS40897.2019.8967704)(Chen et al., IROS 2019)가 LiDAR point cloud에 semantic class를 덧씌워 동적 물체를 걸러냈고, [Kimera](https://doi.org/10.1109/ICRA40945.2020.9196885)(Rosinol et al., ICRA 2020)가 metric-semantic mesh와 3D scene graph를 묶었다. [Hydra](https://doi.org/10.15607/RSS.2022.XVIII.050)(Hughes et al., RSS 2022)는 그 scene graph를 실시간·계층적으로 확장했고, [ConceptGraphs](https://doi.org/10.1109/ICRA57147.2024.10610243)(Gu et al., ICRA 2024)와 [Clio](https://doi.org/10.1109/LRA.2024.3451395)(Maggio et al., RA-L 2024)에 이르러 open-vocabulary foundation feature가 그 위에 얹혔다. Semantic은 landmark 자리가 아니라 지도의 상위 layer로 올라가 살아남았다. 이 계보는 2026년까지 진행 중이고, [Ch.15b](chapter_15b_dynamic.md)(Dynamic·static 분리의 semantic 귀환), [Ch.16](chapter_16_foundation_3d.md)(foundation 3D·metric-semantic 본체), [Ch.19 §19.7](chapter_19_open_problems.md#197-semantic-표현의-귀환과-open-world)(Semantic의 귀환)에서 이어 다룬다.
 
 ---
 

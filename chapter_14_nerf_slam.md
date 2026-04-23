@@ -4,6 +4,8 @@ Ch.13에서 DROID-SLAM은 learned representation이 SLAM의 핵심 루프(tracki
 
 2020년 3월, Ben Mildenhall과 동료들이 arXiv에 올린 [Mildenhall et al. 2020. NeRF](https://arxiv.org/abs/2003.08934)는 8개 이미지로 새로운 시점의 사진을 만들어냈다. 그 사진은 빛과 그림자의 결을 가지고 있었다. SLAM 커뮤니티는 처음에 이것을 렌더링 문제로 보았다. 지도를 *만드는* 방법이 아니라 지도를 *보여주는* 방법이라고. 그 인식이 바뀌는 데는 14개월이 걸렸다. 2021년 ICCV에서 Sucar가 iMAP을 발표하면서, NeRF가 렌더링 도구가 아니라 지도 표현 자체로 쓰일 수 있다는 게 드러났다. iMAP은 KinectFusion(Ch.9)의 계보를 이었다. implicit neural field가 TSDF voxel grid를 대체할 수 있다는 가설의 첫 구현체였다.
 
+NeRF가 허공에서 나온 것은 아니었다. 2019년 한 해 동안 coordinate-based MLP로 3D를 표현하는 세 갈래가 거의 동시에 터졌다. [Park et al.의 DeepSDF](https://arxiv.org/abs/1901.05103)는 좌표를 넣으면 signed distance를 뱉는 MLP로 물체 표면을 암묵적으로 기술했고, [Mescheder et al.의 Occupancy Networks](https://arxiv.org/abs/1812.03828)는 같은 좌표 입력에서 occupancy 확률을 뱉게 만들었으며, [Sitzmann et al.의 SRN](https://arxiv.org/abs/1906.01618)은 좌표마다 scene feature vector를 저장해 differentiable ray marching으로 이미지를 합성했다. 좌표를 넣으면 field 값을 뱉는 같은 수학적 틀이다. Mildenhall et al. 2020 NeRF는 이 틀에 volume rendering 적분과 positional encoding을 더해 view synthesis까지 닫았다. iMAP이 이어받은 것은 NeRF 한 편이 아니라 그 1년짜리 계보 전체였다.
+
 ---
 
 ## NeRF: MLP 기반 공간 표현

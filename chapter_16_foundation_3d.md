@@ -78,13 +78,29 @@ Naver Labs Europe이라는 한 연구소가 CroCo(2022) → DUSt3R(2023) → MAS
 
 ---
 
-## 16.6 SLAM에서 무엇이 남는가
+## 16.6 다른 갈래 — semantic foundation이 지도로 들어온다
+
+지금까지의 서술은 geometric foundation이다. DUSt3R·MASt3R·VGGT는 pointmap·카메라 포즈·기하 구조를 다룬다. 그런데 2022년 전후로 "foundation 3D"라는 단어가 SLAM 문헌에서 두 갈래로 쓰이기 시작했다. 한쪽은 Naver Labs Europe에서 출발한 geometric 계보고, 다른 쪽은 CLIP·DINO·SAM을 지도 안으로 끌어들이는 semantic 계보다. 전자는 calibration을 없앴고, 후자는 dictionary를 없앴다.
+
+semantic 갈래의 시작은 MIT의 Luca Carlone 그룹에서 나왔다. [Nathan Hughes et al. 2022. Hydra: A Real-time Spatial Perception System for 3D Scene Graph Construction and Optimization](https://arxiv.org/abs/2201.13360)는 Kimera(Rosinol 2020)의 metric-semantic mesh 위에 objects → places → rooms → buildings의 hierarchical scene graph를 online으로 얹었다. closed-set 분류기를 쓰는 한 handbook이 "100-1000 labels predefined dictionary"라고 못 박은 제약 안에 있었지만, hierarchical map이 실시간으로 굴러간다는 것을 처음 보여줬다.
+
+dictionary의 벽은 foundation model이 허물었다. [Songyou Peng et al. 2023. OpenScene: 3D Scene Understanding with Open Vocabularies (CVPR)](https://arxiv.org/abs/2211.15654)가 ETH/Pollefeys 그룹에서, 곧이어 [Qiao Gu et al. 2024. ConceptGraphs: Open-Vocabulary 3D Scene Graphs for Perception and Planning (ICRA)](https://arxiv.org/abs/2309.16650)가 Montréal-MIT 협업으로 발표됐다. OpenScene은 CLIP feature를 3D 점군에 distillation해서 "이 점은 의자와 얼마나 가까운가"를 자연어 질의로 풀 수 있게 했다. ConceptGraphs는 한 걸음 더 나아갔다. class label 대신 VLM이 생성한 language description을 node attribute로 달고, object 사이 관계를 LLM이 서술한다. Hydra의 hierarchical 구조에 Peng의 open-vocabulary feature가 결합되면서 scene graph는 사전에 없는 개념까지 수용하게 됐다.
+
+[Dominic Maggio et al. 2024. Clio: Real-time Task-Driven Open-Set 3D Scene Graphs](https://arxiv.org/abs/2404.13696)는 이 계보를 task 쪽으로 돌렸다. 로봇이 받은 자연어 task를 information bottleneck으로 해석해서, 그 task에 필요한 추상화 수준만 scene graph에 남긴다. "커피 머신 근처 청소"라는 지시에서 커피 머신과 그 주변 객체는 보존되고, 무관한 디테일은 묶인다. hierarchical graph의 어느 층을 노출할지가 task에 따라 달라지는 것이다.
+
+> 🔗 **차용.** ConceptGraphs와 Clio의 계보는 Hydra의 hierarchical 구조를 그대로 물려받는다. Carlone 그룹의 scene graph 정의(Armeni → Rosinol-Kimera → Hughes-Hydra → Maggio-Clio)가 8년에 걸쳐 누적된 뒤, 그 위에 CLIP·VLM·LLM이 얹혔다. "표현이 바뀌어도 구조는 살아남는다"는 5부 전체의 패턴이 여기서도 성립한다. 바뀐 것은 node에 붙는 feature고, 살아남은 것은 objects-places-rooms라는 계층 자체다.
+
+이 갈래는 우리 책이 다루지 않는다. 지도에 semantic을 싣는 문제는 Ch.18 §18.4가 2017-2019년 object-as-landmark 계보의 시장 축소를 짚은 뒤 이어지는 별개 궤적이며, 본격 서술은 여기까지다. 다만 역사서의 기록으로 두 가지를 남긴다. 하나는 semantic SLAM이 "실패"한 것이 아니라 hierarchical scene graph라는 형태로 귀환했다는 사실이고, 다른 하나는 geometric foundation(DUSt3R 계보)과 semantic foundation(Hydra → ConceptGraphs → Clio 계보)이 2026년 현재 아직 본격적으로 만나지 않았다는 사실이다. VGGT의 pointmap에 CLIP feature를 붙인 end-to-end 시스템, 또는 Clio의 scene graph에 DUSt3R의 calibration-free 기하를 결합한 구성은 아직 보고되지 않았다. 만남의 지점은 Ch.19의 열린 문제로 넘긴다.
+
+---
+
+## 16.7 SLAM에서 무엇이 남는가
 
 MASt3R-SLAM이 고전 SLAM의 아키텍처를 빌려 쓴다는 점은 흥미롭다. keyframe 선택과 loop closure, map management, 이 구조들이 새 표현 위에서도 그대로 필요했다. DUSt3R 계열이 feature matching과 reconstruction의 내부를 교체했지만, SLAM 시스템 수준의 판단들은 고전 방법이 해결한 방식 그대로 재사용한다.
 
-이 관찰은 5부 전체에 걸쳐 반복되는 패턴과 일치한다. NeRF-SLAM이 NeRF를 map 표현으로 채택하면서도 keyframe 기반 tracking을 유지했다. 3DGS-SLAM이 Gaussian을 채택하면서도 loop closure를 classical 방식으로 했다. 표현(representation)을 바꿔도 시스템 구조는 그대로 살아남는다.
+이 관찰은 5부 전체에 걸쳐 반복되는 패턴과 일치한다. NeRF-SLAM이 NeRF를 map 표현으로 채택하면서도 keyframe 기반 tracking을 유지했다. 3DGS-SLAM이 Gaussian을 채택하면서도 loop closure를 classical 방식으로 했다 (Ch.15). Ch.15b의 dynamic SLAM도 mask 제거라는 front-end만 교체했을 뿐 back-end는 그대로였다. 표현(representation)을 바꿔도 시스템 구조는 그대로 살아남는다.
 
-Foundation 3D의 경우에도 이 패턴이 반복될 것인가. 아직 알 수 없다. 2026년 현재 MASt3R-SLAM은 실시간 구동에서 제약이 있고, VGGT의 SLAM 통합은 발표되지 않았다. "실시간 VGGT-SLAM"이라는 시스템이 등장할지, 아니면 foundation 3D는 오프라인 재건에 머물고 SLAM은 별개로 발전할지, 이 질문은 열려 있다.
+Foundation 3D의 경우에도 이 패턴이 반복된다. 2025년 MIT의 Dominic Maggio와 Luca Carlone이 [VGGT-SLAM](https://arxiv.org/abs/2505.12549)을 공개했다. VGGT가 local submap을 재건하면 factor graph가 그것들을 global 좌표계로 엮는 구성이다. transformer가 기하를 흡수했지만 factor graph는 살아남았다. Revaud 본인도 Handbook Ch.13에서 "a form of factor graph is still necessary"라고 적었다. 흡수의 속도는 특이하지만 최종 형태는 여전히 열려 있다. 실시간 대규모 sequence를 foundation 3D가 어디까지 감당할지, 그리고 16.6에서 언급한 semantic 갈래와 어디서 합류할지는 2026-2027년의 관찰 대상이다.
 
 ---
 
@@ -96,7 +112,7 @@ Foundation 3D의 경우에도 이 패턴이 반복될 것인가. 아직 알 수 
 
 **Metric scale의 일반화.** DUSt3R의 pointmap은 relative scale이다. 두 이미지 사이의 깊이 비율은 복원하지만 절대 스케일은 모른다. Metric3D나 Depth Anything v2가 metric depth를 목표로 했듯, foundation 3D에서도 metric scale을 일반화하는 문제가 남는다. 카메라 독립적 metric은 foundation 규모에서도 쉽지 않다. GPS나 IMU 없이 absolute scale을 결정하는 물리적 제약은 데이터 규모와 무관하게 존재한다.
 
-**이 흐름이 SLAM의 미래인가, 별개 갈래인가.** 15장의 3DGS처럼 foundation 3D도 SLAM 커뮤니티가 흡수하는 중이다. 그러나 흡수의 속도와 최종 형태는 불분명하다. 실시간 구동 조건이 충족될 때, 어떤 시스템 아키텍처가 살아남을지, 2025년 말이나 2026년에 답이 보이기 시작할 것이다.
+**이 흐름이 SLAM의 미래인가, 별개 갈래인가.** 15장의 3DGS처럼 foundation 3D도 SLAM 커뮤니티가 흡수하는 중이다. MASt3R-SLAM과 VGGT-SLAM이 2024-2025년에 연달아 등장하며 흡수의 경로는 윤곽이 잡혔다. 그러나 실시간 대규모 sequence 구동, 그리고 §16.6이 짚은 semantic 갈래(Hydra → ConceptGraphs → Clio)와의 합류 지점은 여전히 불분명하다. geometric foundation과 semantic foundation이 한 시스템에서 만나는 형태는 Ch.19 열린 문제의 핵심 축이다.
 
 ---
 
