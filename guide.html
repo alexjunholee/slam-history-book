@@ -3441,8 +3441,7 @@ Ch.0은 SLAM이 풀렸다고 여겨지는 시대를 묘사했다. 그 묘사는 
     });
 
     var inlineCodes = [];
-    src = src.replace(/`[^`
-]+`/g, function(m) {
+    src = src.replace(/`[^`\n]+`/g, function(m) {
       inlineCodes.push(m);
       return '%%INLINECODE' + (inlineCodes.length - 1) + '%%';
     });
@@ -3494,8 +3493,7 @@ Ch.0은 SLAM이 풀렸다고 여겨지는 시대를 묘사했다. 그 묘사는 
     requestAnimationFrame(function() {
       var src = document.getElementById('md-source').value;
       // CommonMark flank fix: **bold** followed by Korean sometimes fails to close.
-      src = src.replace(/\*\*([^*
-]+)\*\*(?=[가-힣])/g, '<strong>$1</strong>');
+      src = src.replace(/\*\*([^*\n]+)\*\*(?=[가-힣])/g, '<strong>$1</strong>');
       var mathData = protectMath(src);
       var html = marked.parse(mathData.src);
       html = restoreAndRenderMath(html, mathData.placeholders);

@@ -812,7 +812,7 @@ mark.search-highlight {{
     }});
 
     var inlineCodes = [];
-    src = src.replace(/`[^`\n]+`/g, function(m) {{
+    src = src.replace(/`[^`\\n]+`/g, function(m) {{
       inlineCodes.push(m);
       return '%%INLINECODE' + (inlineCodes.length - 1) + '%%';
     }});
@@ -864,7 +864,7 @@ mark.search-highlight {{
     requestAnimationFrame(function() {{
       var src = document.getElementById('md-source').value;
       // CommonMark flank fix: **bold** followed by Korean sometimes fails to close.
-      src = src.replace(/\*\*([^*\n]+)\*\*(?=[가-힣])/g, '<strong>$1</strong>');
+      src = src.replace(/\*\*([^*\\n]+)\*\*(?=[가-힣])/g, '<strong>$1</strong>');
       var mathData = protectMath(src);
       var html = marked.parse(mathData.src);
       html = restoreAndRenderMath(html, mathData.placeholders);
