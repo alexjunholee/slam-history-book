@@ -16,7 +16,7 @@ Kendall이 직접 수집한 Cambridge Landmarks 데이터셋—킹스 칼리지 
 
 논문은 즉각적인 후속을 촉발했다. Bayesian PoseNet(2016)은 Monte Carlo Dropout으로 자세 불확실성을 추정하려 했다. LSTM PoseNet은 시퀀스 정보를 통합했다. Geometric loss를 추가한 변형이 등장했다. Kendall 자신도 2017년에 재귀 구조와 photometric loss를 결합한 버전을 냈다.
 
-그러나 비교 기준이 올라갈수록 격차가 드러났다. 같은 장면에서 Active Search(Sattler et al. 2012)나 DenseVLAD는 위치 오차 0.2 m 수준을 달성했다. PoseNet 계열은 수 미터 오차를 좀처럼 넘지 못했다. 숫자가 말했다. 이미지 한 장에서 절대 자세를 회귀하는 것은 원론적으로 한계가 있었다.
+그러나 비교 기준이 올라갈수록 격차가 드러났다. 같은 장면에서 Active Search(Sattler et al. 2012)나 DenseVLAD는 위치 오차 0.2 m 수준을 달성했다. PoseNet 계열은 수 미터 오차를 좀처럼 넘지 못했다. 이미지 한 장에서 절대 자세를 회귀하는 접근에는 원론적 한계가 있었다.
 
 ---
 
@@ -32,7 +32,7 @@ Tinghui Zhou(UC Berkeley)가 같은 해에 발표한 [Zhou et al. 2017. SfMLearn
 
 > 🔗 **차용.** SfMLearner의 photometric loss는 고전 direct SLAM이 사용하는 intensity residual과 수학적으로 동일하다. DSO(Engel et al. 2018)의 photometric 원리를 미분가능 학습 프레임워크로 옮겼다. 이 계보는 살아남았다—SfMLearner의 self-supervision 아이디어는 MonoDepth2를 거쳐 결국 DROID-SLAM의 전제 조건 중 하나가 된다.
 
-그러나 SfMLearner 단독 VO는 KITTI 공식 리더보드에서 ORB-SLAM의 절반에도 미치지 못하는 성능이었다.
+다만 SfMLearner 단독 VO는 KITTI 공식 리더보드에서 ORB-SLAM의 절반에도 미치지 못하는 성능으로 마무리되었다.
 
 ---
 
@@ -56,7 +56,7 @@ Federico Tombari 그룹(TU Munich, 이후 Google)도 같은 시기에 DenseSLAMN
 
 > 📜 **예언 vs 실제.** Kendall은 PoseNet 논문(2015) §6 Future Work에서 "불확실성 추정, temporal 정보 통합, 더 넓은 규모의 장면으로의 확장"을 다음 과제로 적었다. 세 방향 모두 실행되었다—Bayesian PoseNet(2016), LSTM PoseNet(2016), 복수의 outdoor 확장 실험들. 그러나 각 시도가 새 벽에 부딪혔고, 연구자들은 결국 이 접근법 전체를 포기했다. 예언이 합리적이었어도 플랫폼 자체가 틀렸으면 소용없다. `[무산]`
 
-일부 시도는 다른 방향으로 살아남았다. SfMLearner의 photometric self-supervision은 MonoDepth2(Godard 2019), 나아가 DROID-SLAM(Teed & Deng 2021)의 훈련 전략 안에 흡수되었다. DeepVO가 보여준 LSTM 기반 temporal modeling은 시각-관성 학습 연구에서 변형된 형태로 재등장했다. 아이디어가 사라진 것이 아니었다. 사용법이 바뀐 것이었다.
+일부 시도는 다른 방향으로 살아남았다. SfMLearner의 photometric self-supervision은 MonoDepth2(Godard 2019), 나아가 DROID-SLAM(Teed & Deng 2021)의 훈련 전략 안에 흡수되었다. DeepVO가 보여준 LSTM 기반 temporal modeling은 시각-관성 학습 연구에서 변형된 형태로 재등장했다. 아이디어는 사라진 게 아니라 용도가 바뀌었다.
 
 > 📜 **예언 vs 실제.** Zhou는 SfMLearner 논문(2017) §7 Future Work에서 "dynamic object 처리와 photometric noise에 대한 강건성"을 남은 과제로 적었다. GeoNet(Yin & Shi 2018), DFNet(Zhao et al. 2020) 등이 부분적으로 이 방향을 밀었다. 그러나 self-supervised VO 단독으로 SLAM을 대체하는 경로는 주류에 합류하지 못했다. photometric self-supervision 자체는 계보를 이어갔지만, end-to-end VO라는 목표는 분야가 기각했다. `[기술변화]`
 
@@ -64,13 +64,13 @@ Federico Tombari 그룹(TU Munich, 이후 Google)도 같은 시기에 DenseSLAMN
 
 ## 12.5 교훈의 정착
 
-2020년을 전후해 이 분야는 하나의 합의에 도달했다. 한 줄로 압축하면: "geometry는 알고리즘, learning은 feature와 prior."
+2020년을 전후해 이 분야는 하나의 합의에 도달했다. "geometry는 알고리즘, learning은 feature와 prior"—대략 이런 방향으로.
 
 > 🔗 **차용.** 이 원칙의 실천은 13장에서 다루는 CodeSLAM(Bloesch 2018)과 DROID-SLAM(Teed & Deng 2021)에서 구체화된다. 두 시스템 모두 factor graph 또는 bundle adjustment라는 기하학적 뼈대를 유지하고, 학습 부분은 feature 추출이나 depth prior 형성에 국한한다. PoseNet이 버린 뼈대가 사실 포기할 수 없는 것이었다는 확인이다.
 
 고전 파이프라인이 학습 기반 대안에 일관되게 우월한 것이 아니었다. ORB-SLAM도 textureless 환경에서, 야간에서, 비에서 자주 실패했다. 문제는 고전 SLAM의 견고함이 아니라 end-to-end의 오류가 더 불투명하고 더 예측 불가능하다는 데 있었다.
 
-실패는 데이터셋이나 아키텍처의 문제가 아니었다. 문제 설정이 틀렸다. 이미지에서 바로 pose로. 그 직선 경로에 30년짜리 기하학 지식이 빠져 있었다.
+실패는 데이터셋이나 아키텍처의 문제가 아니었다. 이미지에서 바로 pose로 직결하는 경로에 30년짜리 기하학 지식이 통째로 빠져 있었다.
 
 ---
 

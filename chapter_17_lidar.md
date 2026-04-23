@@ -26,7 +26,7 @@ LOAM의 문제는 지면(ground plane)을 명시적으로 다루지 않는다는
 
 Tixiao Shan(MIT)과 Brendan Englot은 [Shan & Englot 2018. LeGO-LOAM](https://doi.org/10.1109/IROS.2018.8594299)에서 ground segmentation을 첫 단계로 분리했다. 포인트 클라우드를 range image로 투영한 뒤, 지면 포인트를 먼저 분리하고 비지면 포인트를 다시 클러스터링한다. Ground는 roll·pitch 추정에, 클러스터는 yaw·translation 추정에 각각 사용된다. 두 단계 최적화다.
 
-결과는 LOAM 대비 연산 절감이었다. 원래 LOAM이 Velodyne VLP-16에서 실시간 동작이 버거웠다면, LeGO-LOAM은 동일 센서에서 임베디드 플랫폼(NVIDIA Jetson)에서도 돌아간다. 경량화의 대가는 있다. 포인트 희소 환경이나 지면 구조가 불규칙한 환경에서는 segmentation이 실패한다. 레이저가 가리는 구간, 울퉁불퉁한 야지, 건물 내부. 여기서 LeGO-LOAM은 흔들린다.
+결과는 LOAM 대비 연산 절감이었다. 원래 LOAM이 Velodyne VLP-16에서 실시간 동작이 버거웠다면, LeGO-LOAM은 동일 센서에서 임베디드 플랫폼(NVIDIA Jetson)에서도 돌아간다. 경량화의 대가는 있다. 포인트 희소 환경이나 지면 구조가 불규칙한 환경 — 레이저가 가리는 구간, 울퉁불퉁한 야지, 건물 내부 — 에서는 segmentation이 실패하고 odometry가 흔들린다.
 
 하지만 LeGO-LOAM의 진짜 기여는 경량화 그 자체보다 "센서 입력을 구조화된 모듈로 전처리한 뒤 odometry를 돌린다"는 설계 원칙이었다. FAST-LIO와 LIO-SAM이 뒤에 이 원칙을 받아들인다.
 
@@ -34,7 +34,7 @@ Tixiao Shan(MIT)과 Brendan Englot은 [Shan & Englot 2018. LeGO-LOAM](https://do
 
 ## 17.3 IMU와의 결합: FAST-LIO의 등장
 
-LiDAR는 dense range 정보를 준다. 그러나 스캔 주파수는 10-20Hz다. 그 사이사이에서 빠른 움직임이 있으면 포인트 클라우드에 motion distortion이 생긴다. 스캔이 끝나는 순간의 센서 위치와 시작 순간의 위치가 다르기 때문이다. 고속 이동체에서 LOAM 계열이 흔들리는 주된 이유다.
+LiDAR의 스캔 주파수는 10-20Hz다. 그 사이사이에서 빠른 움직임이 있으면 포인트 클라우드에 motion distortion이 생긴다. 스캔이 끝나는 순간의 센서 위치와 시작 순간의 위치가 다르기 때문으로, 고속 이동체에서 LOAM 계열이 흔들리는 주된 이유다.
 
 IMU는 100-400Hz로 동작한다. LiDAR의 틈을 채우기에 충분하다. 그런데 LiDAR와 IMU를 어떻게 결합하느냐에 따라 성능이 갈린다. loosely coupled는 각각 독립적으로 추정 후 fusion. tightly coupled는 하나의 상태 추정기 안에서 동시에 처리. 후자가 이론적으로 우월하지만 구현이 어렵다.
 
@@ -80,7 +80,7 @@ Visual SLAM과 LiDAR SLAM이 동시대에 발전했음에도 두 커뮤니티는
 
 Place recognition 방법도 달랐다. 카메라는 DBoW2·NetVLAD처럼 visual appearance를 사용한다. LiDAR는 Scan Context(Kim·Kim, 2018)나 PointNetVLAD 같이 3D point cloud의 구조적 특징을 활용한다. 동일 장소라도 인식하는 신호 자체가 다르다.
 
-수렴의 첫 신호는 2020년대 초에 나타났다. LiDAR-Camera 융합을 다루는 논문이 CVPR에 올라오기 시작했다. LVI-SAM(Shan et al., 2021)은 LIO-SAM에 visual odometry를 결합했다. 그러나 두 시스템을 loosely coupled 방식으로 연결한 수준이었다. tight fusion은 아직 열려 있다.
+수렴의 첫 신호는 2020년대 초에 나타났다. LiDAR-Camera 융합을 다루는 논문이 CVPR에 올라오기 시작했고, Tixiao Shan이 낸 LVI-SAM(2021)은 LIO-SAM에 visual odometry를 붙인 시도였다. 다만 두 시스템을 loosely coupled 방식으로 연결한 수준이어서, tight fusion은 아직 열려 있다.
 
 ---
 
@@ -112,4 +112,4 @@ Place recognition 방법도 달랐다. 카메라는 DBoW2·NetVLAD처럼 visual 
 
 ---
 
-LiDAR 계보는 Visual 주축과 교차하지 않은 채로 성숙했다. 두 계보는 각자의 언어로 완성됐다. 그 언어들이 아직 번역되지 않았을 뿐이다.
+LiDAR 계보는 Visual 주축과 교차하지 않은 채로 성숙했다. 두 계보는 각자의 언어를 갖추었고, 그 언어들 사이의 번역은 아직 진행 중이다.

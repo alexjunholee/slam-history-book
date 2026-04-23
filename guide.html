@@ -358,7 +358,13 @@
         })
         .then(function(md) {
           var protectedData = protectMath(md);
-          var html = marked.parse(protectedData.src);
+          // CommonMark flank rules: marked는 `**bold**` 다음이 한글일 때 닫힘 인식 실패.
+          // 수식 치환 이후에 `**...**`를 <strong>으로 선(先)렌더링.
+          var preprocessed = protectedData.src.replace(
+            /\*\*([^*\n]+?)\*\*/g,
+            '<strong>$1</strong>'
+          );
+          var html = marked.parse(preprocessed);
           html = restoreMath(html, protectedData.placeholders);
           contentEl.innerHTML = html;
           contentEl.style.display = '';

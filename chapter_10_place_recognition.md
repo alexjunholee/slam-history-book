@@ -126,7 +126,7 @@ Sphinx(2024)는 Gaussian map 표현과 place recognition을 결합했다. 3DGS(3
 
 > 📜 **예언 vs 실제.** Cummins와 Newman은 2011년 FAB-MAP 2.0 §6에서 "1,000 km 규모 place recognition이 목표"라고 적었다. Oxford 캠퍼스와 도심 일부를 달리며 얻은 데이터로 연구를 시작했으니, 1,000 km는 당시 기준으로 두 자릿수 배율의 도약이었다. 2015년경 DBoW2와 대형 vocabulary를 사용한 도시 규모 루프 클로저 실험들이 이 규모를 달성했다. 규모 문제는 예언대로 풀렸다. 그러나 Cummins와 Newman이 남긴 실패 모드 — 계절·조명 변화에 취약한 vocabulary 기반 표현 — 는 deep learning이 가져다준 다른 도구로 넘어섰다. `[기술변화]`
 
-> 📜 **예언 vs 실제.** Arandjelović et al.은 2016년 NetVLAD §6에서 "end-to-end VPR의 일반화는 아직 열린 도전"이라 했다. 이후 7년간 수십 편의 VPR 논문들이 외관 조건 일반화를 목표로 쏟아졌다. 2023년 AnyLoc은 fine-tuning 없는 foundation model feature로 다환경 단일 모델의 가능성을 보였다. 완전한 해결은 아니다. "불가능"에서 "다루기 가능"으로 옮겨간 것에 가깝다. `[진행형]`
+> 📜 **예언 vs 실제.** Arandjelović et al.은 2016년 NetVLAD §6에서 "end-to-end VPR의 일반화는 아직 열린 도전"이라 했다. 이후 7년간 수십 편의 VPR 논문들이 외관 조건 일반화를 목표로 쏟아졌다. 2023년 AnyLoc은 fine-tuning 없는 foundation model feature로 다환경 단일 모델의 가능성을 보였다. 완전한 해결이라기보다 불가능 판정에서 다루기 가능한 문제로 옮겨간 것에 가깝다. `[진행형]`
 
 ---
 
@@ -140,6 +140,6 @@ Sphinx(2024)는 Gaussian map 표현과 place recognition을 결합했다. 3DGS(3
 
 ---
 
-3부(성숙기)의 세 계보는 이렇게 막을 내린다. ORB-SLAM은 feature-based 파이프라인을 표준화했고, DSO는 그 반대편에서 photometric 이론을 완성했으며, KinectFusion 계열은 dense mapping의 가능성과 한계를 함께 드러냈다. Place recognition은 이 세 계보와 달리 SLAM 내부에서 자란 것이 아니었다. 컴퓨터 비전의 이미지 검색 문제에서 자라났고, SLAM이 루프 클로저를 필요로 했을 때 공급자 자리를 맡았다. 그 거리가 오히려 유리했다. deep learning 물결이 닥쳤을 때, place recognition은 기존 SLAM 파이프라인보다 빠르게 새 도구를 흡수했다.
+3부(성숙기)의 세 계보는 이렇게 막을 내린다. ORB-SLAM이 feature-based 파이프라인을 표준화하고, DSO가 photometric 이론을 완성하고, KinectFusion 계열이 dense mapping의 가능성과 한계를 드러내는 동안, place recognition은 그 어느 계보와도 다른 위치에 있었다. SLAM 내부에서 자란 것이 아니라 컴퓨터 비전의 이미지 검색 문제에서 자라났고, SLAM이 루프 클로저를 필요로 했을 때 공급자 자리를 맡았다. 그 거리는 결과적으로 이점이 됐다. deep learning 물결이 닥쳤을 때, place recognition은 기존 SLAM 파이프라인보다 빠르게 새 도구를 흡수했다.
 
-2023년 AnyLoc이 등장했을 때 Sivic의 이름은 감사의 글이 아니라 참고문헌에 있었다. 2003년 BoW를 이미지 검색에 꽂은 사람, 2016년 NetVLAD로 그 한계를 넘은 공동저자. 그 계보의 끝에서 AnyLoc은 Sivic이 연 문을 foundation model 쪽으로 밀어 넘겼다. 3부가 끝난다.
+2023년 AnyLoc이 등장했을 때 Sivic의 이름은 감사의 글이 아니라 참고문헌에 있었다. 2003년 BoW를 이미지 검색에 꽂은 사람, 2016년 NetVLAD로 그 한계를 넘은 공동저자. 그 계보의 끝에서 AnyLoc은 Sivic이 연 문을 foundation model 쪽으로 밀어 넘겼다.

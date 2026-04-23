@@ -1,8 +1,8 @@
 # Ch.8 — Direct 계보: DTAM에서 DSO까지
 
-Richard Newcombe는 Andrew Davison의 박사과정 학생이었다. Imperial College에서 MonoSLAM의 30-landmark 한계를 직접 목격한 그는 2011년 정반대의 선택을 했다. 모든 픽셀. Davison이 "몇 개의 점만 추적하면 충분하다"는 EKF의 논리에 기대어 실시간을 증명했다면, Newcombe는 GPU 한 장을 얹고 화면 전체를 써도 실시간이 가능하다는 것을 보여줬다. DTAM은 MonoSLAM의 직계지만, 그 방법론적 DNA는 완전히 뒤집혀 있다.
+Richard Newcombe는 Andrew Davison의 박사과정 학생이었다. Imperial College에서 MonoSLAM의 30-landmark 한계를 직접 목격한 그는 2011년 정반대의 선택을 했다—모든 픽셀을 쓰기로. Davison이 "몇 개의 점만 추적하면 충분하다"는 EKF의 논리에 기대어 실시간을 증명했다면, Newcombe는 GPU 한 장을 얹고 화면 전체를 써도 실시간이 가능하다는 것을 보여줬다. DTAM은 MonoSLAM의 직계지만, 그 방법론적 DNA는 완전히 뒤집혀 있다.
 
-Ch.7에서 살펴본 ORB-SLAM 계보는 feature를 먼저 뽑고 그 feature만 추적하는 방식이었다. Harris 코너와 ORB 디스크립터가 걸러낸 수백 개의 점—나머지 픽셀은 버려진다. Direct 계보는 이 선택을 거부했다. 버리는 것이 없다. 이미지 자체가 측정값이다.
+Ch.7에서 살펴본 ORB-SLAM 계보는 feature를 먼저 뽑고 그 feature만 추적하는 방식이었다. Harris 코너와 ORB 디스크립터가 걸러낸 수백 개의 점—나머지 픽셀은 버려진다. Direct 계보는 이 선택을 거부했다. 버릴 픽셀이 없다—이미지 자체가 측정값이다.
 
 같은 해 뮌헨에서는 Daniel Cremers가 다른 경로를 걷고 있었다. Computer vision의 variational 방법론(Gauss-Newton image alignment, 광학 흐름의 수식 언어)을 SLAM 전체에 이식하는 작업이었다. Cremers의 제자 Jakob Engel은 2014년 LSD-SLAM을, 2016년 DSO를 내놓았다. 두 논문은 서로 다른 밀도에서 같은 질문을 던졌다. feature를 추출하는 대신 픽셀의 밝기를 직접 비교하면 어떤 일이 생기는가.
 
@@ -20,7 +20,7 @@ $$E(\mathbf{u}) = \sum_{i} \rho\left( I_i\bigl(\pi(KT_i\mathbf{p}(\mathbf{u}))\b
 
 > 🔗 **차용.** DTAM의 dense volumetric 접근은 depth camera 기반 연구, 특히 Curless & Levoy(1996)의 TSDF 아이디어에서 부분 영감을 받았으나, 단안(monocular) 카메라에 적용했다는 점이 핵심 차이다. 이후 Newcombe 자신이 주도한 KinectFusion(2011, ISMAR)이 오히려 depth sensor 버전으로 이 아이디어를 완성시키는 역방향 흐름이 나타난다.
 
-결과는 충격적이었다. 실내 scene 전체가 실시간으로 복원되는 영상은 2011년 ICCV 발표 직후 YouTube에 공개되어 수만 회 조회를 기록했다. 그러나 약점도 명확했다. GPU 의존성. 조명 변화에 대한 취약성. 실외 대규모 환경으로의 확장 불가.
+결과는 충격적이었다. 실내 scene 전체가 실시간으로 복원되는 영상은 2011년 ICCV 발표 직후 YouTube에 공개되어 수만 회 조회를 기록했다. 그러나 약점도 명확했다. GPU 없이는 돌아가지 않았고, 조명 변화에 취약했으며, 실외 대규모 환경으로는 확장되지 않았다.
 
 <!-- DEMO: dtam_photometric_residual.html -->
 

@@ -58,21 +58,17 @@ Spann3R는 sequential 처리를 가능하게 했다. 그러나 pair-wise pointma
 
 > 🔗 **차용.** VGGT가 COLMAP의 역할을 재정의하는 맥락에서, 더 오래된 계보가 있다. COLMAP 자체가 학습 시대의 ground truth를 만든다는 아이러니는 앞에서 언급했다. 그런데 COLMAP이 실제로 수행하는 일(pair-wise geometry estimation → graph construction → global optimization)의 각 단계가 VGGT 안에서 implicit하게 재현된다. 고전 SfM이 알고리즘으로 구현한 것을 foundation model이 weight로 흡수한 형태다.
 
-DUSt3R와의 정량 비교에서 VGGT는 카메라 포즈 추정 정확도와 점군 품질 면에서 일관된 우위를 보였다. 처리 속도도 global alignment 최적화가 없으므로 더 빠르다.
-
-이 지점에서 개념적 충격이 온다.
+DUSt3R와의 정량 비교에서 VGGT는 카메라 포즈 추정 정확도와 점군 품질 면에서 일관된 우위를 보였다. 처리 속도도 global alignment 최적화가 없으므로 더 빠르다. 그리고 여기서 개념적인 문제가 생긴다.
 
 ---
 
 ## 16.5 개념적 충격: pose estimation과 reconstruction의 구분이 흐려진다
 
-전통 컴퓨터 비전은 두 문제를 구분했다. 카메라 포즈 추정은 이미 알려진 지도에서 현재 위치를 찾는 것이다. 3D 재건은 알려지지 않은 환경의 기하를 복원하는 것이다. SLAM은 이 둘을 동시에 푸는 문제였고, 그래서 어려웠다.
+전통 컴퓨터 비전은 두 문제를 구분했다. 카메라 포즈 추정은 이미 알려진 지도에서 현재 위치를 찾는 것이고, 3D 재건은 알려지지 않은 환경의 기하를 복원하는 것이다. SLAM은 이 둘을 동시에 풀기 때문에 어려웠다.
 
 DUSt3R부터 VGGT까지의 시스템은 이 구분에 무관심하다. pointmap을 예측하면 포즈가 나오고, 포즈가 나오면 reconstruction이 나온다. "카메라를 먼저 구하고 점군을 나중에" 또는 "점군을 먼저 구하고 카메라를 나중에"라는 순서 자체가 없다. 하나의 forward pass가 전부를 동시에 출력한다.
 
-이것이 지금까지 배운 모든 multi-view geometry를 폐기하는가.
-
-그렇지 않다. DUSt3R·MASt3R·VGGT가 잘 작동하는 이유는 epipolar constraint, triangulation, bundle adjustment가 구현하는 기하 원리를 transformer weight 안에서 학습했기 때문이다. 폐기된 것은 그 원리가 아니라 그것을 명시적 알고리즘으로 구현하던 방식이다. 기하가 사라진 것이 아니라 implicit하게 들어간 것이다.
+그러면 지금까지 배운 multi-view geometry는 폐기되는가. 그렇지 않다. DUSt3R·MASt3R·VGGT가 잘 작동하는 이유는 epipolar constraint, triangulation, bundle adjustment가 구현하는 기하 원리를 transformer weight 안에서 학습했기 때문이다. 폐기된 것은 그 원리가 아니라 그것을 명시적 알고리즘으로 구현하던 방식이다. 기하가 사라진 것이 아니라 implicit하게 들어간 것이다.
 
 그러나 연구자에게 이것은 실질적 전환이다. Schönberger의 COLMAP 코드를 디버깅하던 방식으로 DUSt3R를 디버깅할 수 없다. 어디서 실패했는지, 왜 실패했는지가 attention weight 안에 묻혀 있다. 해석 가능성 문제가 새로운 형태로 등장한다.
 

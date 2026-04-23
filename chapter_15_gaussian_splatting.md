@@ -28,9 +28,7 @@ Volume rendering 적분을 수치적으로 근사하는 NeRF와 달리, 3DGS는 
 
 implicit representation은 SLAM에 어울리지 않았다. MLP 기반 NeRF는 새 관측이 들어올 때마다 전체 네트워크를 재학습해야 했고, catastrophic forgetting 탓에 incremental update가 어려웠다. 지도 확장은 네트워크 크기 재조정을 뜻했다. NICE-SLAM의 voxel grid는 이 문제를 완화했지만, 해상도와 메모리의 트레이드오프를 피할 수 없었다.
 
-3DGS는 이 문제를 구조적으로 풀었다. Gaussian은 공간에 명시적으로 있는 객체다. 새 키프레임이 들어오면 해당 영역에 Gaussian을 추가하면 된다. Densification 절차가 keyframe 추가와 자연스럽게 맞물린다. 렌더링 품질은 NeRF 수준. 그리고 실시간이다.
-
-2023년 후반에 GS-SLAM 논문들이 쏟아진 데에는 이 계산이 있었다.
+3DGS는 이 문제를 구조적으로 풀었다. Gaussian은 공간에 명시적으로 있는 객체여서, 새 키프레임이 들어오면 해당 영역에 Gaussian을 추가하기만 하면 된다. Densification 절차가 keyframe 추가와 자연스럽게 맞물렸고, 렌더링 품질은 NeRF 수준을 유지하면서 실시간이 가능했다. 2023년 후반에 GS-SLAM 논문들이 쏟아진 것은 이 계산 때문이었다.
 
 ---
 
