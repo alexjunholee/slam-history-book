@@ -76,7 +76,7 @@ Flickr 관광객 사진 1,000~2,000장으로 로마·피렌체 성당 외관을 
 
 ## 3.5 COLMAP: 공학적 성숙
 
-> 📜 **예언 vs 실제.** Snavely et al. 2006 §9 "Future Work"에는 "수십만 장 규모 확장, 온라인 처리, 동적 장면 처리"가 세 과제로 명시되어 있다. 수십만 장 처리는 COLMAP(Schönberger 2016)과 OpenSfM이 달성했다. 온라인 처리는 SLAM이 별도 계보로 답했다—SfM의 incremental refinement 대신 fixed-lag smoother와 loop closure로. 동적 장면 처리는 2026년 기준 여전히 열린 문제다. 세 예측 중 하나는 SfM이, 하나는 다른 분야가, 하나는 아무도 풀지 못했다. `[진행형]`
+> 📜 **예언 vs 실제.** Snavely et al. 2006 논문은 향후 과제로 수십만 장 규모 확장, 온라인 처리, 동적 장면 처리를 꼽았다. 수십만 장 처리는 COLMAP(Schönberger 2016)과 OpenSfM이 달성했다. 온라인 처리는 SLAM이 별도 계보로 답했다—SfM의 incremental refinement 대신 fixed-lag smoother와 loop closure로. 동적 장면 처리는 2026년 기준 여전히 열린 문제다. 세 예측 중 하나는 SfM이, 하나는 다른 분야가, 하나는 아무도 풀지 못했다. `[진행형]`
 
 2016년 Johannes Schönberger와 Jan-Michael Frahm은 CVPR 논문 "[Structure-from-Motion Revisited](https://openaccess.thecvf.com/content_cvpr_2016/papers/Schonberger_Structure-From-Motion_Revisited_CVPR_2016_paper.pdf)"를 발표했다. 제목의 "Revisited"는 겸손한 표현이었지만, 실제로는 Bundler 이후 십 년간 쌓인 개선들을 체계적으로 묶은 재설계였다.
 

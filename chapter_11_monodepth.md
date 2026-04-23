@@ -72,9 +72,9 @@ depth prior를 첫 프레임에 주입하면 초기화가 빨라지고 scale을 
 
 scale recovery 쪽은 더 직접적이었다. monocular visual odometry(VO)는 달리면서 scale drift가 쌓인다. depth network 예측을 주기적인 scale anchor로 쓰면 이 drift를 억제할 수 있다. 완벽한 해법이 아니라 실용적 패치지만, 순수 VO보다 훨씬 긴 거리에서 버텼다.
 
-> 📜 **예언 vs 실제.** Eigen은 2014년 논문 §5에서 "depth와 다른 scene property — surface normal, segmentation — 의 joint estimation이 자연스러운 확장"이라 적었다. joint multi-task learning은 이후 PAD-Net·VPD 등으로 부분 실현됐다. 그러나 2024년 시점 실질적 영향은 task를 합친 것보다 ViT backbone 공유로 왔다. 예측한 방향과 실제 경로는 달랐다. `[기술변화]`
+> 📜 **예언 vs 실제.** Eigen은 2014년 논문에서 depth와 다른 scene property — surface normal, segmentation — 의 joint estimation을 자연스러운 확장 방향으로 제시했다. joint multi-task learning은 이후 PAD-Net·VPD 등으로 부분 실현됐다. 그러나 2024년 시점 실질적 영향은 task를 합친 것보다 ViT backbone 공유로 왔다. 예측한 방향과 실제 경로는 달랐다. `[기술변화]`
 
-> 📜 **예언 vs 실제.** Ranftl은 MiDaS 논문(2020) §6에서 "metric depth는 여전히 카메라 파라미터가 필요하며, 카메라 독립적 metric depth는 미해결 문제"라고 정확히 짚었다. 2024년 Depth Anything v2와 Metric3D v2가 이 방향을 직접 공략했다. camera intrinsic을 입력으로 받는 방식으로 in-the-wild metric이 실용 수준에 가까워졌으나 "완전한 카메라 독립"은 아직 아니다. `[진행형]`
+> 📜 **예언 vs 실제.** Ranftl은 MiDaS 논문(2020)에서 metric depth는 여전히 카메라 파라미터에 의존하며 카메라 독립적 metric depth는 미해결 문제임을 정확히 짚었다. 2024년 Depth Anything v2와 Metric3D v2가 이 방향을 직접 공략했다. camera intrinsic을 입력으로 받는 방식으로 in-the-wild metric이 실용 수준에 가까워졌으나 완전한 카메라 독립은 아직 아니다. `[진행형]`
 
 ---
 

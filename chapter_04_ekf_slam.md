@@ -79,7 +79,7 @@ EKF-SLAM의 더 깊은 결함은 2001년 ICRA에서 터졌다. Simon Julier와 J
 
 2007년 Guoquan Huang과 Gamini Dissanayake는 이 inconsistency의 원인을 더 정밀하게 해부했다. 비선형 관측 모델의 Jacobian을 현재 추정치에서 계산할 때 발생하는 spurious information이 covariance를 부당하게 줄인다는 것. 이른바 "observability"의 왜곡이다. 선형화 시점에 따라 시스템의 관측 가능한 자유도가 달라지고, EKF는 실제로 관측 불가능한 방향(전역 yaw)에 대해 잘못된 정보를 주입한다.
 
-> 📜 **예언 vs 실제.** Julier와 Uhlmann은 2001년 논문 §6에서 "consistent estimation을 달성하기 위한 새로운 필터 설계가 필요하다"고 결론지었다. 이후 10년간 Unscented Kalman Filter(UKF), Invariant EKF, robust covariance 등 필터 계열의 시도들이 나왔다. 그러나 2026년 기준으로 이 문제의 실용적 해법은 *필터가 아닌 최적화*였다. iSAM(Kaess et al., 2008), g2o(Kümmerle et al., 2011), GTSAM이 filter를 대체했다. Jacobian linearization을 current estimate에서 고정하지 않고 반복 최적화로 갱신하는 방식은 inconsistency를 구조적으로 회피한다. Julier-Uhlmann이 요구했던 "새 필터"는 결국 필터가 아닌 형태로 왔다. `[무산]`
+> 📜 **예언 vs 실제.** Julier와 Uhlmann은 2001년 논문 결론부에서 consistent estimation을 달성하기 위한 새로운 필터 설계가 필요하다고 지적했다. 이후 10년간 Unscented Kalman Filter(UKF), Invariant EKF, robust covariance 등 필터 계열의 시도들이 나왔다. 그러나 2026년 기준으로 이 문제의 실용적 해법은 *필터가 아닌 최적화*였다. iSAM(Kaess et al., 2008), g2o(Kümmerle et al., 2011), GTSAM이 filter를 대체했다. Jacobian linearization을 current estimate에서 고정하지 않고 반복 최적화로 갱신하는 방식은 inconsistency를 구조적으로 회피한다. Julier-Uhlmann이 요구했던 "새 필터"는 결국 필터가 아닌 형태로 왔다. `[무산]`
 
 ---
 
@@ -105,7 +105,7 @@ FastSLAM 2.0(Montemerlo et al. 2003)이 proposal distribution을 개선했지만
 
 2010년경을 기점으로 새로운 SLAM 시스템에서 backend로 EKF를 선택하는 경우는 드물어졌다. 특수 제약(매우 제한된 연산 자원, real-time filter 요구)이 있는 경우에만 잔존했다.
 
-> 📜 **예언 vs 실제.** Durrant-Whyte와 Bailey의 2006년 IEEE Robotics & Automation Magazine 튜토리얼은 SLAM의 확장성 문제를 논하며 "submap 분해와 information filter가 대규모 환경에서의 해법이 될 것"이라 전망했다. Information filter(EKF의 역공분산 형태)는 sparse information matrix를 이용해 landmark가 늘어도 연산이 느려지지 않을 것으로 기대됐다. 실제 전개는 달랐다. Information filter 계열(SEIF 등)은 sparsity를 강제로 유지하는 과정에서 marginalization error가 생겼다. Submap은 일부 시스템에 흡수되었으나 주류 해법이 되지 못했다. 2010년대를 지배한 것은 factor graph + iterative 최적화였다. `[기술변화]`
+> 📜 **예언 vs 실제.** Durrant-Whyte와 Bailey의 2006년 IEEE Robotics & Automation Magazine 튜토리얼은 SLAM의 확장성 문제를 논하며 submap 분해와 information filter가 대규모 환경에서의 해법이 될 것으로 전망했다. Information filter(EKF의 역공분산 형태)는 sparse information matrix를 이용해 landmark가 늘어도 연산이 느려지지 않을 것으로 기대됐다. 실제 전개는 달랐다. Information filter 계열(SEIF 등)은 sparsity를 강제로 유지하는 과정에서 marginalization error가 생겼다. Submap은 일부 시스템에 흡수되었으나 주류 해법이 되지 못했다. 2010년대를 지배한 것은 factor graph + iterative 최적화였다. `[기술변화]`
 
 ---
 

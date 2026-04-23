@@ -16,7 +16,7 @@ Milford와 Gordon Wyeth는 Queensland University of Technology(QUT) 로보틱스
 
 그러나 공학적 확장은 거기서 멈췄다. CAN은 장소 수가 늘수록 계산 복잡도가 올랐다. 더 깊은 문제는 정밀도였다. RatSLAM이 만드는 위상 지도(topological map)는 "여기 왔던 적 있다"는 판단은 했지만, 미터 단위의 metric 위치 추정은 안정적으로 내놓지 못했다. 자율주행과 조작(manipulation)이 요구하는 것은 정확한 좌표였다. 인지 지도는 그 요구에 맞지 않았다.
 
-> 📜 **예언 vs 실제.** Milford는 2008년 논문 결론에서 "brain-inspired SLAM이 대규모 outdoor 환경에서 전통적 접근을 능가할 것"이라고 적었다. 실제 전개는 달랐다. RatSLAM은 특정 benchmark에서 경쟁력을 보였으나, 2012년 이후 graph-based SLAM과 visual odometry가 정확도·속도 모두에서 앞서 나갔다. 위상 지도는 지금도 일부 place recognition 연구에 등장하지만, metric-topological 통합이라는 RatSLAM의 원래 야망은 다른 방식으로 이어지지 않았다. `[무산]`
+> 📜 **예언 vs 실제.** Milford는 2008년 논문 결론에서 brain-inspired SLAM이 대규모 outdoor 환경에서 전통적 접근을 능가할 것이라고 주장했다. 실제 전개는 달랐다. RatSLAM은 특정 benchmark에서 경쟁력을 보였으나, 2012년 이후 graph-based SLAM과 visual odometry가 정확도·속도 모두에서 앞서 나갔다. 위상 지도는 지금도 일부 place recognition 연구에 등장하지만, metric-topological 통합이라는 RatSLAM의 원래 야망은 다른 방식으로 이어지지 않았다. `[무산]`
 
 RatSLAM이 남긴 것은 알고리즘 자체가 아니었다. "장소 표현이 기하학 없이도 가능하다"는 아이디어가 place recognition 문헌에 스며들었다. 2012년 SeqSLAM이 같은 Milford 그룹에서 나왔고, 이미지 시퀀스 비교 기반 장소 인식은 visual place recognition 벤치마크의 한 축이 됐다. 계보 자체는 살아남았고, 다만 형태가 달라졌다.
 
@@ -62,7 +62,7 @@ SLAM++ 이후 2017-2019년 사이에 SemanticFusion(McCormac et al., 2017, ICRA)
 
 실제 전개는 달랐다. 2019년까지 autonomous driving benchmark에서 성능을 끌어올린 것은 ORB-SLAM2, VINS-Mono, LIO-SAM 같은 전통적 geometric 파이프라인이었다. Deep semantic feature를 통합한 시스템들은 특정 실내 환경과 고정된 객체 클래스에서만 경쟁력이 있었다. 새로운 객체 카테고리나 처음 보는 환경에서 semantic prior가 오히려 drift를 키우는 사례도 나왔다.
 
-> 📜 **예언 vs 실제.** Salas-Moreno는 SLAM++ 논문 결론에서 "object-level representation이 feature-level map을 대체해 더 compact하고 robust한 SLAM을 실현할 것"이라고 적었다. 실제로 object-level map은 AR과 특정 manipulation 응용에서 자리를 찾았다. 그러나 주류 geometric SLAM은 2026년 기준에도 sparse point와 keyframe 기반 graph를 유지하고 있다. Semantic은 SLAM의 내부가 아닌 하류(downstream) 태스크—semantic mapping, task planning—에 자리를 잡았다. `[무산]`
+> 📜 **예언 vs 실제.** Salas-Moreno는 SLAM++ 논문 결론에서 object-level representation이 feature-level map을 대체해 더 compact하고 robust한 SLAM을 실현할 것이라고 전망했다. 실제로 object-level map은 AR과 특정 manipulation 응용에서 자리를 찾았다. 그러나 주류 geometric SLAM은 2026년 기준에도 sparse point와 keyframe 기반 graph를 유지하고 있다. Semantic은 SLAM의 내부가 아닌 하류(downstream) 태스크—semantic mapping, task planning—에 자리를 잡았다. `[무산]`
 
 왜 semantic-first SLAM은 주류가 되지 못했나. 원인은 두 곳에 있었다. 하나는 의존성이었다. Semantic SLAM은 segmentation이 정확해야 했는데, segmentation이 틀리면 지도 전체가 오염됐다. 기하학적 파이프라인은 feature matching이 부분적으로 실패해도 robust estimation으로 버텼다. 다른 하나는 일반화였다. 특정 객체 클래스로 훈련한 semantic prior는 그 클래스 밖에서 쓸모가 없었다. SLAM이 들어가야 할 환경은 그 prior가 상정한 세계보다 훨씬 넓었다.
 

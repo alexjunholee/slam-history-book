@@ -98,9 +98,9 @@ VI 모드와 Atlas가 결합하면 무인기나 핸드헬드 장치가 조명이
 
 ## 📜 예언 vs 실제
 
-> 📜 **예언 vs 실제.** Mur-Artal은 2015년 ORB-SLAM 논문 §8 "Future Work"에서 "RGB-D 및 stereo 카메라로의 확장, IMU 통합이 다음 목표"라고 적었다. 2017년 ORB-SLAM2가 stereo와 RGB-D를 추가했고, 2021년 ORB-SLAM3가 IMU를 통합했다. 같은 팀이 자기 Future Work를 순서대로 직접 이행하는 데 6년이 걸렸다. `[적중]`
+> 📜 **예언 vs 실제.** Mur-Artal은 2015년 ORB-SLAM 논문에서 RGB-D 및 stereo 카메라로의 확장, IMU 통합을 다음 목표로 꼽았다. 2017년 ORB-SLAM2가 stereo와 RGB-D를 추가했고, 2021년 ORB-SLAM3가 IMU를 통합했다. 같은 팀이 자기 Future Work를 순서대로 직접 이행하는 데 6년이 걸렸다. `[적중]`
 
-> 📜 **예언 vs 실제.** Campos et al.은 2021년 ORB-SLAM3 논문 §10 "Future Work"에서 "learned descriptor와 deep SLAM과의 통합이 다음 방향"이라 언급했다. 2023-2025년 사이 SuperPoint와 LightGlue를 front-end로 사용하는 ORB-SLAM3 변형들이 연구되었다. 그러나 ORB-SLAM3 공식 GitHub 저장소의 main branch는 2026년 현재도 전통 ORB descriptor를 유지한다. 학술 실험에서는 통합이 이뤄졌지만, 공식 시스템은 바뀌지 않았다. `[진행형]`
+> 📜 **예언 vs 실제.** Campos et al.은 2021년 ORB-SLAM3 논문에서 learned descriptor와 deep SLAM과의 통합을 다음 방향으로 제시했다. 2023-2025년 사이 SuperPoint와 LightGlue를 front-end로 사용하는 ORB-SLAM3 변형들이 연구되었다. 그러나 ORB-SLAM3 공식 GitHub 저장소의 main branch는 2026년 현재도 전통 ORB descriptor를 유지한다. 학술 실험에서는 통합이 이뤄졌지만, 공식 시스템은 바뀌지 않았다. `[진행형]`
 
 ---
 

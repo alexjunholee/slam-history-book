@@ -54,11 +54,11 @@ Kendall은 이 실패를 외면하지 않았다. 박사학위를 마친 2019년,
 
 Federico Tombari 그룹(TU Munich, 이후 Google)도 같은 시기에 DenseSLAMNet을 시도했다. dense depth 추정과 pose regression을 하나의 망으로 결합하려는 시도였으나, 결과는 비슷했다. 고전 dense SLAM 대비 정확도가 낮았고, 연산 비용은 오히려 높았다. "denseness"는 보완책이 되지 못했다.
 
-> 📜 **예언 vs 실제.** Kendall은 PoseNet 논문(2015) §6 Future Work에서 "불확실성 추정, temporal 정보 통합, 더 넓은 규모의 장면으로의 확장"을 다음 과제로 적었다. 세 방향 모두 실행되었다—Bayesian PoseNet(2016), LSTM PoseNet(2016), 복수의 outdoor 확장 실험들. 그러나 각 시도가 새 벽에 부딪혔고, 연구자들은 결국 이 접근법 전체를 포기했다. 예언이 합리적이었어도 플랫폼 자체가 틀렸으면 소용없다. `[무산]`
+> 📜 **예언 vs 실제.** Kendall은 PoseNet 논문(2015)에서 불확실성 추정, temporal 정보 통합, 더 넓은 규모의 장면으로의 확장을 다음 과제로 꼽았다. 세 방향 모두 실행되었다—Bayesian PoseNet(2016), LSTM PoseNet(2016), 복수의 outdoor 확장 실험들. 그러나 각 시도가 새 벽에 부딪혔고, 연구자들은 결국 이 접근법 전체를 포기했다. 예언이 합리적이었어도 플랫폼 자체가 틀렸으면 소용없다. `[무산]`
 
 일부 시도는 다른 방향으로 살아남았다. SfMLearner의 photometric self-supervision은 MonoDepth2(Godard 2019), 나아가 DROID-SLAM(Teed & Deng 2021)의 훈련 전략 안에 흡수되었다. DeepVO가 보여준 LSTM 기반 temporal modeling은 시각-관성 학습 연구에서 변형된 형태로 재등장했다. 아이디어는 사라진 게 아니라 용도가 바뀌었다.
 
-> 📜 **예언 vs 실제.** Zhou는 SfMLearner 논문(2017) §7 Future Work에서 "dynamic object 처리와 photometric noise에 대한 강건성"을 남은 과제로 적었다. GeoNet(Yin & Shi 2018), DFNet(Zhao et al. 2020) 등이 부분적으로 이 방향을 밀었다. 그러나 self-supervised VO 단독으로 SLAM을 대체하는 경로는 주류에 합류하지 못했다. photometric self-supervision 자체는 계보를 이어갔지만, end-to-end VO라는 목표는 분야가 기각했다. `[기술변화]`
+> 📜 **예언 vs 실제.** Zhou는 SfMLearner 논문(2017)에서 dynamic object 처리와 photometric noise에 대한 강건성을 남은 과제로 제시했다. GeoNet(Yin & Shi 2018), DFNet(Zhao et al. 2020) 등이 부분적으로 이 방향을 밀었다. 그러나 self-supervised VO 단독으로 SLAM을 대체하는 경로는 주류에 합류하지 못했다. photometric self-supervision 자체는 계보를 이어갔지만, end-to-end VO라는 목표는 분야가 기각했다. `[기술변화]`
 
 ---
 

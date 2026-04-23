@@ -92,7 +92,7 @@ Lu-Milios(1997), Dellaert(2006), Kaess(2012) 세 그룹은 다른 도구로, 서
 
 계산 비용도 달랐다. EKF의 갱신 비용은 $O(N^2)$ (landmark 수 $N$에 대해), 정보 저장은 $O(N^2)$다. 그래프 방법은 희소 Cholesky(또는 QR) 분해를 활용하면 복잡도가 크게 줄어든다. 로봇이 제한된 지역 내에서 움직이는 현실 시나리오—희소 연결 그래프—에서 일반적으로 $O(N \log N)$ 수준의 갱신이 가능하다. 대규모 장기 SLAM에서 이 간격은 좁히기 어렵다.
 
-> 📜 **예언 vs 실제.** Dellaert의 Square Root SAM(2006) §8은 "배치 방식의 한계를 넘기 위한 iSAM 방향 확장이 다음 단계"라고 명시했다. 2008년 iSAM이 Givens rotation 기반 증분 갱신으로 이를 달성했고, 2012년 iSAM2는 Bayes tree로 루프 클로저 상황의 효율성까지 완성했다. GTSAM·Ceres·g2o 모두 같은 구조 위에서 경쟁한다. Dellaert 자신이 예고한 로드맵이 거의 정확히 실현된 경우다. `[적중]`
+> 📜 **예언 vs 실제.** Dellaert의 Square Root SAM(2006)은 배치 방식의 한계를 넘기 위한 iSAM 방향 확장이 다음 단계임을 제시했다. 2008년 iSAM이 Givens rotation 기반 증분 갱신으로 이를 달성했고, 2012년 iSAM2는 Bayes tree로 루프 클로저 상황의 효율성까지 완성했다. GTSAM·Ceres·g2o 모두 같은 구조 위에서 경쟁한다. Dellaert 자신이 예고한 로드맵이 거의 정확히 실현된 경우다. `[적중]`
 
 마지널리제이션(marginalization)의 유연성도 한몫했다. 그래프에서 오래된 포즈를 marginalize할 때 그 정보가 남은 변수들에 연결 factor로 보존된다. 필터는 정보를 버렸지만, 그래프는 압축하면서도 정보를 지킬 수 있다. 슬라이딩 윈도우 최적화나 keyframe 선택 같은 공학적 트레이드오프가 여기서 등장한다.
 
@@ -108,7 +108,7 @@ Lu-Milios(1997), Dellaert(2006), Kaess(2012) 세 그룹은 다른 도구로, 서
 
 세 번째 문제는 marginalization 근사다. iSAM2의 Bayes tree는 정확한 증분 추론을 제공하지만, 변수 수가 계속 증가하면 트리가 커진다. 실제 시스템에서는 오래된 포즈를 marginalize하여 트리 크기를 관리한다. 이 marginalization 과정에서 발생하는 fill-in이 information matrix를 조밀하게 만들 수 있다. 어떻게 truncate할지, Prior factor로 어떻게 근사할지가 구현 품질을 가른다.
 
-> 📜 **예언 vs 실제.** Kümmerle 2011 g2o §7의 "future work"는 "plane, line 같은 복잡한 제약(constraint)을 natively 지원하는 것"을 다음 목표로 명시했다. 2026년 기준, OpenVINS와 VINS-Fusion은 line/plane factor를 내부적으로 사용하는 경우가 있지만, g2o 라이브러리 자체는 이 방향보다 interface 안정성 유지에 집중했다. 기능 확장은 g2o를 fork하거나 래핑하는 방식으로 해결했다. `[진행형]`
+> 📜 **예언 vs 실제.** Kümmerle 2011 g2o 논문은 plane, line 같은 복잡한 제약(constraint)을 natively 지원하는 것을 다음 목표로 제시했다. 2026년 기준, OpenVINS와 VINS-Fusion은 line/plane factor를 내부적으로 사용하는 경우가 있지만, g2o 라이브러리 자체는 이 방향보다 interface 안정성 유지에 집중했다. 기능 확장은 g2o를 fork하거나 래핑하는 방식으로 해결했다. `[진행형]`
 
 ---
 

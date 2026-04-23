@@ -60,9 +60,9 @@ $$E_{pj} = \sum_{\mathbf{p} \in \mathcal{N}_p} w_{\mathbf{p}} \left\| \left( I_j
 
 결과는 인상적이었다. TUM monocular dataset에서 DSO는 ORB-SLAM2를 여러 시퀀스에서 능가한다고 보고했다. 특히 feature가 희박한 환경(평탄한 벽이 많은 실내 복도)에서 DSO가 ORB-SLAM2보다 낮은 ATE를 기록했다. photometric 정보를 쓰는 것이 원론적으로 더 많은 정보를 활용한다는 주장의 경험적 근거였다.
 
-> 📜 **예언 vs 실제.** DSO 논문 §9 "Future Work"는 "photometric calibration의 자동화와 다양한 카메라 유형으로의 일반화"를 다음 과제로 꼽았다. 2018년 Bergmann et al.의 online photometric calibration이 이 방향을 이었다. 캘리브레이션을 사전에 하지 않고 SLAM 실행 중 동시에 추정하는 방식이었다. 그러나 end-user 관점에서 배포 장벽은 2026년 기준 여전히 남아 있다. 특정 카메라에서 photometric 파라미터를 추출하는 과정이 자동화되지 못한 채 사전 세팅을 요구한다. `[진행형]`
+> 📜 **예언 vs 실제.** DSO 논문은 photometric calibration의 자동화와 다양한 카메라 유형으로의 일반화를 다음 과제로 꼽았다. 2018년 Bergmann et al.의 online photometric calibration이 이 방향을 이었다. 캘리브레이션을 사전에 하지 않고 SLAM 실행 중 동시에 추정하는 방식이었다. 그러나 end-user 관점에서 배포 장벽은 2026년 기준 여전히 남아 있다. 특정 카메라에서 photometric 파라미터를 추출하는 과정이 자동화되지 못한 채 사전 세팅을 요구한다. `[진행형]`
 
-> 📜 **예언 vs 실제.** Newcombe의 DTAM 논문 §7에는 "전용 GPU 없이 dense SLAM을 구현하는 것이 미래 방향"이라는 언급이 있었다. 그 실현 경로는 예측과 달랐다. 순수 mono dense는 NeRF와 3DGS가 등장하는 2020년대까지 실시간 배포 가능한 형태로 나오지 않았다. 대신 KinectFusion이 RGB-D depth sensor를 사용해 GPU dense 재구성을 2011년에 바로 완성했다—sensor 교체로 문제를 우회한 것이다. `[기술변화]`
+> 📜 **예언 vs 실제.** Newcombe의 DTAM 논문은 전용 GPU 없이 dense SLAM을 구현하는 것을 미래 방향으로 제시했다. 그 실현 경로는 예측과 달랐다. 순수 mono dense는 NeRF와 3DGS가 등장하는 2020년대까지 실시간 배포 가능한 형태로 나오지 않았다. 대신 KinectFusion이 RGB-D depth sensor를 사용해 GPU dense 재구성을 2011년에 바로 완성했다—sensor 교체로 문제를 우회한 것이다. `[기술변화]`
 
 ---
 

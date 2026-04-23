@@ -124,9 +124,9 @@ Place recognition 연구는 2000년대 초부터 SLAM의 나머지 구성 요소
 
 Sphinx(2024)는 Gaussian map 표현과 place recognition을 결합했다. 3DGS(3D Gaussian Splatting)가 지도 표현으로 올라온 흐름과 맞물린 방향이었다.
 
-> 📜 **예언 vs 실제.** Cummins와 Newman은 2011년 FAB-MAP 2.0 §6에서 "1,000 km 규모 place recognition이 목표"라고 적었다. Oxford 캠퍼스와 도심 일부를 달리며 얻은 데이터로 연구를 시작했으니, 1,000 km는 당시 기준으로 두 자릿수 배율의 도약이었다. 2015년경 DBoW2와 대형 vocabulary를 사용한 도시 규모 루프 클로저 실험들이 이 규모를 달성했다. 규모 문제는 예언대로 풀렸다. 그러나 Cummins와 Newman이 남긴 실패 모드 — 계절·조명 변화에 취약한 vocabulary 기반 표현 — 는 deep learning이 가져다준 다른 도구로 넘어섰다. `[기술변화]`
+> 📜 **예언 vs 실제.** Cummins와 Newman은 2011년 FAB-MAP 2.0 논문에서 1,000 km 규모 place recognition을 다음 목표로 제시했다. Oxford 캠퍼스와 도심 일부를 달리며 얻은 데이터로 연구를 시작했으니, 1,000 km는 당시 기준으로 두 자릿수 배율의 도약이었다. 2015년경 DBoW2와 대형 vocabulary를 사용한 도시 규모 루프 클로저 실험들이 이 규모를 달성했다. 규모 문제는 예언대로 풀렸다. 그러나 Cummins와 Newman이 남긴 실패 모드 — 계절·조명 변화에 취약한 vocabulary 기반 표현 — 는 deep learning이 가져다준 다른 도구로 넘어섰다. `[기술변화]`
 
-> 📜 **예언 vs 실제.** Arandjelović et al.은 2016년 NetVLAD §6에서 "end-to-end VPR의 일반화는 아직 열린 도전"이라 했다. 이후 7년간 수십 편의 VPR 논문들이 외관 조건 일반화를 목표로 쏟아졌다. 2023년 AnyLoc은 fine-tuning 없는 foundation model feature로 다환경 단일 모델의 가능성을 보였다. 완전한 해결이라기보다 불가능 판정에서 다루기 가능한 문제로 옮겨간 것에 가깝다. `[진행형]`
+> 📜 **예언 vs 실제.** Arandjelović et al.은 2016년 NetVLAD 논문에서 end-to-end VPR의 일반화를 여전히 열린 도전으로 꼽았다. 이후 7년간 수십 편의 VPR 논문들이 외관 조건 일반화를 목표로 쏟아졌다. 2023년 AnyLoc은 fine-tuning 없는 foundation model feature로 다환경 단일 모델의 가능성을 보였다. 완전한 해결이라기보다 불가능 판정에서 다루기 가능한 문제로 옮겨간 것에 가깝다. `[진행형]`
 
 ---
 

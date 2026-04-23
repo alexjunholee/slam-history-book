@@ -98,7 +98,7 @@ Place recognition 방법도 달랐다. 카메라는 DBoW2·NetVLAD처럼 visual 
 
 ## 📜 예언 vs 실제
 
-> Zhang·Singh이 2014년 LOAM §6 "Future Work"에 적은 것은 짧았다. "multi-sensor fusion과 dynamic environment 처리". multi-sensor fusion은 LIO-SAM(2020)·FAST-LIO2(2022)가 10년 안에 실현했다. IMU는 표준 구성요소가 됐다. GPS도 factor graph로 자연스럽게 흡수됐다. 그러나 dynamic object 처리는 2026년 현재도 열려 있다. LiDAR 포인트에서 움직이는 보행자·차량을 실시간 분리하는 것은 주로 deep learning segmentation에 의존하고, SLAM 알고리즘 자체에 내장된 해법은 여전히 부재하다. `[적중+진행형]`
+> Zhang·Singh이 2014년 LOAM 논문에서 밝힌 향후 과제는 짧고 명확했다. multi-sensor fusion과 dynamic environment 처리였다. multi-sensor fusion은 LIO-SAM(2020)·FAST-LIO2(2022)가 10년 안에 실현했다. IMU는 표준 구성요소가 됐다. GPS도 factor graph로 자연스럽게 흡수됐다. 그러나 dynamic object 처리는 2026년 현재도 열려 있다. LiDAR 포인트에서 움직이는 보행자·차량을 실시간 분리하는 것은 주로 deep learning segmentation에 의존하고, SLAM 알고리즘 자체에 내장된 해법은 여전히 부재하다. `[적중+진행형]`
 
 ---
 
