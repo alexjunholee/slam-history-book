@@ -84,7 +84,7 @@ Lie group과 factor graph가 1999년의 행렬 표기를 대체했고, 신경망
 
 ---
 
-> 📜 **예언 vs 실제.** Triggs et al.(1999) 결론부에서 저자들은 "대규모 BA 문제(수천 카메라, 수백만 점)로의 확장이 주요 도전"이라 기술했다. 그 도전은 정확히 달성되었다. 2006년 Snavely의 Photo Tourism이 수백 장 인터넷 사진으로 랜드마크를 재구성했고, 2016년 COLMAP은 백만 장 규모의 sparse SfM을 실현했다. 다만 Triggs가 상상한 "직접 확장"이 아니었다. incremental BA와 visibility graph pruning 위에 vocabulary tree 루프 클로저가 얹힌, 엔지니어링 층의 결과였다. `[적중]`
+> 📜 **예언 vs 실제.** Triggs et al.(1999)은 대규모 BA — 수천 대 카메라, 수백만 점 규모 — 로의 확장을 주요 도전으로 꼽았다. 그 도전은 정확히 달성되었다. 2006년 Snavely의 Photo Tourism이 수백 장 인터넷 사진으로 랜드마크를 재구성했고, 2016년 COLMAP은 백만 장 규모의 sparse SfM을 실현했다. 다만 Triggs가 상상한 "직접 확장"이 아니었다. incremental BA와 visibility graph pruning 위에 vocabulary tree 루프 클로저가 얹힌, 엔지니어링 층의 결과였다. `[적중]`
 
 ---
 
