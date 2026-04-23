@@ -6,37 +6,37 @@
 
 ---
 
-## 12.1 PoseNet: 압축의 유혹
+## 12.1 PoseNet
 
-PoseNet이 물려받은 것은 AlexNet(2012)이었다. Kendall은 ImageNet에서 분류 task로 학습된 깊은 CNN이 고수준 시각 표현을 형성한다는 사실을 확인하고, 그 feature hierarchy를 pose estimation으로 전용했다.
+PoseNet이 물려받은 것은 [AlexNet(Krizhevsky et al. 2012)](https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks)이었다. Kendall은 ImageNet에서 분류 task로 학습된 깊은 CNN이 고수준 시각 표현을 형성한다는 사실을 확인하고, 그 feature hierarchy를 pose estimation으로 전용했다.
 
-> 🔗 **차용.** PoseNet의 backbone은 GoogleNet(Inception) 구조다. Classification head를 제거하고 7차원 회귀 head(x, y, z, quaternion 4개)를 붙인 것이 전부다. ImageNet 학습으로 얻은 feature hierarchy를 localization에 이식한 직접 차용.
+> 🔗 **차용.** PoseNet의 backbone은 [GoogleNet(Inception, Szegedy et al. 2014)](https://arxiv.org/abs/1409.4842) 구조다. Classification head를 제거하고 7차원 회귀 head(x, y, z, quaternion 4개)를 붙인 것이 전부다. ImageNet 학습으로 얻은 feature hierarchy를 localization에 이식한 직접 차용.
 
-Kendall이 직접 수집한 Cambridge Landmarks 데이터셋—킹스 칼리지 예배당, 거리, 옛 병원 등 6개 야외 장면—에서 PoseNet은 평균 위치 오차 1.92 m, 방향 오차 5.40°를 기록했다. 2015년 기준으로는 인상적인 수치였다. GPU 한 장으로 5 ms 이내에 답이 나왔다. 특징 추출도, RANSAC도, 지도 조회도 없었다.
+Kendall이 직접 수집한 Cambridge Landmarks 데이터셋—킹스 칼리지 예배당, 거리, 옛 병원 등 여러 야외 장면—에서 PoseNet은 장면에 따라 위치 오차 2 m 안팎, 방향 오차 5-8° 수준을 기록했다(원 논문 §5 기준). 2015년 기준으로는 인상적인 수치였다. GPU 한 장으로 5 ms 이내에 답이 나왔다. 특징 추출도, RANSAC도, 지도 조회도 없었다.
 
-논문은 즉각적인 후속을 촉발했다. Bayesian PoseNet(2016)은 Monte Carlo Dropout으로 자세 불확실성을 추정하려 했다. LSTM PoseNet은 시퀀스 정보를 통합했다. Geometric loss를 추가한 변형이 등장했다. Kendall 자신도 2017년에 재귀 구조와 photometric loss를 결합한 버전을 냈다.
+논문은 즉각적인 후속을 촉발했다. [Bayesian PoseNet(Kendall & Cipolla 2016)](https://arxiv.org/abs/1509.05909)은 Monte Carlo Dropout으로 자세 불확실성을 추정하려 했다. LSTM PoseNet은 시퀀스 정보를 통합했다. Geometric loss를 추가한 변형이 등장했다. Kendall 자신도 2017년에 재귀 구조와 photometric loss를 결합한 버전을 냈다.
 
-그러나 비교 기준이 올라갈수록 격차가 드러났다. 같은 장면에서 Active Search(Sattler et al. 2012)나 DenseVLAD는 위치 오차 0.2 m 수준을 달성했다. PoseNet 계열은 수 미터 오차를 좀처럼 넘지 못했다. 이미지 한 장에서 절대 자세를 회귀하는 접근에는 원론적 한계가 있었다.
+그러나 비교 기준이 올라갈수록 격차가 드러났다. 같은 장면에서 [Active Search(Sattler et al. 2012)](https://www.graphics.rwth-aachen.de/media/papers/sattler_eccv12_preprint_1.pdf)나 DenseVLAD는 위치 오차 0.2 m 수준을 달성했다. PoseNet 계열은 수 미터 오차를 좀처럼 넘지 못했다. 이미지 한 장에서 절대 자세를 회귀하는 접근에는 원론적 한계가 있었다.
 
 ---
 
-## 12.2 DeepVO: 시간을 넣으면 달라질까
+## 12.2 DeepVO
 
-PoseNet의 한계 중 하나가 단일 이미지 입력이라면, 시퀀스를 입력하면 어떨까. Sen Wang(에든버러 대학)과 공저자들은 2017년 [Wang et al. 2017. DeepVO](https://doi.org/10.1109/ICRA.2017.7989236)를 ICRA에 발표했다. FlowNet에서 영향을 받은 CNN으로 연속 프레임 쌍의 optical flow feature를 추출하고, LSTM으로 시간 맥락을 축적해 VO를 직접 출력하는 구조였다.
+PoseNet의 한계 중 하나가 단일 이미지 입력이라면, 시퀀스를 입력하면 어떨까. Sen Wang(에든버러 Heriot-Watt)과 공저자들은 2017년 [Wang et al. 2017. DeepVO](https://arxiv.org/abs/1709.08429)를 ICRA에 발표했다. FlowNet에서 영향을 받은 CNN으로 연속 프레임 쌍의 optical flow feature를 추출하고, LSTM으로 시간 맥락을 축적해 VO를 직접 출력하는 구조였다.
 
-> 🔗 **차용.** DeepVO의 훈련 라벨은 KITTI의 GPS/IMU ground truth다. feature 추출 설계는 FlowNet(Dosovitskiy et al. 2015)의 optical flow CNN 구조에서 직접 차용했다. "deep VO"가 고전 센서 측정과 이전 딥러닝 연구 양쪽에 동시에 기대는 방식.
+> 🔗 **차용.** DeepVO의 훈련 라벨은 KITTI의 GPS/IMU ground truth다. feature 추출 설계는 [FlowNet(Dosovitskiy et al. 2015)](https://arxiv.org/abs/1504.06852)의 optical flow CNN 구조에서 직접 차용했다. "deep VO"가 고전 센서 측정과 이전 딥러닝 연구 양쪽에 동시에 기대는 방식.
 
 LSTM이 temporal modeling을 맡으면서 drift 억제를 기대했다. KITTI 시퀀스 일부에서 DVO-SLAM이나 VISO2-M 대비 낮은 drift를 보이는 결과가 논문에 실렸다. 하지만 조건이 있었다. 훈련 시퀀스와 비슷한 주행 패턴, 비슷한 조명 조건, 비슷한 도시 풍경, 비슷한 속도 프로파일. 조건이 어긋나면 LSTM이 축적한 "맥락"은 오히려 편향이 되었다.
 
-Tinghui Zhou(UC Berkeley)가 같은 해에 발표한 [Zhou et al. 2017. SfMLearner](https://doi.org/10.1109/CVPR.2017.700)는 다른 각도로 접근했다. 자기지도(self-supervised) 학습으로 depth와 ego-motion을 동시에 추정하되, photometric reprojection loss를 학습 신호로 썼다. 라벨 없이 학습 가능하다는 점이 강점이었다.
+Tinghui Zhou(UC Berkeley)가 같은 해에 발표한 [Zhou et al. 2017. SfMLearner](https://arxiv.org/abs/1704.07813)는 다른 각도로 접근했다. 자기지도(self-supervised) 학습으로 depth와 ego-motion을 동시에 추정하되, photometric reprojection loss를 학습 신호로 썼다. 라벨 없이 학습 가능하다는 점이 강점이었다.
 
-> 🔗 **차용.** SfMLearner의 photometric loss는 고전 direct SLAM이 사용하는 intensity residual과 수학적으로 동일하다. DSO(Engel et al. 2018)의 photometric 원리를 미분가능 학습 프레임워크로 옮겼다. 이 계보는 살아남았다—SfMLearner의 self-supervision 아이디어는 MonoDepth2를 거쳐 결국 DROID-SLAM의 전제 조건 중 하나가 된다.
+> 🔗 **차용.** SfMLearner의 photometric loss는 고전 direct SLAM이 사용하는 intensity residual과 수학적으로 동일하다. [DSO(Engel et al. 2018)](https://arxiv.org/abs/1607.02565)의 photometric 원리를 미분가능 학습 프레임워크로 옮겼다. 이 계보는 살아남았다—SfMLearner의 self-supervision 아이디어는 MonoDepth2를 거쳐 결국 DROID-SLAM의 전제 조건 중 하나가 된다.
 
 다만 SfMLearner 단독 VO는 KITTI 공식 리더보드에서 ORB-SLAM의 절반에도 미치지 못하는 성능으로 마무리되었다.
 
 ---
 
-## 12.3 왜 실패했나: 세 가지 원인
+## 12.3 실패 원인 세 가지
 
 2019년에서 2020년 사이, 이 분야의 논문들이 공통된 자기비판을 시작했다. Sudeep Pillai(MIT, 이후 TRI)는 2019년 발표에서 end-to-end 접근의 구조적 한계를 체계화했다. 원인은 크게 세 가지였다.
 
@@ -52,13 +52,13 @@ Tinghui Zhou(UC Berkeley)가 같은 해에 발표한 [Zhou et al. 2017. SfMLearn
 
 Kendall은 이 실패를 외면하지 않았다. 박사학위를 마친 2019년, 그는 Wayve로 자리를 옮겨 자율주행용 imitation learning과 world model 연구로 방향을 틀었다. 학습 기반 localization을 포기한 것이 아니라, "이미지 한 장에서 절대 pose를 회귀한다"는 문제 정의가 틀렸다고 판단한 것이었다.
 
-Federico Tombari 그룹(TU Munich, 이후 Google)도 같은 시기에 DenseSLAMNet을 시도했다. dense depth 추정과 pose regression을 하나의 망으로 결합하려는 시도였으나, 결과는 비슷했다. 고전 dense SLAM 대비 정확도가 낮았고, 연산 비용은 오히려 높았다. "denseness"는 보완책이 되지 못했다.
+Federico Tombari 그룹(TU Munich, 이후 Google)도 같은 시기에 [CNN-SLAM(Tateno et al. 2017)](https://arxiv.org/abs/1704.03489)을 시도했다. CNN이 예측한 dense depth를 직접(direct) monocular SLAM의 깊이 측정과 융합하려는 접근이었다. 학습 부분이 dense depth에 국한되었다는 점에서 완전한 end-to-end는 아니었지만, "CNN이 단안 SLAM의 스케일·저텍스처 문제를 해결해 줄 수 있지 않을까"라는 기대의 한 갈래였다. 결과는 장면에 따라 들쭉날쭉했고, 정확도가 일관되게 앞서지 못했다.
 
 > 📜 **예언 vs 실제.** Kendall은 PoseNet 논문(2015)에서 불확실성 추정, temporal 정보 통합, 더 넓은 규모의 장면으로의 확장을 다음 과제로 꼽았다. 세 방향 모두 실행되었다—Bayesian PoseNet(2016), LSTM PoseNet(2016), 복수의 outdoor 확장 실험들. 그러나 각 시도가 새 벽에 부딪혔고, 연구자들은 결국 이 접근법 전체를 포기했다. 예언이 합리적이었어도 플랫폼 자체가 틀렸으면 소용없다. `[무산]`
 
 일부 시도는 다른 방향으로 살아남았다. SfMLearner의 photometric self-supervision은 MonoDepth2(Godard 2019), 나아가 DROID-SLAM(Teed & Deng 2021)의 훈련 전략 안에 흡수되었다. DeepVO가 보여준 LSTM 기반 temporal modeling은 시각-관성 학습 연구에서 변형된 형태로 재등장했다. 아이디어는 사라진 게 아니라 용도가 바뀌었다.
 
-> 📜 **예언 vs 실제.** Zhou는 SfMLearner 논문(2017)에서 dynamic object 처리와 photometric noise에 대한 강건성을 남은 과제로 제시했다. GeoNet(Yin & Shi 2018), DFNet(Zhao et al. 2020) 등이 부분적으로 이 방향을 밀었다. 그러나 self-supervised VO 단독으로 SLAM을 대체하는 경로는 주류에 합류하지 못했다. photometric self-supervision 자체는 계보를 이어갔지만, end-to-end VO라는 목표는 분야가 기각했다. `[기술변화]`
+> 📜 **예언 vs 실제.** Zhou는 SfMLearner 논문(2017)에서 dynamic object 처리와 photometric noise에 대한 강건성을 남은 과제로 제시했다. [GeoNet(Yin & Shi 2018)](https://arxiv.org/abs/1803.02276)을 비롯한 후속 self-supervised 연구들이 부분적으로 이 방향을 밀었다. 그러나 self-supervised VO 단독으로 SLAM을 대체하는 경로는 주류에 합류하지 못했다. photometric self-supervision 자체는 계보를 이어갔지만, end-to-end VO라는 목표는 분야가 기각했다. `[기술변화]`
 
 ---
 

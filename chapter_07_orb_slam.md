@@ -28,7 +28,7 @@ KITTI 시퀀스 00(전체 4.5 km 루프)에서 ORB-SLAM은 1.2% translation drif
 
 > 🔗 **차용.** Essential graph의 아이디어는 [Strasdat et al. 2011. Double Window Optimisation](https://doi.org/10.1109/ICCV.2011.6126517)의 계층적 최적화 구조에서 왔다. Strasdat는 local window와 global window를 분리해 최적화 비용을 낮췄다. Mur-Artal은 이를 Essential graph라는 sparse 포즈 그래프로 일반화했다.
 
-루프 클로저의 장소 인식은 DBoW2가 담당한다. [Gálvez-López & Tardós 2012. DBoW2](https://doi.org/10.1109/TRO.2012.2197158)는 binary descriptor용 vocabulary tree다. ORB feature를 hierarchical k-means로 클러스터링해 트리 구조의 vocabulary를 만든다. 트리 분기 수 k와 깊이 L이 고정되면 leaf 노드(word) 수는 k^L이 된다. ORB-SLAM에서는 k=10, L=6으로 약 10^6 개의 word가 쓰인다. 각 word에는 TF-IDF(Term Frequency–Inverse Document Frequency) 가중치가 붙는다: 특정 word가 전체 키프레임 데이터베이스에 자주 등장할수록 낮은 IDF 가중치를 받아 discriminative한 word가 더 큰 영향력을 갖는다. 키프레임은 이 가중 BoW 벡터로 표현되고, inverted index에 저장된다. 새 프레임이 들어오면 vocabulary tree를 내려가 word를 결정하는 데 O(log(k^L))=O(L)이 걸리고, inverted index로 후보 키프레임을 바로 조회한다. 전체 지도를 순회하지 않는다.
+루프 클로저의 장소 인식은 DBoW2가 담당한다. [Gálvez-López & Tardós 2012. DBoW2](https://doi.org/10.1109/TRO.2012.2197158)는 binary descriptor용 vocabulary tree다. ORB descriptor를 k-medians(k-means++ seeding)로 계층적 클러스터링해 트리 구조의 vocabulary를 만든다. 트리 분기 수 $k_w$와 깊이 $L_w$가 고정되면 leaf 노드(word) 수는 $k_w^{L_w}$가 된다. DBoW2 논문은 $k_w=10$, $L_w=6$로 1백만 단어 규모의 vocabulary를 학습한 예를 보고하며, ORB-SLAM 공개 구현도 비슷한 수준의 vocabulary를 사용한다. 각 word에는 TF-IDF(Term Frequency–Inverse Document Frequency) 가중치가 붙는다: 특정 word가 전체 키프레임 데이터베이스에 자주 등장할수록 낮은 IDF 가중치를 받아 discriminative한 word가 더 큰 영향력을 갖는다. 키프레임은 이 가중 BoW 벡터로 표현되고, inverted index에 저장된다. 새 프레임이 들어오면 vocabulary tree를 내려가 word를 결정하는 데 O(log(k^L))=O(L)이 걸리고, inverted index로 후보 키프레임을 바로 조회한다. 전체 지도를 순회하지 않는다.
 
 Tracking 스레드는 매 프레임마다 현재 포즈를 추정한다. 이전 프레임 포즈를 초기값으로 feature matching을 수행한 뒤, **EPnP**(Efficient Perspective-n-Point)로 포즈 $\mathbf{T}_{cw} \in SE(3)$를 구한다. EPnP는 3D–2D correspondence $\{(\mathbf{X}_i, \mathbf{u}_i)\}$에서 reprojection error를 최소화한다:
 
@@ -38,7 +38,7 @@ $$\mathbf{T}^* = \arg\min_{\mathbf{T}} \sum_i \left\| \mathbf{u}_i - \pi(\mathbf
 
 ---
 
-## 7.2 ORB-SLAM2 (2017): Scale Ambiguity를 넘어서
+## 7.2 ORB-SLAM2 (2017) — stereo/RGB-D
 
 ORB-SLAM(2015)는 mono-only였다. 카메라 하나만으로는 scale을 알 수 없다. "이 복도가 10m인가 100m인가"를 이미지 픽셀에서 읽어낼 방법이 없다. Mur-Artal과 Tardós가 2016년에 작업을 시작한 것은 이 문제 때문이었다.
 
@@ -52,7 +52,7 @@ $$Z = \frac{b \cdot f}{d}$$
 
 depth $Z$가 임계값 $Z_{\max}=40b$ 이하인 특징점은 즉시 3D 맵 포인트로 등록된다. RGB-D 초기화도 동일한 원리다. depth 이미지에서 픽셀 $(u, v)$의 depth값 $Z$를 읽고, 역투영(back-projection)으로 3D 좌표를 얻는다. 두 경우 모두 scale이 고정되므로 첫 프레임 직후 Local BA를 바로 실행할 수 있다.
 
-EuRoC MAV(Micro Aerial Vehicle) 데이터셋 Machine Hall 01 시퀀스에서 ORB-SLAM2(stereo)는 절대 translation 오차 0.035 m를 기록했다. 비교 시점의 VINS-Mono(0.052 m)보다 낮았다. KITTI 오도메트리에서도 ORB-SLAM2가 당시 published 방법 중 상위권이었다.
+EuRoC MAV(Micro Aerial Vehicle) 데이터셋 Machine Hall 01 시퀀스에서 ORB-SLAM2(stereo)는 Table II에서 절대 translation 오차 0.035 m를 기록했다. 같은 표는 Stereo LSD-SLAM을 비교 대상으로 삼고 있어, 당시 feature-based 계열의 정밀도 우위가 수치로 확인되었다. KITTI 오도메트리에서도 ORB-SLAM2가 당시 published 방법 중 상위권이었다.
 
 2017년 5월 논문이 IEEE TRO에 실리던 날, Mur-Artal과 Tardós는 GitHub에 소스를 함께 올렸다. Zaragoza 팀 둘이서 mono·stereo·RGB-D 세 모드를 단일 코드베이스로 공개한 것이다. 이후 GitHub star는 수천을 넘었고, ROS 래퍼가 커뮤니티에서 만들어졌다.
 
@@ -66,7 +66,7 @@ ORB-SLAM3의 핵심 확장은 두 가지다. **Atlas**(멀티맵)와 **Visual-In
 
 Atlas는 여러 개의 분리된 지도를 동시에 유지하는 구조다. 추적이 실패하면 기존 지도를 닫고 새 지도를 시작하며, 나중에 같은 장소를 재방문했을 때 두 지도를 병합한다. ORB-SLAM과 ORB-SLAM2에서 추적 실패는 치명적이었다. 한번 잃으면 처음부터 다시 해야 했다. Campos는 이 점을 박사 과정 내내 가장 자주 겪은 한계로 지목했고, Atlas가 그 답이었다. ORB-SLAM3는 실패 후 재초기화하고 이전 지도를 기억한다.
 
-Visual-Inertial(VI) 모드는 IMU 데이터를 통합한다. Campos는 Forster et al.이 2016년 IJRR에 정리한 [IMU Preintegration on Manifold](https://doi.org/10.1177/0278364916652421) 방식을 그대로 가져왔다. IMU는 빠른 모션에서 Visual SLAM이 잃기 쉬운 추적을 보완한다. VI-SLAM은 단안 카메라의 scale ambiguity도 해결한다. IMU의 가속도계 측정이 중력 방향과 함께 절대 scale을 제공한다.
+Visual-Inertial(VI) 모드는 IMU 데이터를 통합한다. Campos는 Forster et al.이 RSS 2015에서 "IMU Preintegration on Manifold" 제목으로 제안하고 2016년 IEEE TRO에서 [On-Manifold Preintegration for Real-Time Visual-Inertial Odometry](https://doi.org/10.1109/TRO.2016.2597321)로 확장한 방식을 그대로 가져왔다. IMU는 빠른 모션에서 Visual SLAM이 잃기 쉬운 추적을 보완한다. VI-SLAM은 단안 카메라의 scale ambiguity도 해결한다. IMU의 가속도계 측정이 중력 방향과 함께 절대 scale을 제공한다.
 
 Preintegration의 핵심은 키프레임 $i$와 $j$ 사이의 IMU 측정을 한 번만 적분해 놓는 것이다. 가속도계·자이로스코프 측정값을 $\tilde{\mathbf{a}}_t = \mathbf{a}_t + \mathbf{b}_a + \mathbf{n}_a$, $\tilde{\boldsymbol{\omega}}_t = \boldsymbol{\omega}_t + \mathbf{b}_g + \mathbf{n}_g$로 모델링하면(bias $\mathbf{b}$, noise $\mathbf{n}$), 두 키프레임 사이의 상대 회전·속도·위치 변화량을 다음과 같이 preintegration한다:
 
@@ -76,9 +76,9 @@ $$\Delta\mathbf{p}_{ij} = \sum_{k=i}^{j-1}\!\left[\Delta\mathbf{v}_{ik}\Delta t 
 
 여기서 $\mathrm{Exp}(\cdot)$는 $\mathfrak{so}(3)$의 지수 사상이다. bias가 BA 중 갱신되면 전체 재적분 없이 1차 선형 근사로 보정한다. ORB-SLAM3는 이 preintegrated 항($\Delta\mathbf{R}$, $\Delta\mathbf{v}$, $\Delta\mathbf{p}$)을 factor graph의 inertial edge로 추가해 visual reprojection residual과 함께 최적화한다.
 
-> 🔗 **차용.** Campos는 [Forster et al. 2016. IMU Preintegration on Manifold](https://doi.org/10.1177/0278364916652421)의 preintegration 공식을 ORB-SLAM3 Inertial 통합의 핵심으로 가져왔다. Forster의 수식은 연속 IMU 측정을 bias 보정과 함께 SE(3) 위에서 적분하는 방법을 제공한다. ORB-SLAM3는 이 공식을 factor graph 최적화에 연결했다.
+> 🔗 **차용.** Campos는 Forster et al.의 On-Manifold Preintegration(TRO 2016, 원형은 RSS 2015) 공식을 ORB-SLAM3 Inertial 통합의 핵심으로 가져왔다. Forster의 수식은 연속 IMU 측정을 bias 보정과 함께 SO(3) 매니폴드 위에서 적분하는 방법을 제공한다. ORB-SLAM3는 이 공식을 factor graph 최적화에 연결했다.
 
-EuRoC MAV 전체 11개 시퀀스 평균 RMSE ATE(절대 궤적 오차)에서 ORB-SLAM3(mono-inertial)는 0.016 m였다. 같은 조건에서 VINS-Mono는 0.043 m, Kimera는 0.022 m였다.
+EuRoC MAV 전체 11개 시퀀스 평균 RMSE ATE(절대 궤적 오차)에서 ORB-SLAM3(mono-inertial)는 Table II에서 0.043 m로 보고된다. 같은 표에서 VINS-Mono는 0.110 m로 집계되며, Kimera(stereo-inertial)는 0.119 m였다.
 
 VI 모드와 Atlas가 결합하면 무인기나 핸드헬드 장치가 조명이 달라지거나 추적을 잃어도 이전 지도로 돌아올 수 있다. 버전 번호를 바꾼 것이 아니라 시스템의 성격이 달라진 것이다.
 
@@ -92,15 +92,15 @@ VI 모드와 Atlas가 결합하면 무인기나 핸드헬드 장치가 조명이
 
 재현성도 있다. 코드가 공개되어 있고, ROS 통합이 잘 되어 있으며, 수천 개의 실사용 사례가 문서화되어 있다. 실험실에서 새 시스템을 평가할 때 ORB-SLAM3를 돌려보는 것이 첫 번째 단계가 된 지 오래다. mono·stereo·RGB-D·IMU를 단일 코드베이스가 지원하기 때문에 "우리 방법 vs ORB-SLAM3(stereo)" 혹은 "우리 방법 vs ORB-SLAM3(mono-inertial)"을 나란히 비교할 수 있다. 하나의 baseline이 여러 설정을 커버한다.
 
-마지막으로, learned alternative가 일관되게 능가하지 못한다. DROID-SLAM(Teed & Deng, 2021)은 여러 시퀀스에서 ORB-SLAM3를 이긴다. 그러나 GPU 메모리를 수 GB 사용하고, 초기화 시간이 길며, 실시간이 아닌 경우가 있어 임베디드 플랫폼에서는 돌아가지 않는다. ORB-SLAM3는 Raspberry Pi 4에서도 작동한다.
+마지막으로, learned alternative가 일관되게 능가하지 못한다. DROID-SLAM(Teed & Deng, 2021)은 여러 시퀀스에서 ORB-SLAM3를 이긴다. 그러나 논문 자체가 보고하듯 EuRoC·TartanAir 같은 대용량 시퀀스에서는 24 GB급 GPU가 필요하고 TartanAir에서는 8 fps로 실시간이 아니다. 반면 ORB-SLAM3는 CPU-only로 돌고, 커뮤니티 보고로는 ARM/임베디드 플랫폼에서도 기본 동작이 확인된다.
 
 ---
 
 ## 📜 예언 vs 실제
 
-> 📜 **예언 vs 실제.** Mur-Artal은 2015년 ORB-SLAM 논문에서 RGB-D 및 stereo 카메라로의 확장, IMU 통합을 다음 목표로 꼽았다. 2017년 ORB-SLAM2가 stereo와 RGB-D를 추가했고, 2021년 ORB-SLAM3가 IMU를 통합했다. 같은 팀이 자기 Future Work를 순서대로 직접 이행하는 데 6년이 걸렸다. `[적중]`
+> 📜 **예언 vs 실제.** Mur-Artal은 2015년 ORB-SLAM 논문 Section IX-C에서 두 가지 Future Work를 제시했다. 하나는 "Points at Infinity"로, 시차가 부족해 일반 맵 포인트로 편입할 수 없는 먼 점들을 회전 추정에 활용하자는 것이었다. 다른 하나는 "Dense Map Reconstruction"으로, compact한 키프레임 선택이 dense reconstruction의 좋은 skeleton을 제공한다는 제안이었다. 10년 뒤 시점에서 보면 첫 번째 방향은 VI-SLAM 및 후속 연구에서 부분적으로 흡수됐고, 두 번째 방향은 2020년대 NeRF-SLAM·Gaussian Splatting 계열이 "sparse skeleton + dense overlay" 구도를 다른 재료로 실현하는 쪽으로 귀결됐다. 저자가 지목한 RGB-D/stereo/IMU 같은 후속 모달리티 확장은 이 Section이 아니라 ORB-SLAM2(2017)·ORB-SLAM3(2021)에서 별도의 문제의식으로 덧붙었다. `[부분 적중]`
 
-> 📜 **예언 vs 실제.** Campos et al.은 2021년 ORB-SLAM3 논문에서 learned descriptor와 deep SLAM과의 통합을 다음 방향으로 제시했다. 2023-2025년 사이 SuperPoint와 LightGlue를 front-end로 사용하는 ORB-SLAM3 변형들이 연구되었다. 그러나 ORB-SLAM3 공식 GitHub 저장소의 main branch는 2026년 현재도 전통 ORB descriptor를 유지한다. 학술 실험에서는 통합이 이뤄졌지만, 공식 시스템은 바뀌지 않았다. `[진행형]`
+> 📜 **예언 vs 실제.** Campos et al.은 2021년 ORB-SLAM3 논문 Conclusions에서 ORB-SLAM3의 주된 실패 모드가 저텍스처 환경임을 인정하며, 네 가지 data association 문제에 적합한 photometric 기법의 개발을 다음 방향으로 제시했다(내시경 영상 응용을 예로 들었다). 2023-2025년 사이 그 방향보다 먼저 두드러진 흐름은 SuperPoint·LightGlue 같은 learned front-end를 ORB-SLAM3에 이식하는 연구였고, photometric 계열의 통합은 DSO·LDSO 쪽 맥락에서 별도로 이어졌다. ORB-SLAM3 공식 저장소 main branch는 2026년 현재도 전통 ORB descriptor를 유지한다. 저자 예언의 중심축(photometric)과 실제 학계 관심(learned feature)은 어긋난 채로 굴러갔다. `[진행형·어긋남]`
 
 ---
 
@@ -114,4 +114,4 @@ Pure vision baseline의 자리. learned feature 기반 시스템들이 표준 be
 
 ---
 
-ORB-SLAM 삼부작이 feature-based 계보의 표준을 세운 같은 시기, Newcombe와 Engel은 정반대의 선택을 하고 있었다. 특징점을 뽑지 않고 이미지 전체의 밝기 정보를 직접 쓰겠다는 것이었다. 두 계보는 2010년대 내내 나란히 발전했고, 서로를 비교 대상으로 삼으면서 각자의 한계를 드러냈다. ORB-SLAM3가 2021년 EuRoC에서 0.016 m를 기록하는 동안, DSO는 TUM 복도에서 ORB-SLAM2를 눌렀다. 같은 시간표, 다른 출발점이었다.
+ORB-SLAM 삼부작이 feature-based 계보의 표준을 세운 같은 시기, Newcombe와 Engel은 정반대의 선택을 하고 있었다. 특징점을 뽑지 않고 이미지 전체의 밝기 정보를 직접 쓰겠다는 것이었다. 두 계보는 2010년대 내내 나란히 발전했고, 서로를 비교 대상으로 삼으면서 각자의 한계를 드러냈다. ORB-SLAM3가 2021년 EuRoC 벤치마크를 주도하는 동안, DSO는 TUM 복도에서 ORB-SLAM2를 눌렀다. 같은 시간표, 다른 출발점이었다.

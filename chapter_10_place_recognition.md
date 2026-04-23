@@ -6,11 +6,11 @@ Ch.7이 ORB-SLAM 삼부작으로 feature-based 계보를 완성하고, Ch.8이 D
 
 ---
 
-## 10.1 BoW 이전: 장소를 어떻게 묻는가
+## 10.1 BoW 이전의 place recognition
 
 GPS가 없는 실내, 터널, 도심 협곡에서 로봇이 루프를 닫으려면 현재 관측과 과거 관측 사이의 유사도를 수천 장의 후보 이미지 중에서 빠르게 찾아야 한다. 픽셀 단위 비교는 선형 탐색이어서 O(N)이고, 이미지 수가 수만 장을 넘으면 실시간은 불가능하다.
 
-2000년대 초 컴퓨터 비전에서 이 문제를 먼저 건드린 것은 Sivic과 Zisserman이었다. 2003년 ICCV에서 발표된 "Video Google"은 문서 검색의 TF-IDF를 이미지에 적용했다. SIFT 기술자를 k-means로 군집화해 "visual word"를 만들고, 이미지를 그 단어들의 빈도 벡터로 표현했다. 검색은 inverted index를 통해 O(1)에 가까워졌다. place recognition 연구자들은 이 아이디어를 곧바로 받아들였다.
+2000년대 초 컴퓨터 비전에서 이 문제를 먼저 건드린 것은 Sivic과 Zisserman이었다. 2003년 ICCV에서 발표된 ["Video Google"](https://www.robots.ox.ac.uk/~vgg/publications/2003/Sivic03/sivic03.pdf)은 문서 검색의 TF-IDF를 이미지에 적용했다. SIFT 기술자를 k-means로 군집화해 "visual word"를 만들고, 이미지를 그 단어들의 빈도 벡터로 표현했다. 검색은 inverted index를 통해 O(1)에 가까워졌다. place recognition 연구자들은 이 아이디어를 곧바로 받아들였다.
 
 ---
 
@@ -40,11 +40,11 @@ $$P(z_t \mid \ell_i) = \prod_k P(z_t^k \mid z_t^{\text{pa}(k)}, \ell_i)$$
 
 > 🔗 **차용.** FAB-MAP의 visual word 방식은 Sivic & Zisserman의 "Video Google"(2003)에서 직접 이식되었다. 문서 검색의 inverted index 논리를 로봇의 장소 기억에 적용한 것이다.
 
-2011년 Cummins와 Newman은 FAB-MAP 2.0을 발표했다. 처리 가능한 지도 규모를 1,000 km 수준으로 확장한 것이 목표였다. 실험적으로 도시 규모 데이터셋에서 작동함을 보였다.
+2011년 Cummins와 Newman은 [FAB-MAP 2.0](https://www.robots.ox.ac.uk/~mjc/Papers/cummins_newman_ijrr_fabmap2_2010_preprint.pdf)을 발표했다. 처리 가능한 지도 규모를 1,000 km 수준으로 확장한 것이 목표였다. 실험적으로 도시 규모 데이터셋에서 작동함을 보였다.
 
 ---
 
-## 10.3 DBoW2 — 이진 descriptor와 실용화 (2012)
+## 10.3 DBoW2 — binary descriptor와 vocabulary tree (2012)
 
 FAB-MAP은 SIFT처럼 부동소수점 descriptor를 기반으로 했다. 2012년 무렵 SLAM 커뮤니티는 더 빠른 binary descriptor, 특히 BRIEF·ORB·BRISK 쪽으로 이동하고 있었다. SIFT vocabulary를 그대로 쓰는 것은 연산 비용이 문제였다.
 
@@ -60,7 +60,7 @@ $$s(\mathbf{v}_a, \mathbf{v}_b) = 1 - \frac{1}{2} \left\| \frac{\mathbf{v}_a}{|\
 
 으로 계산한다. 조회는 inverted index를 통해 O(log N)에 수행된다.
 
-> 🔗 **차용.** DBoW2의 vocabulary tree 개념은 Nistér & Stewénius의 2006년 "Scalable Recognition with a Vocabulary Tree"(CVPR)에서 계보를 잇는다. DBoW2는 그 구조를 binary descriptor 세계로 이식하고, 가중치 체계를 SLAM에 맞게 조정했다.
+> 🔗 **차용.** DBoW2의 vocabulary tree 개념은 Nistér & Stewénius의 2006년 ["Scalable Recognition with a Vocabulary Tree"](https://people.eecs.berkeley.edu/~yang/courses/cs294-6/papers/nister_stewenius_cvpr2006.pdf)(CVPR)에서 계보를 잇는다. DBoW2는 그 구조를 binary descriptor 세계로 이식하고, 가중치 체계를 SLAM에 맞게 조정했다.
 
 DBoW2가 중요한 건 알고리즘보다 배포다. 오픈소스로 공개된 이 라이브러리는 ORB-SLAM(2015)의 loop closure 모듈로 채택되었고, ORB-SLAM2·ORB-SLAM3까지 같은 DBoW2를 썼다. 2015-2020년대 중반, SLAM 커뮤니티의 place recognition은 사실상 DBoW2가 담당했다.
 
@@ -68,7 +68,7 @@ Gálvez-López와 Tardós의 파트너십 역시 주목할 만하다. Tardós는
 
 ---
 
-## 10.4 NetVLAD — 학습으로의 전환 (2016)
+## 10.4 NetVLAD — CNN 기반 VPR (2016)
 
 BoW 계열은 한 가지 근본 한계가 있었다. vocabulary는 특정 descriptor와 특정 환경에서 훈련된 것이었다. 조명이 바뀌거나 계절이 달라지거나 시점이 크게 달라지면 visual word의 분포가 달라지고, 미리 훈련된 vocabulary는 부정합을 일으켰다.
 
@@ -76,7 +76,7 @@ Relja Arandjelović, Petr Gronat, Akihiko Torii, Tomáš Pajdla, Josef Sivic는 
 
 NetVLAD의 아이디어는 **VLAD(Vector of Locally Aggregated Descriptors)** aggregation을 미분 가능하게 만드는 것이었다.
 
-VLAD는 2010년 Jégou et al.이 제안한 aggregation 방식으로, 각 local descriptor가 가장 가까운 cluster center(visual word)에 "잔차"로 얼마나 기여하는지를 누적해 이미지 전체를 표현한다. cluster center $k$에 대한 VLAD 부분 벡터는
+VLAD는 2010년 [Jégou et al.](https://inria.hal.science/inria-00548637/file/jegou_compactimagerepresentation.pdf)이 제안한 aggregation 방식으로, 각 local descriptor가 가장 가까운 cluster center(visual word)에 "잔차"로 얼마나 기여하는지를 누적해 이미지 전체를 표현한다. cluster center $k$에 대한 VLAD 부분 벡터는
 
 $$\mathbf{V}(k) = \sum_{\mathbf{x}_i : \text{NN}(\mathbf{x}_i)=k} (\mathbf{x}_i - \boldsymbol{\mu}_k)$$
 
@@ -100,33 +100,33 @@ Pittsburgh 250k, Tokyo 24/7 벤치마크에서 NetVLAD는 DBoW 계열과 이전 
 
 ---
 
-## 10.5 Patch-NetVLAD, MixVPR, AnyLoc — 일반화를 향한 시도 (2020-2023)
+## 10.5 Patch-NetVLAD, MixVPR, AnyLoc (2020-2023)
 
 NetVLAD 이후 VPR(Visual Place Recognition) 연구는 일반화 성능 개선으로 흩어졌다.
 
-2021년 Hausler et al.은 Patch-NetVLAD를 내놓았다. Global descriptor 하나로 장소를 판단하는 NetVLAD 대신, 이미지를 패치로 분할해 각 패치의 NetVLAD 표현을 공간적으로 결합하는 방식이다. Tokyo 24/7에서 NetVLAD 대비 Recall@1을 약 10% 포인트 올렸다. 패치 단위 처리로 추론 비용도 함께 늘었다.
+2021년 Hausler et al.은 [Patch-NetVLAD](https://arxiv.org/abs/2103.01486)를 내놓았다. Global descriptor 하나로 장소를 판단하는 NetVLAD 대신, 이미지를 패치로 분할해 각 패치의 NetVLAD 표현을 공간적으로 결합하는 방식이다. Tokyo 24/7에서 NetVLAD 대비 Recall@1을 약 10% 포인트 올렸다. 패치 단위 처리로 추론 비용도 함께 늘었다.
 
-2023년 Ali-bey et al.의 MixVPR는 Transformer-style feature mixing으로 global feature를 생성했다. 경량화와 성능 사이의 균형이 목표였다. 이 시기 VPR 논문들은 공통으로 Mapillary Street Level Sequences(MSLS)와 Nordland 같은 계절 변화 데이터셋을 벤치마크로 삼았다. 극단적 조명·계절 조건이 공통의 장벽으로 떠올랐다.
+2023년 Ali-bey et al.의 [MixVPR](https://arxiv.org/abs/2303.02190)는 Transformer-style feature mixing으로 global feature를 생성했다. 경량화와 성능 사이의 균형이 목표였다. 이 시기 VPR 논문들은 공통으로 Mapillary Street Level Sequences(MSLS)와 Nordland 같은 계절 변화 데이터셋을 벤치마크로 삼았다. 극단적 조명·계절 조건이 공통의 장벽으로 떠올랐다.
 
 2023년 Keetha et al.의 [AnyLoc: Towards Universal Visual Place Recognition](https://arxiv.org/abs/2308.00688)은 다른 방향을 택했다. DINOv2 기반 self-supervised feature를 fine-tuning 없이 그대로 place recognition에 쓰는 것이다.
 
-> 🔗 **차용.** AnyLoc의 feature 추출은 Oquab et al.의 DINOv2(Meta AI, 2023)에서 사전 학습된 ViT 표현을 가져온다. AnyLoc은 그 위에 VLAD aggregation을 얹었다. FAB-MAP에서 시작한 BoW-VLAD 계보가 foundation model 시대에 다시 합류한 형태다.
+> 🔗 **차용.** AnyLoc의 feature 추출은 Oquab et al.의 [DINOv2](https://arxiv.org/abs/2304.07193)(Meta AI, 2023)에서 사전 학습된 ViT 표현을 가져온다. AnyLoc은 그 위에 VLAD aggregation을 얹었다. FAB-MAP에서 시작한 BoW-VLAD 계보가 foundation model 시대에 다시 합류한 형태다.
 
 DINOv2는 대규모 인터넷 이미지로 학습된 Vision Transformer(ViT)다. 특정 도시, 특정 계절, 특정 카메라에 편향되지 않은 범용 feature를 생성한다. AnyLoc에서 주목한 것은 DINOv2의 **facet** 개념이다. ViT의 각 attention head는 query(Q), key(K), value(V) 행렬과 최종 token(patch feature)을 출력한다. Keetha et al.은 이 네 종류의 facet 중 value(V) facet이 place recognition에 가장 의미론적으로 안정된 표현을 제공함을 실험으로 확인했다. Q·K facet은 구조·기하 정보에, V facet은 의미론(semantics)에 더 집중되는 경향이 있어, 계절·조명에 걸친 일관된 장소 표현에 유리하다. Keetha et al.은 이 V facet 표현을 VLAD aggregation에 연결하면 세계 각지, 실내외, 지하, 항공 뷰 등 매우 다양한 환경에서 단일 모델이 동작함을 보였다. Pittsburgh, Tokyo, 실내 공장, 지하 주차장, 도서관 등 7개 이상의 환경에서 single-model이 이전 specialized 방법들과 경쟁하거나 앞섰다.
 
 ---
 
-## 10.6 평행선의 수렴 (2024-2025)
+## 10.6 place recognition과 metric localization의 통합 시도 (2024-2025)
 
 Place recognition 연구는 2000년대 초부터 SLAM의 나머지 구성 요소와 평행하게 달려왔다. ORB-SLAM이 DBoW2를 내장했지만 place recognition 모듈은 mapping·tracking으로부터 격리된 블랙박스였다. 입력은 이미지, 출력은 루프 후보 ID였다.
 
-2024-2025년 들어 이 경계가 흐려지기 시작했다. Berton et al.의 EigenPlaces(2023)와 Izquierdo et al.의 Salad(2023)는 place recognition descriptor를 metric localization에 직접 끌어들이는 방향을 탐구했다. "어디서 본 장소"를 찾는 데 그치지 않고 6-DoF pose를 place recognition 표현 자체에서 바로 뽑으려 했다.
+2024-2025년 들어 이 경계가 흐려지기 시작했다. Berton et al.의 [EigenPlaces](https://arxiv.org/abs/2308.10832)(2023)와 Izquierdo & Civera의 [SALAD](https://arxiv.org/abs/2311.15937)(2023 arXiv / CVPR 2024)는 place recognition descriptor를 metric localization에 직접 끌어들이는 방향을 탐구했다. "어디서 본 장소"를 찾는 데 그치지 않고 6-DoF pose를 place recognition 표현 자체에서 바로 뽑으려 했다.
 
-Sphinx(2024)는 Gaussian map 표현과 place recognition을 결합했다. 3DGS(3D Gaussian Splatting)가 지도 표현으로 올라온 흐름과 맞물린 방향이었다.
+2024년 전후로는 Gaussian map 표현과 place recognition을 결합하려는 시도들도 등장했다. 3DGS(3D Gaussian Splatting)가 지도 표현으로 올라온 흐름과 맞물린 방향이었다.
 
-> 📜 **예언 vs 실제.** Cummins와 Newman은 2011년 FAB-MAP 2.0 논문에서 1,000 km 규모 place recognition을 다음 목표로 제시했다. Oxford 캠퍼스와 도심 일부를 달리며 얻은 데이터로 연구를 시작했으니, 1,000 km는 당시 기준으로 두 자릿수 배율의 도약이었다. 2015년경 DBoW2와 대형 vocabulary를 사용한 도시 규모 루프 클로저 실험들이 이 규모를 달성했다. 규모 문제는 예언대로 풀렸다. 그러나 Cummins와 Newman이 남긴 실패 모드 — 계절·조명 변화에 취약한 vocabulary 기반 표현 — 는 deep learning이 가져다준 다른 도구로 넘어섰다. `[기술변화]`
+> 📜 **예언 vs 실제.** Cummins와 Newman은 2011년 FAB-MAP 2.0 논문에서 1,000 km 규모 궤적에서의 appearance-only 루프 클로저를 시연하며 place recognition의 스케일 한계를 밀어올렸다. Oxford 캠퍼스와 도심 일부를 달리던 초기 FAB-MAP 실험 기준으로 두 자릿수 배율의 도약이었다. 이후 DBoW2와 대형 vocabulary를 쓴 도시 규모 실험들이 같은 스케일을 실용 SLAM에서 재현했다. 규모 문제는 이렇게 풀렸지만, Cummins와 Newman이 남긴 실패 모드 — 계절·조명 변화에 취약한 vocabulary 기반 표현 — 는 deep learning이 가져다준 다른 도구로 넘어섰다. `[기술변화]`
 
-> 📜 **예언 vs 실제.** Arandjelović et al.은 2016년 NetVLAD 논문에서 end-to-end VPR의 일반화를 여전히 열린 도전으로 꼽았다. 이후 7년간 수십 편의 VPR 논문들이 외관 조건 일반화를 목표로 쏟아졌다. 2023년 AnyLoc은 fine-tuning 없는 foundation model feature로 다환경 단일 모델의 가능성을 보였다. 완전한 해결이라기보다 불가능 판정에서 다루기 가능한 문제로 옮겨간 것에 가깝다. `[진행형]`
+> 📜 **예언 vs 실제.** Arandjelović et al.은 2016년 NetVLAD 논문 서론에서 place recognition을 풀기 위한 세 가지 도전 — CNN 아키텍처, 충분한 학습 데이터, end-to-end 학습 절차 — 을 명시하고 각각에 대한 자신들의 기여를 제시했다. 아키텍처와 학습 절차 쪽은 NetVLAD로 직접 답했지만, 이후 7년간 외관 조건(계절·조명·시점) 일반화를 목표로 한 VPR 논문들이 연이어 나왔다. 2023년 AnyLoc은 fine-tuning 없는 foundation model feature로 다환경 단일 모델의 가능성을 보였다. 완전한 해결이라기보다 특화 모델에서 범용 모델 쪽으로 축이 옮겨간 것에 가깝다. `[진행형]`
 
 ---
 
