@@ -765,6 +765,7 @@ mark.search-highlight {{
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
 <script>
 (function() {{
   'use strict';
@@ -800,6 +801,10 @@ mark.search-highlight {{
     gfm: true
   }});
   marked.use({{ renderer: {{ del: function(token) {{ return '~' + (token.text || token) + '~'; }} }} }});
+
+  if (window.mermaid) {{
+    mermaid.initialize({{ startOnLoad: false, theme: 'default', securityLevel: 'loose' }});
+  }}
 
   function protectMath(src) {{
     var placeholders = [];
@@ -869,6 +874,19 @@ mark.search-highlight {{
       var html = marked.parse(mathData.src);
       html = restoreAndRenderMath(html, mathData.placeholders);
       contentEl.innerHTML = html;
+
+      if (window.mermaid) {{
+        var mermaidBlocks = contentEl.querySelectorAll('pre > code.language-mermaid');
+        mermaidBlocks.forEach(function(code, i) {{
+          var pre = code.parentElement;
+          var container = document.createElement('div');
+          container.className = 'mermaid';
+          container.id = 'mermaid-' + i;
+          container.textContent = code.textContent;
+          pre.replaceWith(container);
+        }});
+        try {{ mermaid.run({{ querySelector: '.mermaid' }}); }} catch(e) {{ console.error('mermaid', e); }}
+      }}
 
       tocContainer.innerHTML = '';
       buildOverview();

@@ -109,3 +109,119 @@ SLAM과 생성형 로봇 정책의 관계도 같은 지평에서 열려 있다. 
 Ch.0은 SLAM이 풀렸다고 여겨지는 시대를 묘사했다. 그 묘사는 정확하다. 같은 2026년 SLAM Handbook의 Epilogue에서 편집자 5인이 공동으로 *"If someone tells you 'SLAM is solved,' don't listen to them"*이라고 적은 것도 같은 풍경을 내부에서 본 것이다. SLAM의 역사는 새로운 것을 쌓는 역사가 아니라 언제 무엇을 놓아줘야 하는지 배우는 역사다. 어떤 가정을 놓아주는 순간, 이전에 닫혔던 문제가 새로운 형태로 돌아온다. EKF의 선형 가정을 내려놓자 particle filter가 뒤를 이었고, sparse feature를 놓자 dense method가, geometric prior를 놓자 learned prior가 그 자리를 채웠다. 각 전환은 이전 방법을 폐기한 것이 아니라 새로운 가정 체계로 넘어간 것이다.
 
 2026년에 풀렸다고 여기는 것도 대부분 이 순환 어딘가에 있다. 지금 확신하는 가정이 흔들릴 때 공란이 다시 생긴다.
+
+---
+
+## 19.9 계보 약도
+
+```mermaid
+graph TD
+  PM[사진측량 1858]
+  BA[Bundle Adjustment<br/>Brown 1958]
+  SfM[Photo Tourism 2006]
+  COLMAP[COLMAP 2016]
+
+  SC[Smith-Cheeseman 1986]
+  Mono[MonoSLAM 2003]
+  PTAM[PTAM 2007]
+  ORB[ORB-SLAM 2015]
+  ORB3[ORB-SLAM3 2020]
+
+  LSD[LSD-SLAM 2014]
+  DSO[DSO 2016]
+  VIDSO[VI-DSO 2018]
+
+  LM[Lu-Milios 1997]
+  FG[Factor Graph<br/>Dellaert 2000s]
+  iSAM[iSAM 2008]
+  iSAM2[iSAM2 2012]
+  g2o[g2o 2011]
+
+  Forster[Preintegration<br/>Forster 2016]
+  VINS[VINS-Mono 2018]
+
+  Kinect[KinectFusion 2011]
+  Elastic[ElasticFusion 2015]
+
+  SESync[SE-Sync 2019]
+  TEASER[TEASER 2020]
+
+  LOAM[LOAM 2014]
+  FAST[FAST-LIO 2021]
+
+  NeRF[NeRF 2020]
+  iMAP[iMAP 2021]
+  NICE[NICE-SLAM 2021]
+
+  GS3D[3DGS 2023]
+  Spla[SplaTAM 2024]
+  MonoGS[MonoGS 2024]
+
+  DROID[DROID-SLAM 2021]
+  DPV[DPV-SLAM 2024]
+
+  DUSt3R[DUSt3R 2023]
+  MASt[MASt3R 2024]
+  VGGT[VGGT 2025]
+  MASlam[MASt3R-SLAM 2025]
+
+  Hydra[Hydra 2022]
+  Clio[Clio 2024]
+
+  PM --> BA --> SfM --> COLMAP
+  SC --> Mono --> PTAM --> ORB --> ORB3
+  PTAM -.-> LSD --> DSO --> VIDSO
+  LM --> FG --> iSAM --> iSAM2
+  FG --> g2o
+  iSAM2 -.-> SESync --> TEASER
+  Forster --> VINS --> ORB3
+  VIDSO --> Forster
+  Kinect --> Elastic
+  Elastic -.-> LOAM --> FAST
+  NeRF --> iMAP --> NICE
+  NICE -.-> GS3D --> Spla --> MonoGS
+  PTAM -.-> DROID --> DPV
+  COLMAP -.-> DUSt3R --> MASt --> VGGT
+  MASt --> MASlam
+  ORB3 -.-> Hydra --> Clio
+
+  click PM "#chapter-1" "Ch.1 선사시대 — 사진측량"
+  click BA "#chapter-1" "Ch.1 선사시대 — Bundle Adjustment"
+  click SfM "#chapter-3" "Ch.3 Structure from Motion"
+  click COLMAP "#chapter-3" "Ch.3 SfM — COLMAP"
+  click SC "#chapter-4" "Ch.4 EKF-SLAM — Smith-Cheeseman"
+  click Mono "#chapter-5" "Ch.5 MonoSLAM·PTAM"
+  click PTAM "#chapter-5" "Ch.5 MonoSLAM·PTAM"
+  click ORB "#chapter-7" "Ch.7 ORB-SLAM 계열"
+  click ORB3 "#chapter-7" "Ch.7 ORB-SLAM3"
+  click LSD "#chapter-8" "Ch.8 Direct Methods — LSD-SLAM"
+  click DSO "#chapter-8" "Ch.8 Direct Methods — DSO"
+  click VIDSO "#chapter-8" "Ch.8 Direct Methods — VI-DSO"
+  click LM "#chapter-6" "Ch.6 Graph SLAM — Lu-Milios"
+  click FG "#chapter-6" "Ch.6 Graph SLAM — Factor Graph"
+  click iSAM "#chapter-6" "Ch.6 Graph SLAM — iSAM"
+  click iSAM2 "#chapter-6" "Ch.6 Graph SLAM — iSAM2"
+  click g2o "#chapter-6" "Ch.6 Graph SLAM — g2o"
+  click Forster "#chapter-7" "Ch.7b IMU Preintegration (Ch.7 뒤)"
+  click VINS "#chapter-7" "Ch.7 — VINS-Mono"
+  click Kinect "#chapter-9" "Ch.9 RGB-D — KinectFusion"
+  click Elastic "#chapter-9" "Ch.9 RGB-D — ElasticFusion"
+  click SESync "#chapter-6" "Ch.6b Certifiable (Ch.6 뒤)"
+  click TEASER "#chapter-6" "Ch.6b Certifiable — TEASER"
+  click LOAM "#chapter-17" "Ch.17 LiDAR — LOAM"
+  click FAST "#chapter-17" "Ch.17 LiDAR — FAST-LIO"
+  click NeRF "#chapter-14" "Ch.14 NeRF-SLAM"
+  click iMAP "#chapter-14" "Ch.14 NeRF-SLAM — iMAP"
+  click NICE "#chapter-14" "Ch.14 NeRF-SLAM — NICE-SLAM"
+  click GS3D "#chapter-15" "Ch.15 Gaussian Splatting"
+  click Spla "#chapter-15" "Ch.15 — SplaTAM"
+  click MonoGS "#chapter-15" "Ch.15 — MonoGS"
+  click DROID "#chapter-13" "Ch.13 Hybrid — DROID-SLAM"
+  click DPV "#chapter-13" "Ch.13 — DPV-SLAM"
+  click DUSt3R "#chapter-16" "Ch.16 Foundation 3D — DUSt3R"
+  click MASt "#chapter-16" "Ch.16 — MASt3R"
+  click VGGT "#chapter-16" "Ch.16 — VGGT"
+  click MASlam "#chapter-16" "Ch.16 — MASt3R-SLAM"
+  click Hydra "#chapter-16" "Ch.16 §16.6 Semantic Foundation"
+  click Clio "#chapter-16" "Ch.16 §16.6 — Clio"
+```
