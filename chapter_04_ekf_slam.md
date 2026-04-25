@@ -16,7 +16,7 @@ $$\mathbf{x} = [\mathbf{x}_r^\top,\ \mathbf{m}_1^\top,\ \ldots,\ \mathbf{m}_N^\t
 
 $$\mathbf{P} = \begin{bmatrix} \mathbf{P}_{rr} & \mathbf{P}_{rm} \\ \mathbf{P}_{mr} & \mathbf{P}_{mm} \end{bmatrix}$$
 
-off-diagonal 블록 $\mathbf{P}_{rm}$이 핵심이었다. 로봇 위치 불확실성과 landmark 위치 불확실성이 *상관되어* 있다는 것, 그 상관관계를 추적해야 일관된 추정이 가능하다는 것. 논문은 이것을 명시적으로 증명했고, SLAM 분야 전체가 이 출발점에 서게 된다.
+off-diagonal 블록 $\mathbf{P}_{rm}$이 핵심이었다. 로봇 위치 불확실성과 landmark 위치 불확실성이 *상관되어* 있다는 것, 그 상관관계를 추적해야 일관된 추정이 가능하다는 것. 논문은 이것을 명시적으로 증명했고, SLAM 분야 전체가 이 출발점에 섰다.
 
 > 🔗 **차용.** Smith-Cheeseman(1988)의 공간관계 수학은 Kalman(1960)의 공분산 전파를 직접 계승한다. 단일 이동 물체를 추적하던 기법이 로봇과 지도 요소 전체를 동시에 추적하는 틀로 바뀌었다.
 
@@ -77,7 +77,7 @@ EKF-SLAM의 더 깊은 결함은 2001년 ICRA에서 터졌다. Simon Julier와 J
 
 원인은 linearization error에 있다. EKF는 비선형 모션 모델과 관측 모델을 일차 Taylor 전개로 근사한다. 이 근사 오류가 매 단계 누적되면 공분산이 실제 오류를 과소 평가하기 시작한다. 로봇이 "나는 여기 있다"고 과도하게 확신하면, 이후 measurements를 필터가 덜 신뢰하게 되어 오류가 교정되지 않고 쌓인다.
 
-2007년 [Shoudong Huang과 Gamini Dissanayake](https://doi.org/10.1109/TRO.2007.903811)는 이 inconsistency의 원인을 더 정밀하게 해부했다. 현재 상태 추정치에서 평가된 Jacobian들 사이의 기본 제약(constraint)이 무너지는 것이 EKF-SLAM 비일관성의 주된 원인이며, 그 결과 로봇 방향각(yaw)의 분산이 실제로는 유지되어야 하는데도 잘못 0으로 수렴할 수 있다는 것이 논문의 핵심 진단이었다. 선형화 시점에 따라 시스템의 관측 가능한 자유도가 달라지고, 관측 불가능한 방향에 필터가 임의의 정보를 주입하게 된다는 이후 observability 기반 계열의 해석은 이 논문을 출발점으로 삼는다.
+2007년 [Shoudong Huang과 Gamini Dissanayake](https://doi.org/10.1109/TRO.2007.903811)는 이 inconsistency의 원인을 더 정밀하게 해부했다. 논문의 핵심 진단은 두 가지였다. 현재 상태 추정치에서 평가된 Jacobian들 사이의 기본 제약(constraint)이 무너지는 것이 EKF-SLAM 비일관성의 주된 원인이고, 그 결과 로봇 방향각(yaw)의 분산이 실제로는 유지되어야 하는데도 잘못 0으로 수렴할 수 있다는 것이었다. 선형화 시점에 따라 시스템의 관측 가능한 자유도가 달라지고, 관측 불가능한 방향에 필터가 임의의 정보를 주입하게 된다는 이후 observability 기반 계열의 해석은 이 논문에서 출발한다.
 
 > 📜 **예언 vs 실제.** Julier와 Uhlmann의 2001년 반례 이후, consistent estimation을 달성하려는 필터 설계 시도가 이어졌다. Unscented Kalman Filter(UKF), Invariant EKF, robust covariance 등 필터 계열의 변형들이 10년 가까이 제안됐다. 그러나 2026년 시점에서 되돌아보면 이 문제의 실용적 해법은 *필터가 아닌 최적화*였다. [iSAM](https://www.cs.cmu.edu/~kaess/pub/Kaess08tro.pdf)(Kaess et al., 2008), [g2o](http://ais.informatik.uni-freiburg.de/publications/papers/kuemmerle11icra.pdf)(Kümmerle et al., 2011), GTSAM이 filter를 사실상 대체했다. Jacobian linearization을 current estimate에 고정하지 않고 반복 최적화로 갱신하는 방식은 inconsistency를 구조적으로 회피한다. 반례가 요구한 "새 필터"의 자리를 결국 필터가 아닌 구조가 채웠다. `[무산]`
 

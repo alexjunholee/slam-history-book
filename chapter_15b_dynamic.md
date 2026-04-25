@@ -56,7 +56,7 @@ Handbook이 §15.3 전체를 통과하는 프레임 하나가 있다. **absence 
 
 Monocular 쪽의 이야기는 Zaragoza에서 진행됐다. Montiel 지도 아래 박사를 한 Juan Lamarca가 2021년 [DefSLAM](https://arxiv.org/abs/1908.08918)을 RA-L에 발표했다. isometric NRSfM으로 keyframe마다 template를 다시 계산하고, ORB frontend와 Lucas-Kanade optical flow를 섞어 trace를 유지했다. 평면 토폴로지를 가정하는 한계가 있었다. 같은 그룹의 Juan J. Gómez Rodríguez는 2023년 [NR-SLAM](https://arxiv.org/abs/2308.04036)으로 그 한계를 치웠다. dynamic deformable graph로 임의 토폴로지를 다루고, visco-elastic 모델로 시간 방향 정칙화를 넣었다. Handbook §15.4.2가 이 계보를 "deformable SLAM의 monocular 계통"으로 정리한다.
 
-응용은 의료 쪽에 몰려 있다. Tsinghua의 Song이 2018년 낸 [MIS-SLAM](https://ieeexplore.ieee.org/document/8458232)은 stereo endoscopy로 수술 중 장기의 변형을 추적했다. Children's National의 Jayender 그룹이 개발한 EMDQ(Expectation Maximization + Dual Quaternion)는 SURF feature 위에서 부드러운 deformation field를 추정했다. Minimally invasive surgery의 실제 환경에서 intra-operative navigation이 이들 시스템의 목표다.
+응용은 의료 쪽에 몰려 있다. Tsinghua의 Song이 2018년 낸 [MIS-SLAM](https://ieeexplore.ieee.org/document/8458232)은 stereo endoscopy로 수술 중 장기의 변형을 추적했다. Children's National의 Jayender 그룹이 개발한 EMDQ(Expectation Maximization + Dual Quaternion)는 SURF feature 위에서 부드러운 deformation field를 추정했다. 이들 시스템이 겨냥하는 것은 minimally invasive surgery의 실제 환경에서 intra-operative navigation을 돌리는 일이다.
 
 Handbook §15.4.1이 강조하는 근본 문제 하나가 있다. **Floating Map Ambiguity**. 비강체 객체의 rigid motion과 카메라의 rigid motion은 prior 없이는 구별되지 않는다. 손이 30cm 움직인 것인지 카메라가 30cm 움직인 것인지, 관측만으로는 어느 쪽도 말할 수 없다. Absolute scale 복원은 단안 SLAM의 오래된 scale ambiguity와는 성격이 다르다. Scale만이 아니라 trajectory와 deformation이 동시에 결합하여 ill-posed가 된다. DefSLAM과 NR-SLAM이 isometric prior, visco-elastic prior로 이 ambiguity를 부분적으로 깨지만, 원리적 해법은 2026년 기준에도 없다.
 
@@ -66,7 +66,7 @@ Handbook §15.4.1이 강조하는 근본 문제 하나가 있다. **Floating Map
 
 ## 15b.5 세 학파의 지적 계보
 
-이 챕터의 Handbook 저자 여섯 명의 배치 자체가 증거다.
+Handbook Ch.15 저자 여섯 명의 배치 자체가 증거다.
 
 **Zaragoza 학파**(Montiel, Neira, Civera, Lamarca, Rodríguez)는 MonoSLAM(Ch.5)부터 ORB-SLAM(Ch.7), DynaSLAM, DefSLAM, NR-SLAM으로 이어지는 deformable geometry의 본산이다. Monocular 세팅에서 기하학을 끝까지 밀어붙이는 전통이 20년째 유지되고 있다. **Imperial/TUM 계열**(Davison, Newcombe, Rünz, Cremers)은 dense와 learning-based의 축을 맡는다. KinectFusion(Ch.9)에서 DynamicFusion으로, SLAM++(Ch.18)에서 Co-Fusion·MaskFusion으로 이어졌다. Cremers 그룹이 2020년대 들어 change-aware SLAM 쪽으로 축을 옮기면서 새 계보의 중심이 되었다. **Cambridge/ETH/MIT 계열**(Schmid, Leutenegger, Agapito)은 panoptic 4D로 수렴했다. Schmid 본인이 Cremers 아래에서 박사를 마친 뒤 MIT Carlone 그룹을 거쳐 JPL로 갔다. 그 궤적이 KillingFusion → Dynablox → Panoptic Multi-TSDF → Khronos의 순서와 겹친다.
 

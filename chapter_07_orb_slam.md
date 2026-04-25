@@ -1,6 +1,6 @@
 # Ch.7 — Feature-based 계보: ORB-SLAM 삼부작
 
-Ch.6의 graph SLAM 혁명은 포즈 그래프 최적화를 SLAM의 표준 언어로 굳혔다. Kümmerle(2011)의 g²o와 Kaess(2012)의 iSAM2는 대규모 지도에서 반복 최적화를 실현했고, loop closure의 비용을 현실적인 수준으로 낮췄다. 최적화 이론이 완성을 향해 달려가던 그 흐름이 3부의 출발선이다. 2부가 "어떻게 오차를 줄이는가"를 질문했다면, 3부는 그 질문에 이미 답이 나와 있다는 전제 위에서 시작한다. 남은 과제는 프론트엔드였다. 어떤 특징을 어떻게 뽑아 추적할 것인가.
+Ch.6의 graph SLAM 혁명은 포즈 그래프 최적화를 SLAM의 표준 언어로 굳혔다. Kümmerle(2011)의 g²o와 Kaess(2012)의 iSAM2는 대규모 지도에서 반복 최적화를 실현했고, loop closure의 비용을 현실적인 수준으로 낮췄다. 최적화 이론이 완성을 향해 달려가던 그 흐름에서 3부가 시작된다. 2부가 "어떻게 오차를 줄이는가"를 질문했다면, 3부는 그 질문에 이미 답이 나와 있다는 전제 위에서 시작한다. 남은 과제는 프론트엔드였다. 어떤 특징을 어떻게 뽑아 추적할 것인가.
 
 Klein과 Murray가 2007년 PTAM으로 tracking과 mapping을 두 스레드로 분리했을 때, 그것은 실험실 데모였다. 넓이가 아니라 깊이가 입증된 아이디어였고, 소규모 실내 장면 이상에서는 무너졌다. Raúl Mur-Artal이 2015년 Zaragoza대학에서 그 구조를 가져올 때, 그는 세 가지를 함께 들고 왔다. Rublee(2011)의 ORB 디스크립터, Gálvez-López(2012)의 DBoW2 visual vocabulary, 그리고 Strasdat(2011)의 Essential graph 아이디어. PTAM이 빠른 프로토타입이었다면 ORB-SLAM은 10년짜리 표준이었다.
 
@@ -64,7 +64,7 @@ EuRoC MAV(Micro Aerial Vehicle) 데이터셋 Machine Hall 01 시퀀스에서 ORB
 
 ORB-SLAM3의 핵심 확장은 두 가지다. **Atlas**(멀티맵)와 **Visual-Inertial** 모드.
 
-Atlas는 여러 개의 분리된 지도를 동시에 유지하는 구조다. 추적이 실패하면 기존 지도를 닫고 새 지도를 시작하며, 나중에 같은 장소를 재방문했을 때 두 지도를 병합한다. ORB-SLAM과 ORB-SLAM2에서 추적 실패는 치명적이었다. 한번 잃으면 처음부터 다시 해야 했다. Campos는 이 점을 박사 과정 내내 가장 자주 겪은 한계로 지목했고, Atlas가 그 답이었다. ORB-SLAM3는 실패 후 재초기화하고 이전 지도를 기억한다.
+Atlas는 여러 개의 분리된 지도를 동시에 유지하는 구조다. 추적이 실패하면 기존 지도를 닫고 새 지도를 시작하며, 나중에 같은 장소를 재방문했을 때 두 지도를 병합한다. ORB-SLAM과 ORB-SLAM2에서 추적 실패는 치명적이었다. 한 번 잃으면 처음부터 다시 해야 했다. Campos는 이 점을 박사 과정 내내 가장 자주 겪은 한계로 지목했고, Atlas가 그 답이었다. ORB-SLAM3는 실패 후 재초기화하고 이전 지도를 기억한다.
 
 Visual-Inertial(VI) 모드는 IMU 데이터를 통합한다. Campos는 Forster et al.이 RSS 2015에서 "IMU Preintegration on Manifold" 제목으로 제안하고 2016년 IEEE TRO에서 [On-Manifold Preintegration for Real-Time Visual-Inertial Odometry](https://doi.org/10.1109/TRO.2016.2597321)로 확장한 방식을 그대로 가져왔다. IMU는 빠른 모션에서 Visual SLAM이 잃기 쉬운 추적을 보완한다. VI-SLAM은 단안 카메라의 scale ambiguity도 해결한다. IMU의 가속도계 측정이 중력 방향과 함께 절대 scale을 제공한다.
 

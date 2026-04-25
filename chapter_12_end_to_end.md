@@ -52,7 +52,7 @@ Tinghui Zhou(UC Berkeley)가 같은 해에 발표한 [Zhou et al. 2017. SfMLearn
 
 Kendall은 이 실패를 외면하지 않았다. 박사학위를 마친 2019년, 그는 Wayve로 자리를 옮겨 자율주행용 imitation learning과 world model 연구로 방향을 틀었다. 학습 기반 localization을 포기한 것이 아니라, "이미지 한 장에서 절대 pose를 회귀한다"는 문제 정의가 틀렸다고 판단한 것이었다.
 
-Federico Tombari 그룹(TU Munich, 이후 Google)도 같은 시기에 [CNN-SLAM(Tateno et al. 2017)](https://arxiv.org/abs/1704.03489)을 시도했다. CNN이 예측한 dense depth를 직접(direct) monocular SLAM의 깊이 측정과 융합하려는 접근이었다. 학습 부분이 dense depth에 국한되었다는 점에서 완전한 end-to-end는 아니었지만, "CNN이 단안 SLAM의 스케일·저텍스처 문제를 해결해 줄 수 있지 않을까"라는 기대의 한 갈래였다. 결과는 장면에 따라 들쭉날쭉했고, 정확도가 일관되게 앞서지 못했다.
+Federico Tombari 그룹(TU Munich, 이후 Google)도 같은 시기에 [CNN-SLAM(Tateno et al. 2017)](https://arxiv.org/abs/1704.03489)을 시도했다. CNN이 예측한 dense depth를 직접(direct) monocular SLAM의 깊이 측정과 융합하려는 접근이었다. 학습 부분이 dense depth에 국한되었다는 점에서 완전한 end-to-end는 아니었지만, "CNN이 단안 SLAM의 스케일·저텍스처 문제를 해결해 줄 수 있지 않을까"라는 기대의 한 갈래였다. 성능은 장면에 따라 들쭉날쭉했고, 정확도에서 일관된 우위를 보이지 못했다.
 
 > 📜 **예언 vs 실제.** Kendall은 PoseNet 논문(2015)에서 불확실성 추정, temporal 정보 통합, 더 넓은 규모의 장면으로의 확장을 다음 과제로 꼽았다. 세 방향 모두 실행되었다—Bayesian PoseNet(2016), LSTM PoseNet(2016), 복수의 outdoor 확장 실험들. 그러나 각 시도가 새 벽에 부딪혔고, 연구자들은 결국 이 접근법 전체를 포기했다. 예언이 합리적이었어도 플랫폼 자체가 틀렸으면 소용없다. `[무산]`
 
@@ -64,7 +64,7 @@ Federico Tombari 그룹(TU Munich, 이후 Google)도 같은 시기에 [CNN-SLAM(
 
 ## 12.5 교훈의 정착
 
-2020년을 전후해 이 분야는 하나의 합의에 도달했다. "geometry는 알고리즘, learning은 feature와 prior"—대략 이런 방향으로.
+2020년을 전후해 이 분야는 하나의 합의에 도달했다. "geometry는 알고리즘, learning은 feature와 prior"—대략 이런 방향이었다.
 
 > 🔗 **차용.** 이 원칙의 실천은 13장에서 다루는 CodeSLAM(Bloesch 2018)과 DROID-SLAM(Teed & Deng 2021)에서 구체화된다. 두 시스템 모두 factor graph 또는 bundle adjustment라는 기하학적 뼈대를 유지하고, 학습 부분은 feature 추출이나 depth prior 형성에 국한한다. PoseNet이 버린 뼈대가 사실 포기할 수 없는 것이었다는 확인이다.
 

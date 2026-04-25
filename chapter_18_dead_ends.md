@@ -16,7 +16,7 @@ Milford와 Gordon Wyeth는 Queensland University of Technology(QUT) 로보틱스
 
 그러나 공학적 확장은 거기서 멈췄다. CAN은 장소 수가 늘수록 계산 복잡도가 올랐다. 더 깊은 문제는 정밀도였다. RatSLAM이 만드는 위상 지도(topological map)는 "여기 왔던 적 있다"는 판단은 했지만, 미터 단위의 metric 위치 추정은 안정적으로 내놓지 못했다. 자율주행과 조작(manipulation)이 요구하는 것은 정확한 좌표였다. 인지 지도는 그 요구에 맞지 않았다.
 
-> 📜 **예언 vs 실제.** Milford·Wyeth는 2008년 T-RO 논문 Conclusion에서 RatSLAM이 "vision-only SLAM의 대안적 접근"이며, 기존 state-of-the-art SLAM에게는 도전이 될 만한 환경—장거리 경로, 큰 누적 오차, 시각적 모호성—에서 반복적이고 신뢰도 높은 loop closure를 수행한다고 주장했다. 대체가 아니라 대안으로서의 위치 주장이었다. 실제 전개는 이 주장 자체에 대해서는 부분적으로 맞았다. RatSLAM은 특정 benchmark에서 경쟁력을 보였다. 그러나 이후 분야 전체의 흐름에서는 2012년 이후 graph-based SLAM과 visual odometry가 정확도·속도 모두에서 앞서 나갔고, 위상 지도는 지금도 일부 place recognition 연구에 등장하지만, metric-topological 통합이라는 RatSLAM의 원래 야망은 다른 방식으로 이어지지 않았다. `[부분적중+무산]`
+> 📜 **예언 vs 실제.** Milford·Wyeth는 2008년 T-RO 논문 Conclusion에서 RatSLAM이 "vision-only SLAM의 대안적 접근"이며, 기존 state-of-the-art SLAM에게는 도전이 될 만한 환경—장거리 경로, 큰 누적 오차, 시각적 모호성—에서 반복적이고 신뢰도 높은 loop closure를 수행한다고 주장했다. 대체가 아니라 대안이라는 주장이었다. 실제로 이 주장은 부분적으로 맞았다. RatSLAM은 특정 benchmark에서 경쟁력을 보였다. 그러나 이후 분야 전체의 흐름에서는 2012년 이후 graph-based SLAM과 visual odometry가 정확도·속도 모두에서 앞서 나갔고, 위상 지도는 지금도 일부 place recognition 연구에 등장하지만, metric-topological 통합이라는 RatSLAM의 원래 야망은 다른 방식으로 이어지지 않았다. `[부분적중+무산]`
 
 RatSLAM이 남긴 것은 알고리즘 자체가 아니었다. "장소 표현이 기하학 없이도 가능하다"는 아이디어가 place recognition 문헌에 스며들었다. 2012년 [SeqSLAM](https://doi.org/10.1109/ICRA.2012.6224623)이 같은 Milford 그룹에서 나왔고, 이미지 시퀀스 비교 기반 장소 인식은 visual place recognition 벤치마크의 한 축이 됐다. 계보 자체는 살아남았고, 다만 형태가 달라졌다.
 
@@ -76,7 +76,7 @@ SLAM++ 이후 2017-2019년 사이에 [SemanticFusion](https://arxiv.org/abs/1609
 
 비슷한 시기, 다른 계보가 조용히 시도됐다가 조용히 사라졌다. Manhattan-world assumption을 이용한 SLAM이었다.
 
-가정 자체는 단순했다. [Coughlan & Yuille 1999](https://doi.org/10.1109/ICCV.1999.790349)의 Manhattan world 개념을 이어받아, 실내 환경은 대부분 세계 좌표계의 세 직교 축(x, y, z)에 정렬된 구조라고 봤다. 벽, 바닥, 천장이 그 방향을 만든다. 이미지 속 평행선 묶음은 소실점(vanishing point)으로 수렴하며, 각 소실점은 카메라의 회전 행렬 R과 방향 벡터 d의 관계 `v = K R d`로 기술된다(K: 카메라 내부 행렬). 세 직교 소실점을 찾으면 R의 세 열을 직접 복원할 수 있다. IMU나 feature matching 없이 기하학적 제약만으로 drift를 억제할 수 있다는 뜻이었다. 이 아이디어를 visual odometry와 결합하려는 시도들이 이 시기에 등장했다.
+가정 자체는 단순했다. [Coughlan & Yuille 1999](https://doi.org/10.1109/ICCV.1999.790349)의 Manhattan world 개념을 이어받아, 실내 환경은 대부분 세계 좌표계의 세 직교 축(x, y, z)에 정렬된 구조라고 봤다. 벽, 바닥, 천장이 그 방향을 만든다. 이미지 속 평행선 묶음은 소실점(vanishing point)으로 수렴하며, 각 소실점은 카메라의 회전 행렬 R과 방향 벡터 d의 관계 `v = K R d`로 기술된다(K: 카메라 내부 행렬). 세 직교 소실점을 찾으면 R의 세 열을 직접 복원할 수 있다. IMU나 feature matching 없이 기하학적 제약만으로 drift를 억제할 수 있다는 말이다. 이 아이디어를 visual odometry와 결합하려는 시도들이 이 시기에 등장했다.
 
 긴 복도와 직사각형 방에서는 drift가 실제로 줄었다. 문제는 그 밖이었다. 야외로 나가거나, 둥근 구조물이 있거나, 불규칙한 산업 환경에 들어서면 Manhattan-world 가정 자체가 성립하지 않았다. 환경에 꼭 맞춘 prior는 그 환경 밖에서 오히려 발목을 잡았다. 2015년 이후 general-purpose visual-inertial odometry가 성숙하면서 이 계보는 관심을 잃었다. 일부 실내 mapping 도구에 보조 제약으로 남아 있지만, 독립 연구 계보로는 사라졌다.
 
@@ -88,7 +88,7 @@ SLAM++ 이후 2017-2019년 사이에 [SemanticFusion](https://arxiv.org/abs/1609
 
 Event camera SLAM은 경로가 달랐다. 알고리즘이 막혔던 것이 아니라 하드웨어가 아직 거기까지 오지 못했던 것이었다. 2022년 이후 640×480 이상의 event camera가 시장에 나왔고, 고속 드론과 HDR 환경에서의 필요가 분명해졌다. [Guillermo Gallego](https://arxiv.org/abs/1904.08405)(TU Berlin)를 중심으로 한 event vision 커뮤니티는 2020-2024년 사이에 event-based depth estimation과 ego-motion 추정에서 경쟁력 있는 결과를 냈다.
 
-영감이 좋아도 공학이 따라오는 데 시간이 걸리고, 센서가 새로워도 알고리즘은 따로 만들어야 한다. 그 간격을 메우는 데 얼마나 걸리느냐는 알고리즘의 성숙도와 하드웨어의 실용화 속도에 달렸다. 그리고 그 사이에 더 나은 대안이 먼저 자리를 잡느냐도.
+영감이 좋아도 공학이 따라오는 데 시간이 걸리고, 센서가 새로워도 알고리즘은 따로 만들어야 한다. 그 간격을 메우는 데 얼마나 걸리느냐는 알고리즘의 성숙도와 하드웨어의 실용화 속도에 달렸다. 그리고 그 사이에 더 나은 대안이 먼저 자리를 잡느냐도 변수였다.
 
 ---
 

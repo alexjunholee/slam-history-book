@@ -24,7 +24,7 @@ SLAM의 역사는 단일한 발전 곡선이 아니다. 네 가지 서로 다른
 
 **🔗 차용 박스**는 특정 기법이 어디서 왔는지를 한두 문장으로 명시하는 마진 주석이다. "ORB-SLAM의 이 구조는 Strasdat 2011에서 왔다"처럼. 연구자들은 인용하지만 계보를 명시하지 않는 경우가 많다. 이 박스는 그 계보를 드러낸다.
 
-**📜 예언 vs 실제 박스**는 원 논문의 Conclusion·Future Work·Summary 섹션이 짚은 것과 실제로 일어난 일을 대조한다. [Triggs 1999](https://dblp.org/rec/conf/dagstuhl/TriggsMHF99.html)의 BA 종합 논문이 §12 "Summary and Recommendations"에서 대규모 희소 구조 활용을 핵심 지침으로 남긴 자리는, 2010년대 [COLMAP](https://openaccess.thecvf.com/content_cvpr_2016/papers/Schonberger_Structure-From-Motion_Revisited_CVPR_2016_paper.pdf)이 수만 장 규모의 SfM을 오픈소스 실전 도구로 만들며 다른 각도에서 채웠다. 예측의 방향은 맞았지만 경로는 달랐다. 연구자가 당시 시점에서 본 미래와 실제 미래의 간극이 이 장치의 대상이다.
+**📜 예언 vs 실제 박스**는 원 논문의 Conclusion·Future Work·Summary 섹션이 짚은 것과 실제로 일어난 일을 대조한다. [Triggs 1999](https://dblp.org/rec/conf/dagstuhl/TriggsMHF99.html)의 BA 종합 논문이 §12 "Summary and Recommendations"에서 대규모 희소 구조 활용을 핵심 지침으로 남긴 자리를, 2010년대 [COLMAP](https://openaccess.thecvf.com/content_cvpr_2016/papers/Schonberger_Structure-From-Motion_Revisited_CVPR_2016_paper.pdf)이 수만 장 규모의 SfM을 오픈소스 실전 도구로 만들며 다른 각도에서 채웠다. 예측의 방향은 맞았지만 경로는 달랐다. 연구자가 당시 시점에서 본 미래와 실제 미래의 간극이 이 장치의 대상이다.
 
 **🧭 아직 열린 것**은 챕터 말미에 놓인다. 그 챕터가 다룬 주제에서 2026년 기준 아직 해결되지 않은 항목들이다. SLAM이 풀렸다는 인식 안에 숨어 있는 열린 문제들을 꺼낸다. Ch.19에서 이 항목들을 전 챕터에 걸쳐 수확해 재구성한다.
 

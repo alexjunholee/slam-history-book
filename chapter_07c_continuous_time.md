@@ -46,7 +46,7 @@ GP의 순수 형태는 문제가 하나 있다. 관측 수 $N$이 크면 kernel 
 
 > 🔗 **차용.** "GP posterior를 factor graph의 prior로 재해석한다"는 틀은 [Särkkä 2013 *Bayesian Filtering and Smoothing*](https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf)이 정리한 SDE-GP 연결을 Barfoot 그룹이 SLAM으로 끌어온 것이다. Rasmussen-Williams의 GP 교과서는 kernel을 닫힌 형식으로 쓰지만, 실시간 SLAM은 sparse inverse를 원한다. Särkkä의 SDE 표현이 그 다리였다.
 
-실무 귀결이 **STEAM** (Simultaneous Trajectory Estimation and Mapping)이다. 2015년 RSS에서 [Sean Anderson·Barfoot 2015 "Full STEAM Ahead"](https://www.roboticsproceedings.org/rss11/p45.pdf)가 constant-velocity prior 기반 STEAM을 공식화했다. 상태를 자세 $\mathbf{p}(t)$와 속도 $\mathbf{v}(t)$로 augment하고, 속도의 white noise 적분으로 자세가 따라가는 구조다. Anderson은 같은 해 sparsity 증명을 tightened 형태로 완성했고, 이 부분이 이후 Barfoot 그룹의 모든 continuous-time 논문의 backbone이 됐다.
+실무 귀결이 **STEAM** (Simultaneous Trajectory Estimation and Mapping)이다. 2015년 RSS에서 [Sean Anderson·Barfoot 2015 "Full STEAM Ahead"](https://www.roboticsproceedings.org/rss11/p45.pdf)가 constant-velocity prior 기반 STEAM을 공식화했다. 상태를 자세 $\mathbf{p}(t)$와 속도 $\mathbf{v}(t)$로 augment하고, 속도의 white noise 적분으로 자세가 따라가는 구조다. Anderson은 같은 해 sparsity 증명을 tightened 형태로 완성했고, 그 증명이 이후 Barfoot 그룹의 모든 continuous-time 논문의 backbone이 됐다.
 
 STEAM의 두 번째 이점이 GP interpolation이었다. 제어점(control pose)을 소수만 두고, 제어점 사이 임의 시각의 자세를 posterior mean으로 질의할 수 있다. spinning LiDAR의 한 scan 안에서 10,000개의 점이 각자 다른 시각에 찍혀도, 제어점은 scan 당 하나만 둔다. 계산량이 관측 수가 아니라 제어점 수에 비례한다.
 
@@ -60,7 +60,7 @@ Parametric이든 nonparametric이든 SLAM은 SE(3) 위의 궤적을 원한다. E
 
 B-spline 쪽에서는 [Sommer, Demmel et al. 2020 "Efficient Derivative Computation for Cumulative B-Splines on Lie Groups"](https://arxiv.org/abs/1911.08860)가 SE(3) cumulative spline의 Jacobian을 닫힌 형식으로 정리했다. CVPR에 실린 이 논문은 rolling-shutter VIO·event camera·visual-inertial 시스템에서 실시간 미분이 가능한 B-spline 궤적의 표준 공식을 제공했다. Basalt와 Cremers 그룹 후속 작업이 이 정리 위에 섰다.
 
-GP 쪽에서는 Anderson·Barfoot이 "local variable" 구도를 제안했다. 각 제어 자세 $T_k$ 근처에서 local perturbation $\xi_k(t) = \log(T(t)\,T_k^{-1})$를 정의하고, 그 위에서 GP를 운용한다. 전역 매니폴드 위에서 직접 GP를 정의하는 것은 어렵지만, 각 제어점 근방의 tangent space에서는 euclidean GP가 성립한다. 제어점 사이를 건너뛸 때 adjoint가 등장하는데, 그 adjoint가 왜 거기에 있어야 하는지는 Ch.7b preintegration의 on-manifold 논의와 같은 뿌리다. 두 도구가 같은 Lie group 문법을 공유한다는 사실이 2015년 이후 분명해졌다.
+GP 쪽에서는 Anderson·Barfoot이 "local variable" 구도를 제안했다. 각 제어 자세 $T_k$ 근처에서 local perturbation $\xi_k(t) = \log(T(t)\,T_k^{-1})$를 정의하고, 그 위에서 GP를 운용한다. 전역 매니폴드 위에서 직접 GP를 정의하는 것은 어렵지만, 각 제어점 근방의 tangent space에서는 euclidean GP가 성립한다. 제어점 사이를 건너뛸 때 adjoint가 등장하는데, 그 수학적 근거는 Ch.7b preintegration의 on-manifold 논의와 같다. 두 도구가 같은 Lie group 문법을 공유한다는 사실이 2015년 이후 분명해졌다.
 
 > 🔗 **차용.** GP를 Lie group local variable로 이식한 경로는 [Anderson-Barfoot 2015 ICRA](https://doi.org/10.1109/ICRA.2015.7138984)가 처음 체계화했다. 이들이 쓴 트릭 — "연속한 두 제어점 사이에서만 GP를 돌리고, 제어점 사이를 건너뛸 때 adjoint로 보정" — 은 이후 continuous-time LiDAR·VIO 논문이 모두 물려받는다.
 

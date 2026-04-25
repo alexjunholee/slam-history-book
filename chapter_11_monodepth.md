@@ -30,7 +30,7 @@ Clément Godard(UCL)는 2017년 이 아이디어를 [Godard et al. 2017](https:/
 
 2019년 Godard의 *MonoDepth2* ([Godard et al. 2019, ICCV](https://arxiv.org/abs/1806.01260))는 stereo 쌍 대신 monocular video를 쓰는 self-supervised로 나아갔다. depth network와 pose network를 동시에 학습한다. 연속 프레임 사이의 카메라 운동을 pose network가 예측하면, depth network의 출력으로 이전 프레임을 현재로 warping한다. warping 오차가 줄어드는 방향으로 두 네트워크가 함께 최적화된다. 두 가지 핵심 장치가 추가됐다. 첫째, **minimum reprojection loss**: 여러 소스 프레임 중 photometric error가 가장 낮은 것을 선택해 occluded 영역 오류를 줄인다. 둘째, **auto-masking**: 카메라와 같은 속도로 움직이는 픽셀(정지 카메라 + 정지 물체 포함)을 자동으로 제외한다.
 
-깔끔한 구조였다. 그러나 여전히 문제가 있었다. 움직이는 물체와 반사 표면. 하늘은 텍스처가 없어 더 심했다. 이 영역에서 photometric consistency 가정이 무너진다. 그리고 스케일은 여전히 모호하다. video supervision은 스케일을 프레임 간 상대적으로만 풀어준다.
+깔끔한 구조였다. 그러나 여전히 문제가 있었다. 움직이는 물체와 반사 표면이 걸렸고, 하늘처럼 텍스처가 없는 영역에서는 더 심했다. 이 영역에서 photometric consistency 가정이 무너진다. 그리고 스케일은 여전히 모호하다. video supervision은 스케일을 프레임 간 상대적으로만 풀어준다.
 
 ---
 
@@ -44,7 +44,7 @@ Ranftl의 해법은 **affine-invariant loss**였다. 각 이미지의 depth pred
 
 12개 데이터셋, 190만 장 이상의 이미지로 학습한 MiDaS는 처음으로 실용적인 cross-dataset generalization을 보여줬다. 야외, 실내, 역사 사진, 영화 프레임 모두에서 그럴듯한 relative depth를 내놨다. 절대 스케일은 없지만, 깊이 순서와 구조는 맞았다.
 
-이후 Ranftl 팀은 2021년 [**DPT**(Dense Prediction Transformer)](https://arxiv.org/abs/2103.13413)를 별도 발표해 MiDaS backbone을 ViT 기반으로 교체했다. MiDaS v3부터 DPT가 기본 backbone이 됐고, v3.1(2022)은 그 개선판이다. 성능이 크게 올랐다.
+이후 Ranftl 팀은 2021년 [**DPT**(Dense Prediction Transformer)](https://arxiv.org/abs/2103.13413)를 별도 발표해 MiDaS backbone을 ViT 기반으로 교체했다. MiDaS v3부터 DPT가 기본 backbone이 됐고, v3.1(2022)은 그 개선판이었다. 성능이 크게 올랐다.
 
 > 🔗 **차용.** MiDaS v3와 이후 Depth Anything은 CLIP·DINOv2·ViT 계열 backbone을 그대로 전용했다. backbone 교체만으로 성능이 점프하는 현상은 foundation model 시대의 일반적 패턴이지만, depth estimation에서 그 효과가 처음 대규모로 확인된 것은 DPT(Ranftl 2021)에서였다.
 
@@ -52,7 +52,7 @@ Ranftl의 해법은 **affine-invariant loss**였다. 각 이미지의 depth pred
 
 ## 4. Depth Anything — foundation 규모
 
-2024년 1월, TikTok Research의 Lihe Yang 팀이 발표한 [Yang et al. 2024](https://arxiv.org/abs/2401.10891) **Depth Anything**은 규모로 문제를 풀었다. 1.5M개의 labeled 이미지(기존 데이터셋 통합)와 62M개의 unlabeled 이미지. unlabeled 이미지에는 pseudo-label을 생성해 학습에 포함했다. pseudo-label 품질을 높이기 위해 semantic segmentation feature를 auxiliary supervision으로 썼다.
+2024년 1월, TikTok Research의 Lihe Yang 팀이 발표한 [Yang et al. 2024](https://arxiv.org/abs/2401.10891) **Depth Anything**은 규모로 문제를 풀었다. 1.5M개의 labeled 이미지(기존 데이터셋 통합)와 62M개의 unlabeled 이미지를 썼고, unlabeled 이미지에는 pseudo-label을 생성해 학습에 포함했다. pseudo-label 품질을 높이기 위해 semantic segmentation feature를 auxiliary supervision으로 썼다.
 
 결과는 MiDaS를 포함한 이전 방법들을 KITTI, NYU, ScanNet, DIODE 등 모든 주요 벤치마크에서 앞질렀다. 모델 크기는 ViT-L 기반 335M 파라미터. 추론 속도는 실시간과 거리가 있었으나, 품질이 먼저였다.
 

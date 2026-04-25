@@ -94,7 +94,7 @@ MonoSLAM이 EKF를 붙들고 있었던 이유는 확률론적 일관성(consiste
 
 Klein & Murray는 그 대가를 기꺼이 치렀다. AR 응용에서 중요한 것은 카메라 pose의 실시간 추적이었다. 지도의 불확실성을 센티미터 단위로 추적할 필요는 없었다. Bundle adjustment로 지도를 주기적으로 refine하면 충분했다.
 
-이후 SLAM 분야의 방향은 이 거래 쪽으로 기울었다. 2010년대 이후 graph-based 최적화와 bundle adjustment가 주류가 되었고, EKF-SLAM은 계산 자원이 극도로 제한된 응용 외에서는 대부분 전면에서 물러났다. 다만 MonoSLAM이 붙들었던 확률론적 관심사가 사라진 것은 아니었다. Davison의 lab은 PTAM 계보로 건너뛰는 대신 이후 몇 단계에 걸쳐 방향을 바꾸어 factor graph 기반의 추정, 그리고 Gaussian Belief Propagation(GBP)·Robot Web 쪽으로 옮겨갔다. 23년 뒤 SLAM Handbook Ch.18에서 Davison은 같은 흐름을 EKF→BA→factor graph→GBP로 이어지는 representation 변경의 연속으로 해석한다. 본인이 MonoSLAM을 직접 호명해 평가하는 대목은 없고, 각 표현 교체가 시스템 전체의 재설계를 유발한다는 일반 원리로 치환해 서술한다.
+이후 SLAM 분야의 방향은 이 거래 쪽으로 기울었다. 2010년대 이후 graph-based 최적화와 bundle adjustment가 주류가 되었고, EKF-SLAM은 계산 자원이 극도로 제한된 응용 외에서는 대부분 전면에서 물러났다. 다만 MonoSLAM이 붙들었던 확률론적 관심사가 사라진 것은 아니었다. Davison의 lab은 PTAM 계보로 건너뛰는 대신 이후 몇 단계에 걸쳐 factor graph 기반 추정, 그리고 Gaussian Belief Propagation(GBP)·Robot Web 쪽으로 옮겨갔다. 23년 뒤 SLAM Handbook Ch.18에서 Davison은 같은 흐름을 EKF→BA→factor graph→GBP로 이어지는 representation 변경의 연속으로 해석한다. 본인이 MonoSLAM을 직접 호명해 평가하는 대목은 없고, 각 표현 교체가 시스템 전체의 재설계를 유발한다는 일반 원리로 치환해 서술한다.
 
 ---
 

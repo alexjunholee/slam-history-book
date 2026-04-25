@@ -4,7 +4,7 @@ Ch.13에서 DROID-SLAM은 learned representation이 SLAM의 핵심 루프(tracki
 
 2020년 3월, Ben Mildenhall과 동료들이 arXiv에 올린 [Mildenhall et al. 2020. NeRF](https://arxiv.org/abs/2003.08934)는 8개 이미지로 새로운 시점의 사진을 만들어냈다. 그 사진은 빛과 그림자의 결을 가지고 있었다. SLAM 커뮤니티는 처음에 이것을 렌더링 문제로 보았다. 지도를 *만드는* 방법이 아니라 지도를 *보여주는* 방법이라고. 그 인식이 바뀌는 데는 14개월이 걸렸다. 2021년 ICCV에서 Sucar가 iMAP을 발표하면서, NeRF가 렌더링 도구가 아니라 지도 표현 자체로 쓰일 수 있다는 게 드러났다. iMAP은 KinectFusion(Ch.9)의 계보를 이었다. implicit neural field가 TSDF voxel grid를 대체할 수 있다는 가설의 첫 구현체였다.
 
-NeRF가 허공에서 나온 것은 아니었다. 2019년 한 해 동안 coordinate-based MLP로 3D를 표현하는 세 갈래가 거의 동시에 터졌다. [Park et al.의 DeepSDF](https://arxiv.org/abs/1901.05103)는 좌표를 넣으면 signed distance를 뱉는 MLP로 물체 표면을 암묵적으로 기술했고, [Mescheder et al.의 Occupancy Networks](https://arxiv.org/abs/1812.03828)는 같은 좌표 입력에서 occupancy 확률을 뱉게 만들었으며, [Sitzmann et al.의 SRN](https://arxiv.org/abs/1906.01618)은 좌표마다 scene feature vector를 저장해 differentiable ray marching으로 이미지를 합성했다. 좌표를 넣으면 field 값을 뱉는 같은 수학적 틀이다. Mildenhall et al. 2020 NeRF는 이 틀에 volume rendering 적분과 positional encoding을 더해 view synthesis까지 닫았다. iMAP이 이어받은 것은 NeRF 한 편이 아니라 그 1년짜리 계보 전체였다.
+NeRF가 허공에서 나온 것은 아니었다. 2019년 한 해 동안 coordinate-based MLP로 3D를 표현하는 세 갈래가 거의 동시에 터졌다. [Park et al.의 DeepSDF](https://arxiv.org/abs/1901.05103)는 좌표를 넣으면 signed distance를 뱉는 MLP로 물체 표면을 암묵적으로 기술했고, [Mescheder et al.의 Occupancy Networks](https://arxiv.org/abs/1812.03828)는 같은 좌표 입력에서 occupancy 확률을 뱉게 만들었으며, [Sitzmann et al.의 SRN](https://arxiv.org/abs/1906.01618)은 좌표마다 scene feature vector를 저장해 differentiable ray marching으로 이미지를 합성했다. 세 연구는 좌표를 넣으면 field 값을 뱉는 같은 수학적 틀을 공유했다. Mildenhall et al. 2020 NeRF는 이 틀에 volume rendering 적분과 positional encoding을 더해 view synthesis까지 닫았다. iMAP이 이어받은 것은 NeRF 한 편이 아니라 그 1년짜리 계보 전체였다.
 
 ---
 
@@ -52,7 +52,7 @@ iMAP의 단일 MLP 문제에 대한 직접적인 답은 ETH 취리히의 Zihan Z
 
 아이디어는 공간을 명시적 복셀 격자로 나누되, 각 복셀에 학습 가능한 feature vector를 두는 것이다. 렌더링 시 샘플 좌표 주변 복셀들의 feature를 trilinear interpolation으로 결합한 뒤 작은 MLP에 통과시켜 색상과 occupancy를 얻는다. MLP는 크지 않아도 된다. 공간 정보의 대부분은 격자에 담겨 있기 때문이다.
 
-NICE-SLAM은 세 단계 해상도 격자를 계층적으로 쌓았다. 거친 격자는 전체 geometry 형태를 담고, 중간 격자는 구조의 세부를, 세밀한 격자는 texture를 담는다. 새로운 영역이 추가되면 해당 복셀의 feature만 업데이트하면 되므로 다른 영역의 catastrophic forgetting이 크게 줄었다.
+NICE-SLAM은 세 단계 해상도 격자를 계층적으로 쌓았다. 거친 격자는 전체 geometry 형태를 담고, 중간 격자는 구조의 세부를, 세밀한 격자는 texture를 담는다. 새로운 영역이 추가되면 해당 복셀의 feature만 업데이트하면 되므로 다른 영역의 catastrophic forgetting이 크게 줄어든다.
 
 tracking에서 NICE-SLAM은 iMAP과 유사하게 MLP와 격자 feature를 고정하고 포즈를 최적화했다. mapping에서는 격자 feature를 업데이트했다. Replica·ScanNet 데이터셋에서 iMAP보다 넓은 공간을 다뤘고 세부 표현 품질도 높았다.
 

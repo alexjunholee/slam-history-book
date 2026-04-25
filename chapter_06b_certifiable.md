@@ -24,7 +24,7 @@ $$d^* = \min_{\boldsymbol{X}\in\mathbb{S}^n} \mathrm{tr}(\boldsymbol{C}\boldsymb
 
 쓸모는 이중성 부등식 $d^* \le p^*$에 있다. SDP 최솟값은 원 QCQP 최솟값의 아래쪽 경계다. 후보해 $\hat{\boldsymbol{x}}$가 있을 때 $f(\hat{\boldsymbol{x}}) - d^*$가 그 후보의 최적성 간극의 상한이 된다. 여기서 "certifiable"이라는 이름이 나온다. 전역적으로 못 풀어도, 가진 해가 얼마나 나쁜지의 상한은 풀 수 있다. SDP 해 $\boldsymbol{X}^*$가 rank-1로 떨어지면 $\boldsymbol{X}^* = \boldsymbol{x}^*\boldsymbol{x}^{*\top}$에서 $\boldsymbol{x}^*$가 원 QCQP의 전역 최솟값이다. 이 "favorable situation"이 SLAM에서 얼마나 자주 일어나는지가 이후 논문들의 주제가 된다.
 
-Carlone이 2015년 IROS와 ICRA에서 발표한 두 편의 논문 — [Carlone et al. 2015 "Lagrangian duality in 3D SLAM"](https://arxiv.org/abs/1506.00746)과 [Carlone & Dellaert 2015 "Planar pose graph optimization"](https://doi.org/10.1109/ICRA.2015.7139264) — 이 계보의 출발점이다. 2D PGO에서 duality gap이 대개 0임을 경험적으로 보였고, 3D로 확장 가능함을 시사했다. Carlone은 2014년 TRO 서베이에서 g2o·GTSAM 초기화 기법을 정리한 직후였고, odometry와 루프 클로저가 충돌할 때 최적화가 자주 틀린 지점에서 멈추는 것을 본 뒤였다. 2015년 논문은 "duality gap이 보통 0"임을 보고할 뿐, 언제 성립하는지의 닫힌 조건은 주지 못했다.
+이 계보의 출발점은 Carlone이 2015년 IROS와 ICRA에서 발표한 두 편의 논문, [Carlone et al. 2015 "Lagrangian duality in 3D SLAM"](https://arxiv.org/abs/1506.00746)과 [Carlone & Dellaert 2015 "Planar pose graph optimization"](https://doi.org/10.1109/ICRA.2015.7139264)이다. 2D PGO에서 duality gap이 대개 0임을 경험적으로 보였고, 3D로 확장 가능함을 시사했다. Carlone은 2014년 TRO 서베이에서 g2o·GTSAM 초기화 기법을 정리한 직후였고, odometry와 루프 클로저가 충돌할 때 최적화가 자주 틀린 지점에서 멈추는 것을 본 뒤였다. 2015년 논문은 "duality gap이 보통 0"임을 보고할 뿐, 언제 성립하는지의 닫힌 조건은 주지 못했다.
 
 같은 시기 [Briales & Gonzalez-Jimenez (2017)](https://arxiv.org/abs/1702.03235)의 Cartan-Sync가 SO(3) synchronization으로 같은 프로그램을 밀었다. 수학 쪽에서는 Boumal·Absil·Sepulchre가 Riemannian optimization을, 최적화 쪽에서는 Burer-Monteiro의 low-rank SDP factorization이 2003년부터 자리잡고 있었다. 흩어진 재료들이 2019년 한 편의 논문에서 조립된다.
 
@@ -36,7 +36,7 @@ Carlone이 2015년 IROS와 ICRA에서 발표한 두 편의 논문 — [Carlone e
 
 조립의 순서는 세 단계다. 첫째, 회전 고정 시 translation이 선형 최소자승이 된다는 관찰에서 $\boldsymbol{t}$를 닫힌 형태로 소거한다(Problem 6.2). Ch.6의 graph SLAM 계보가 오래전부터 알던 사실을 Carlone이 2014년 TRO 서베이에서 명시했고, Rosen이 convex relaxation의 첫 단계로 집어넣었다. 둘째, 남은 rotation-only 문제 $\min_{\boldsymbol{R}\in\mathrm{SO}(d)^n} \mathrm{tr}(\tilde{\boldsymbol{Q}}\boldsymbol{R}^\top\boldsymbol{R})$에 Shor relaxation을 적용해 SDP로 리프팅한다(Problem 6.3). 셋째, $dn \times dn$ 차원 SDP는 그대로 풀면 interior-point method가 수천 포즈에서 무너지므로 Burer-Monteiro 재파라미터화 $\boldsymbol{Z} = \boldsymbol{Y}^\top \boldsymbol{Y}$로 Stiefel manifold 위의 저차원 비제약 문제로 바꾼다(Problem 6.4).
 
-두 정리가 이 조립을 정당화한다. Theorem 6.1 **exact recovery**: 측정 노이즈가 어떤 상수 $\beta$보다 작으면 SDP relaxation의 유일 해가 원 MLE의 전역 최솟값을 rank-1로 품는다. "어떤 노이즈까지 버티는가"에 대한 첫 정량적 답이었다. 다만 $\beta$는 ground-truth에 의존해 사전에는 모른다. Theorem 6.2는 Boumal et al.의 결과로, Stiefel manifold 위에서 찾은 2차 임계점이 rank-deficient하면 곧 전역 최솟값임을 보장한다. 이 두 정리가 Riemannian Staircase를 가능케 한다. rank를 작게 두고 시작해 2차 임계점을 찾고 rank-deficiency를 검사, 안 맞으면 rank를 하나 올린다. rank가 $dn + 1$에 닿으면 모든 $\boldsymbol{Y}$가 row rank-deficient가 되므로 유한 단계 내 반드시 멈춘다. 실무 데이터셋에서는 보통 한 계단이면 끝났다.
+두 정리가 이 조립을 정당화한다. Theorem 6.1 **exact recovery**: 측정 노이즈가 어떤 상수 $\beta$보다 작으면 SDP relaxation의 유일 해가 원 MLE의 전역 최솟값을 rank-1로 품는다. "어떤 노이즈까지 버티는가"에 대한 첫 정량적 답이었다. 다만 $\beta$는 ground-truth에 의존해 사전에는 모른다. Theorem 6.2는 Boumal et al.의 결과로, Stiefel manifold 위에서 찾은 2차 임계점이 rank-deficient하면 곧 전역 최솟값임을 보장한다. 이 두 정리가 Riemannian Staircase를 가능케 한다. rank를 작게 두고 시작해 2차 임계점을 찾고 rank-deficiency를 검사, 안 맞으면 rank를 하나 올린다. rank가 $dn + 1$에 닿으면 모든 $\boldsymbol{Y}$가 row rank-deficient가 되므로 유한 단계 내 반드시 멈춘다. 실무 데이터셋에서는 보통 한 계단이면 끝난다.
 
 sphere·torus·garage 벤치마크에서 SE-Sync는 g2o·GTSAM 수준 속도로 수렴하며 a posteriori certificate를 함께 냈다. g2o·GTSAM은 빨랐지만 답을 언제 믿을지 침묵했고, Rosen의 알고리즘은 끝에 suboptimality bound를 하나 더 토해낸다. 이 bound가 0이면 해는 증명 가능하게 전역 최적이다. Lu-Milios 이후 20년 만에 백엔드가 "이 해가 진짜 최솟값인가"에 '예/아니오'를 찍을 수 있게 됐다.
 
@@ -72,7 +72,7 @@ SE-Sync가 나온 뒤 전선은 두 방향으로 넓어졌다. 첫째, 아웃라
 
 Range-aided SLAM은 [Papalia et al. CORA (2024)](https://arxiv.org/abs/2403.09295)의 자리다. 범위 측정 $(\|\boldsymbol{t}_j - \boldsymbol{t}_i\| - \tilde r_{ij})^2$는 그대로면 quartic이라 QCQP에서 벗어나는데, Papalia는 보조 단위벡터 $\boldsymbol{b}_{ij} \in S^{d-1}$로 bearing lifting해 다시 집어넣었다. CORA는 단일 로봇에서는 tight한 relaxation이 멀티로봇에서는 일반적으로 exact하지 않음을 보여 "언제 Shor가 통하는가"의 범위를 좁혔다.
 
-Landmark 쪽에서는 [Holmes & Barfoot (2023)](https://arxiv.org/abs/2308.05631)이 Schur complement로 landmark를 미리 소거해 SE-Sync가 그대로 받아먹는 형태로 만들었다. Holmes·Khosoussi·Rosen의 Handbook Ch.6 공저가 이 계보가 2025년 한 테이블에 모였다는 증거다.
+Landmark 쪽에서는 [Holmes & Barfoot (2023)](https://arxiv.org/abs/2308.05631)이 Schur complement로 landmark를 미리 소거해 SE-Sync가 그대로 받아먹는 형태로 만들었다. Holmes·Khosoussi·Rosen이 Handbook Ch.6을 공저한 것은 이 계보가 2025년 한 테이블에 모였다는 증거다.
 
 그러나 벽도 드러났다. anisotropic noise와 truncated-quadratic outlier를 POP(Polynomial Optimization Problem)로 일반화하면 Lasserre moment relaxation이 필요한데, 유도된 SDP가 **degenerate**해 constraint qualification이 실패하고 Riemannian Staircase의 수렴 조건이 깨진다. Yang의 2022년 sparse monomial basis 같은 우회가 있지만 전용 solver는 일반 local solver보다 느리다. 속도와 증명 가능성을 동시에 쥐는 알고리즘은 아직 없다. Visual SLAM·VIO는 더 깊은 장벽 — perspective projection·IMU preintegration의 구조적 비호환 — 앞에 있는데 🧭에서 다룬다.
 
@@ -92,4 +92,4 @@ Landmark 쪽에서는 [Holmes & Barfoot (2023)](https://arxiv.org/abs/2308.05631
 
 ---
 
-이 챕터 전체가 Ch.6이 한 줄로 지나간 "지역 최솟값 수렴"(§6.7)에 대한 각주다. 민속적 관찰이 10년의 이론 프로그램으로 대체된 흐름이다. Carlone-Khosoussi-Rosen-Holmes-Barfoot-Dissanayake가 공저한 *The SLAM Handbook* Ch.6이 34페이지로 이 주제를 다룬 것 자체가 계보의 현재 무게다. 같은 10년 동안 Ch.12·Ch.13·Ch.16의 학습 기반 SLAM은 다른 경로로 나아갔다. 한쪽은 해의 전역성을 증명하는 쪽, 다른 쪽은 신경망이 해를 직접 예측하는 쪽. 두 계보가 만날지, 분야를 둘로 나누어 지낼지는 2026년에도 답이 없다. Ch.19에서 이 챕터의 🧭 항목들이 "백엔드 이론의 공란"으로 수확된다.
+이 챕터 전체가 Ch.6이 한 줄로 지나간 "지역 최솟값 수렴"(§6.7)에 대한 각주다. 민속적 관찰은 10년의 이론 프로그램으로 대체됐다. Carlone-Khosoussi-Rosen-Holmes-Barfoot-Dissanayake가 공저한 *The SLAM Handbook* Ch.6이 34페이지로 이 주제를 다룬 것 자체가 계보의 현재 무게다. 같은 10년 동안 Ch.12·Ch.13·Ch.16의 학습 기반 SLAM은 다른 경로로 나아갔다. 한쪽은 해의 전역성을 증명하는 쪽, 다른 쪽은 신경망이 해를 직접 예측하는 쪽. 두 계보가 만날지, 분야를 둘로 나누어 지낼지는 2026년에도 답이 없다. Ch.19에서 이 챕터의 🧭 항목들이 "백엔드 이론의 공란"으로 수확된다.

@@ -62,7 +62,7 @@ $$D(x, y, \sigma) = L(x, y, k\sigma) - L(x, y, \sigma)$$
 
 결과는 scale, rotation, 부분적인 affine 변형에 강인한 128차원 서술자였다. KITTI 이전 시대, SLAM 벤치마크가 없던 시절에도 연구자들이 SIFT를 쓸 수밖에 없었던 이유다.
 
-Lowe는 2000년 3월 SIFT를 특허 출원해 2004년 3월 등록되었다(US6711293B1, 우선권 1999년 3월). 이 특허는 상업용 사용에 비용을 부과했고, 2020년 3월 만료 전까지 SIFT를 대체하려는 시도의 동기 중 하나가 되었다.
+Lowe는 2000년 3월 SIFT를 특허 출원했고, 2004년 3월 등록됐다(US6711293B1, 우선권 1999년 3월). 이 특허는 상업용 사용에 비용을 부과했고, 2020년 3월 만료 전까지 SIFT를 대체하려는 시도의 동기 중 하나가 되었다.
 
 > 📜 **예언 vs 실제.** Lowe는 2004년 SIFT 논문의 "9 Conclusions"에서 서술자의 확장 가능성을 "view matching for 3D reconstruction, motion tracking and segmentation, robot localization, image panorama assembly, epipolar calibration"로 나열했다. 방향 자체는 대부분 맞았다—SfM·SLAM·파노라마·초기 영상 기반 로봇 위치추정이 2000년대 후반 SIFT에 기댔다. 다만 장기 대응 문제에서 SIFT의 위치는 CNN 이후 흔들렸다. 2012년 AlexNet 이후 물체 인식 쪽 수요는 CNN으로 이동했고, SLAM용 local descriptor 자리도 SuperPoint·R2D2 같은 학습 서술자가 점차 가져갔다. 응용 영역 예측은 적중, 서술자 형태는 기술변화. `[부분 적중]`
 

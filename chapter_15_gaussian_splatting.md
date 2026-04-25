@@ -28,7 +28,7 @@ Volume rendering 적분을 수치적으로 근사하는 NeRF와 달리, 3DGS는 
 
 implicit representation은 SLAM에 어울리지 않았다. MLP 기반 NeRF는 새 관측이 들어올 때마다 전체 네트워크를 재학습해야 했고, catastrophic forgetting 탓에 incremental update가 어려웠다. 지도 확장은 네트워크 크기 재조정을 뜻했다. NICE-SLAM의 voxel grid는 이 문제를 완화했지만, 해상도와 메모리의 트레이드오프를 피할 수 없었다.
 
-3DGS는 이 문제를 구조적으로 풀었다. Gaussian은 공간에 명시적으로 있는 객체여서, 새 키프레임이 들어오면 해당 영역에 Gaussian을 추가하기만 하면 된다. Densification 절차가 keyframe 추가와 자연스럽게 맞물렸고, 렌더링 품질은 NeRF 수준을 유지하면서 실시간이 가능했다. 2023년 후반에 GS-SLAM 논문들이 쏟아진 것은 이 계산 때문이었다.
+3DGS는 이 문제를 구조적으로 풀었다. Gaussian은 공간에 명시적으로 있는 객체여서, 새 키프레임이 들어오면 해당 영역에 Gaussian을 추가하기만 하면 된다. Densification 절차가 keyframe 추가와 자연스럽게 맞물렸고, 렌더링 품질은 NeRF 수준을 유지했다. 실시간 처리도 가능했다. 2023년 후반에 GS-SLAM 논문들이 쏟아진 것은 이 계산 때문이었다.
 
 ---
 
@@ -98,7 +98,7 @@ RTG-SLAM의 전략은 Gaussian의 수를 제어하는 것이다. 모든 Gaussian
 
 2024년을 기점으로 TSDF·occupancy grid는 SLAM mapping의 주류에서 밀려났다. embedded 시스템이나 안전이 요구되는 환경에서는 여전히 쓰이지만, 연구 전선에서는 보조 역할로 물러났다. NeRF 기반 SLAM도 같은 해 기준으로 3DGS 대비 렌더링 속도와 update 유연성에서 밀려 보조 위치로 이동했다.
 
-표현의 전환이면서 동시에 하드웨어 친화성의 전환이다. GPU 래스터라이저는 GPU 레이마처(ray marcher)보다 훨씬 잘 최적화되어 있다. 3DGS가 기존 그래픽스 파이프라인 위에서 자연스럽게 돌아간다는 점이 NeRF 대비 채택 속도를 높였다.
+이것은 표현의 전환이면서 동시에 하드웨어 친화성의 전환이다. GPU 래스터라이저는 GPU 레이마처(ray marcher)보다 훨씬 잘 최적화되어 있다. 3DGS가 기존 그래픽스 파이프라인 위에서 자연스럽게 돌아간다는 점이 NeRF 대비 채택 속도를 높였다.
 
 > 🔗 **차용.** 3DGS의 differentiable rendering 정신은 NeRF에서 직접 계승한다. 장면 표현을 gradient로 최적화한다는 아이디어, photometric loss로 관측과 렌더링을 연결하는 방식은 Mildenhall et al.(2020)의 유산이다. Kerbl은 표현(implicit MLP → explicit Gaussian)을 교체했지만 패러다임을 계승했다.
 

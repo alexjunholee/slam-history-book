@@ -6,7 +6,7 @@
 
 ## 1. 20세기 초 유리판과 Stereophotogrammetry
 
-1901년 [Carl Pulfrich](https://en.wikipedia.org/wiki/Carl_Pulfrich)는 함부르크 자연과학자 회의에서 Zeiss 광학연구소가 제작한 **입체 측량기(stereocomparator)**를 발표했다 (1899년 뮌헨에서 입체 거리계 시제품을 먼저 공개한 뒤의 정식 공개). 두 카메라 시점에서 같은 점을 찍고, 유리판 위의 좌표 차이를 읽어 거리를 산출하는 장치였다. 원리는 단순했다: 두 시점의 시차(parallax)가 깊이와 역비례한다. 수학은 그리스 시대의 삼각법이고, 새로운 것은 광학 기기의 정밀도였다.
+1901년 [Carl Pulfrich](https://en.wikipedia.org/wiki/Carl_Pulfrich)는 함부르크 자연과학자 회의에서 Zeiss 광학연구소가 제작한 **입체 측량기(stereocomparator)**를 발표했다 (1899년 뮌헨에서 입체 거리계 시제품을 먼저 공개한 뒤의 정식 공개). 두 카메라 시점에서 같은 점을 찍고, 유리판 위의 좌표 차이를 읽어 거리를 산출하는 장치였다. 원리는 단순했다: 두 시점의 시차(parallax)가 깊이와 역비례한다. 수학은 그리스 시대의 삼각법이었고, 새로운 것은 광학 기기의 정밀도였다.
 
 한 세대 앞선 흐름으로, [Albrecht Meydenbauer](https://de.wikipedia.org/wiki/Albrecht_Meydenbauer)는 건축물 보존을 위한 **건축 사진측량(architectural photogrammetry)**을 체계화했다. 1858년 그는 베츨라 대성당 외벽을 측량하다 추락사고를 겪은 뒤, 사진으로 대신할 수 있다는 생각을 품었다. 1885년 그는 프로이센 왕립 사진측량국(Königlich Preussische Messbild-Anstalt)을 설립했다.
 
@@ -78,7 +78,7 @@ Triggs et al.(1999)은 그 공식을 컴퓨터 비전 교과서 언어로 다듬
 
 "SLAM"이라는 약어 자체는 1995년 [Durrant-Whyte·Leonard의 survey](https://ieeexplore.ieee.org/document/476131)에서 표준 용어로 정립됐지만, 그 backend의 수학은 이 챕터가 추적해 온 1958년 Brown의 reprojection 공식을 거의 그대로 물려받는다. 오늘날 SLAM 최적화 backend를 보자. ORB-SLAM3는 g2o를 통해 SE(3) 자세와 3D landmark 위치를 동시 최적화한다. LIO-SAM은 GTSAM의 factor graph 위에서 LM 알고리즘을 돌린다. DROID-SLAM은 GRU-based optical flow로 업데이트 방향을 구하지만, 최종 bundle adjustment 레이어는 여전히 Schur complement trick을 쓴다.
 
-Lie group과 factor graph가 1999년의 행렬 표기를 대체했고, 신경망이 기술자 계산을 넘겨받았지만, 연산의 본질은 그대로다. 다수의 시점에서 관측된 점들의 reprojection error를 최소화해 카메라 자세와 맵을 동시에 추정한다. Pulfrich의 유리판이 픽셀 배열로, 손 계산이 GPU로 바뀌었을 뿐이다.
+Lie group과 factor graph가 1999년의 행렬 표기를 대체했고, 신경망이 기술자 계산을 넘겨받았지만, 연산의 본질은 그대로다. 다수의 시점에서 관측된 점들의 reprojection error를 최소화해 카메라 자세와 맵을 동시에 추정한다. Pulfrich의 유리판이 픽셀 배열로 바뀌고, 손 계산이 GPU로 바뀌었을 뿐이다.
 
 이 연속성은 분야의 강점이자 취약점이다. 강점: 100년의 수렴성 증명과 실용 검증이 무료로 따라온다. 취약점: BA의 전제(static world, point feature, Gaussian noise)가 현실 환경과 어긋날 때 대안이 없다.
 
