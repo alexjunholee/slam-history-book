@@ -848,8 +848,7 @@ mark.search-highlight {{
     lang: (function() {{
       var saved = null;
       try {{ saved = localStorage.getItem('shb-lang'); }} catch(e) {{}}
-      if (saved === 'ko' || saved === 'en') return saved;
-      return (navigator.language || 'ko').toLowerCase().indexOf('ko') === 0 ? 'ko' : 'en';
+      return (saved === 'en' || saved === 'ko') ? saved : 'ko';
     }})(),
     cache: {{}},
     observer: null,
