@@ -316,7 +316,7 @@ body {{
 }}
 
 #topbar .back-link {{
-  margin-left: auto;
+  margin-left: 16px;
   color: var(--link);
   text-decoration: none;
   font-size: 13.5px;
