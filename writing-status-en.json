@@ -1,0 +1,281 @@
+{
+  "_schema": "writing-pipeline-en-v1",
+  "_stages": [
+    "T1-queued",
+    "T2-translated",
+    "T3-revised",
+    "T3b-coherent",
+    "T4-edited",
+    "done"
+  ],
+  "_note": "English edition of slam-history-book. Source Korean chapters are complete (see writing-status.json). Each chapter progresses independently.",
+  "project": "slam-history-book-en",
+  "source_status": "writing-status.json",
+  "style_guide": "/Users/alex/Library/CloudStorage/Dropbox/repos/STYLE_PROSE_EN.md",
+  "chapters": {
+    "ch00": {
+      "title": "SLAM Solved?",
+      "source": "chapter_00_prologue.md",
+      "target": "en/chapter_00_prologue.md",
+      "part": "0 Preface",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch01": {
+      "title": "Photogrammetry and bundle adjustment",
+      "source": "chapter_01_photogrammetry.md",
+      "target": "en/chapter_01_photogrammetry.md",
+      "part": "1 Prehistory",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch02": {
+      "title": "The classical CV toolbox",
+      "source": "chapter_02_classical_cv.md",
+      "target": "en/chapter_02_classical_cv.md",
+      "part": "1 Prehistory",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch03": {
+      "title": "Structure from Motion",
+      "source": "chapter_03_sfm.md",
+      "target": "en/chapter_03_sfm.md",
+      "part": "1 Prehistory",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch04": {
+      "title": "Smith-Cheeseman and EKF-SLAM",
+      "source": "chapter_04_ekf_slam.md",
+      "target": "en/chapter_04_ekf_slam.md",
+      "part": "2 Classical SLAM",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch05": {
+      "title": "MonoSLAM to PTAM",
+      "source": "chapter_05_monoslam_ptam.md",
+      "target": "en/chapter_05_monoslam_ptam.md",
+      "part": "2 Classical SLAM",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch06": {
+      "title": "The Graph-SLAM revolution",
+      "source": "chapter_06_graph_slam.md",
+      "target": "en/chapter_06_graph_slam.md",
+      "part": "2 Classical SLAM",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch06b": {
+      "title": "Certifiable SLAM",
+      "source": "chapter_06b_certifiable.md",
+      "target": "en/chapter_06b_certifiable.md",
+      "part": "2 Classical SLAM",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch07": {
+      "title": "Feature-based lineage (ORB-SLAM trilogy)",
+      "source": "chapter_07_orb_slam.md",
+      "target": "en/chapter_07_orb_slam.md",
+      "part": "3 Maturity",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch07b": {
+      "title": "IMU preintegration",
+      "source": "chapter_07b_preintegration.md",
+      "target": "en/chapter_07b_preintegration.md",
+      "part": "3 Maturity",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch07c": {
+      "title": "Continuous-time trajectories",
+      "source": "chapter_07c_continuous_time.md",
+      "target": "en/chapter_07c_continuous_time.md",
+      "part": "3 Maturity",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch08": {
+      "title": "Direct lineage (DTAM to DSO)",
+      "source": "chapter_08_direct.md",
+      "target": "en/chapter_08_direct.md",
+      "part": "3 Maturity",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch09": {
+      "title": "Dense/RGB-D (KinectFusion to BundleFusion)",
+      "source": "chapter_09_rgbd.md",
+      "target": "en/chapter_09_rgbd.md",
+      "part": "3 Maturity",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch10": {
+      "title": "Place recognition in parallel",
+      "source": "chapter_10_place_recognition.md",
+      "target": "en/chapter_10_place_recognition.md",
+      "part": "3 Maturity",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch11": {
+      "title": "The revival of depth estimation",
+      "source": "chapter_11_monodepth.md",
+      "target": "en/chapter_11_monodepth.md",
+      "part": "4 Learning fusion",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch12": {
+      "title": "End-to-end disappointments",
+      "source": "chapter_12_end_to_end.md",
+      "target": "en/chapter_12_end_to_end.md",
+      "part": "4 Learning fusion",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch13": {
+      "title": "Hybrid victory (CodeSLAM to DROID-SLAM)",
+      "source": "chapter_13_hybrid.md",
+      "target": "en/chapter_13_hybrid.md",
+      "part": "4 Learning fusion",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch14": {
+      "title": "The NeRF shock and SLAM",
+      "source": "chapter_14_nerf_slam.md",
+      "target": "en/chapter_14_nerf_slam.md",
+      "part": "5 Representation",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch15": {
+      "title": "The Gaussian Splatting era",
+      "source": "chapter_15_gaussian_splatting.md",
+      "target": "en/chapter_15_gaussian_splatting.md",
+      "part": "5 Representation",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch15b": {
+      "title": "Dynamic scenes",
+      "source": "chapter_15b_dynamic.md",
+      "target": "en/chapter_15b_dynamic.md",
+      "part": "5 Representation",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch16": {
+      "title": "Foundation 3D (DUSt3R to VGGT)",
+      "source": "chapter_16_foundation_3d.md",
+      "target": "en/chapter_16_foundation_3d.md",
+      "part": "5 Representation",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch17": {
+      "title": "The LiDAR parallel universe",
+      "source": "chapter_17_lidar.md",
+      "target": "en/chapter_17_lidar.md",
+      "part": "6 Sidetracks and close",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch18": {
+      "title": "Dead ends and lost lineages",
+      "source": "chapter_18_dead_ends.md",
+      "target": "en/chapter_18_dead_ends.md",
+      "part": "6 Sidetracks and close",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    },
+    "ch19": {
+      "title": "Today's map and tomorrow's blanks",
+      "source": "chapter_19_open_problems.md",
+      "target": "en/chapter_19_open_problems.md",
+      "part": "6 Sidetracks and close",
+      "stage": "done",
+      "translation_date": "2026-04-25",
+      "revision_date": "2026-04-25",
+      "coherence_date": "2026-04-25",
+      "editing_date": "2026-04-25"
+    }
+  }
+}
