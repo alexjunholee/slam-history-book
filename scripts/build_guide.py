@@ -10,11 +10,16 @@ import os
 import glob
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+EN_DIR = os.path.join(PROJECT_ROOT, "en")
 OUTPUT = os.path.join(PROJECT_ROOT, "guide.html")
 
 
-def read_chapters():
-    pattern = os.path.join(PROJECT_ROOT, "chapter_*.md")
+def read_chapters(lang="ko"):
+    """Read all chapter markdown files in order for the given language."""
+    if lang == "ko":
+        pattern = os.path.join(PROJECT_ROOT, "chapter_*.md")
+    else:
+        pattern = os.path.join(EN_DIR, "chapter_*.md")
     files = sorted(glob.glob(pattern))
     parts = []
     for f in files:
@@ -202,7 +207,7 @@ OVERVIEW_JS = r"""
 """
 
 
-def build_html(md_content):
+def build_html(md_content_ko, md_content_en):
     return f'''<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -329,6 +334,29 @@ body {{
   border-color: var(--accent);
   color: var(--accent);
 }}
+
+/* Language toggle — inline link style (no box) */
+#topbar .lang-toggle {{
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  letter-spacing: -0.010em;
+}}
+#topbar .lang-toggle a {{
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 4px 2px;
+  transition: color 0.15s;
+  cursor: pointer;
+}}
+#topbar .lang-toggle a:hover {{ color: var(--text); }}
+#topbar .lang-toggle a.active {{
+  color: var(--text-heading);
+  font-weight: 600;
+}}
+#topbar .lang-toggle .sep {{ color: var(--border-strong); }}
 
 #sidebar {{
   position: fixed;
@@ -736,7 +764,12 @@ mark.search-highlight {{
 
 <div id="topbar">
   <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation">&#9776;</button>
-  <span class="title">SLAM History Book</span>
+  <span class="title" id="topbar-title">SLAM History Book</span>
+  <div class="lang-toggle" id="lang-toggle" role="group" aria-label="Language">
+    <a data-lang="ko" tabindex="0" role="button">한국어</a>
+    <span class="sep">/</span>
+    <a data-lang="en" tabindex="0" role="button">English</a>
+  </div>
   <a href="../" class="back-link">← repos</a>
 </div>
 
@@ -753,13 +786,17 @@ mark.search-highlight {{
 <main id="main-content">
   <div id="loading">
     <div class="spinner"></div>
-    <span>가이드 렌더링 중...</span>
+    <span id="loading-text">가이드 렌더링 중...</span>
   </div>
   <div id="content" style="display:none;"></div>
 </main>
 
-<textarea id="md-source" style="display:none;">
-{md_content}
+<textarea id="md-source-ko" style="display:none;">
+{md_content_ko}
+</textarea>
+
+<textarea id="md-source-en" style="display:none;">
+{md_content_en}
 </textarea>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
@@ -770,18 +807,66 @@ mark.search-highlight {{
 (function() {{
   'use strict';
 
-  var OVERVIEW_TITLE = 'SLAM History Book';
+  var I18N = {{
+    ko: {{
+      docTitle: 'SLAM History Book — Spatial AI 계보 추적',
+      topbarTitle: 'SLAM History Book',
+      overviewTitle: 'SLAM History Book',
+      searchPlaceholder: '챕터/섹션 검색... (Ctrl+K)',
+      noResults: '검색 결과 없음',
+      loading: '가이드 렌더링 중...',
+      groups: [
+        {{ label: '0 · 서문',        chapters: [0] }},
+        {{ label: '1 · 선사시대',    chapters: [1, 2, 3] }},
+        {{ label: '2 · 고전 SLAM',   chapters: [4, 5, 6] }},
+        {{ label: '3 · 성숙기',      chapters: [7, 8, 9, 10] }},
+        {{ label: '4 · 러닝 융합기', chapters: [11, 12, 13] }},
+        {{ label: '5 · 표현의 혁명', chapters: [14, 15, 16] }},
+        {{ label: '6 · 옆길과 결론', chapters: [17, 18, 19] }}
+      ]
+    }},
+    en: {{
+      docTitle: 'SLAM History Book — Tracing the Spatial AI Lineage',
+      topbarTitle: 'SLAM History Book',
+      overviewTitle: 'SLAM History Book',
+      searchPlaceholder: 'Search chapters/sections... (Ctrl+K)',
+      noResults: 'No results',
+      loading: 'Rendering guide...',
+      groups: [
+        {{ label: '0 · Preface',            chapters: [0] }},
+        {{ label: '1 · Prehistory',         chapters: [1, 2, 3] }},
+        {{ label: '2 · Classical SLAM',     chapters: [4, 5, 6] }},
+        {{ label: '3 · Maturity',           chapters: [7, 8, 9, 10] }},
+        {{ label: '4 · Learning fusion',    chapters: [11, 12, 13] }},
+        {{ label: '5 · Representation',     chapters: [14, 15, 16] }},
+        {{ label: '6 · Sidetracks & close', chapters: [17, 18, 19] }}
+      ]
+    }}
+  }};
 
-  // Ch.N → group label (used by both overview and sidebar TOC)
-  var CHAPTER_GROUPS = [
-    {{ label: '0 · 서문',        chapters: [0] }},
-    {{ label: '1 · 선사시대',    chapters: [1, 2, 3] }},
-    {{ label: '2 · 고전 SLAM',   chapters: [4, 5, 6] }},
-    {{ label: '3 · 성숙기',      chapters: [7, 8, 9, 10] }},
-    {{ label: '4 · 러닝 융합기', chapters: [11, 12, 13] }},
-    {{ label: '5 · 표현의 혁명', chapters: [14, 15, 16] }},
-    {{ label: '6 · 옆길과 결론', chapters: [17, 18, 19] }}
-  ];
+  var state = {{
+    lang: (function() {{
+      var saved = null;
+      try {{ saved = localStorage.getItem('shb-lang'); }} catch(e) {{}}
+      if (saved === 'ko' || saved === 'en') return saved;
+      return (navigator.language || 'ko').toLowerCase().indexOf('ko') === 0 ? 'ko' : 'en';
+    }})(),
+    cache: {{}},
+    observer: null,
+    scrollHandler: null
+  }};
+
+  var OVERVIEW_TITLE = I18N[state.lang].overviewTitle;
+  var CHAPTER_GROUPS = I18N[state.lang].groups;
+
+  function refreshGroupContext() {{
+    OVERVIEW_TITLE = I18N[state.lang].overviewTitle;
+    CHAPTER_GROUPS = I18N[state.lang].groups;
+    GROUP_FIRST = {{}};
+    CHAPTER_GROUPS.forEach(function(g) {{
+      if (g.chapters.length) GROUP_FIRST[g.chapters[0]] = g.label;
+    }});
+  }}
 
   // chapter number → group label (for TOC insertion when a new chapter starts a group)
   var GROUP_FIRST = {{}};
@@ -860,14 +945,53 @@ mark.search-highlight {{
   var contentEl = document.getElementById('content');
   var loadingEl = document.getElementById('loading');
   var tocContainer = document.getElementById('toc-container');
-  var state = {{ observer: null, scrollHandler: null }};
 
-  function renderGuide() {{
+  function applyI18N(lang) {{
+    var strs = I18N[lang];
+    document.documentElement.lang = lang;
+    document.body.setAttribute('data-lang', lang);
+    document.title = strs.docTitle;
+    var tt = document.getElementById('topbar-title');
+    if (tt) tt.textContent = strs.topbarTitle;
+    var si = document.getElementById('search-input');
+    if (si) si.placeholder = strs.searchPlaceholder;
+    var nr = document.getElementById('toc-no-results');
+    if (nr) nr.textContent = strs.noResults;
+    var lt = document.getElementById('loading-text');
+    if (lt) lt.textContent = strs.loading;
+    var links = document.querySelectorAll('#lang-toggle a');
+    links.forEach(function(a) {{
+      if (a.getAttribute('data-lang') === lang) a.classList.add('active');
+      else a.classList.remove('active');
+    }});
+  }}
+
+  function renderLanguage(lang) {{
+    state.lang = lang;
+    applyI18N(lang);
+    refreshGroupContext();
+    try {{ localStorage.setItem('shb-lang', lang); }} catch(e) {{}}
+
+    if (state.observer) {{ state.observer.disconnect(); state.observer = null; }}
+
+    if (state.cache[lang]) {{
+      contentEl.innerHTML = state.cache[lang].content;
+      tocContainer.innerHTML = state.cache[lang].toc;
+      contentEl.style.display = 'block';
+      loadingEl.style.display = 'none';
+      // Re-run mermaid in case nodes were re-attached.
+      if (window.mermaid) {{
+        try {{ mermaid.run({{ querySelector: '.mermaid' }}); }} catch(e) {{}}
+      }}
+      setupScrollTracking();
+      return;
+    }}
+
     contentEl.style.display = 'none';
     loadingEl.style.display = 'flex';
 
     requestAnimationFrame(function() {{
-      var src = document.getElementById('md-source').value;
+      var src = document.getElementById('md-source-' + lang).value;
       // CommonMark flank fix: **bold** followed by Korean sometimes fails to close.
       src = src.replace(/\*\*([^*\\n]+)\*\*(?=[가-힣])/g, '<strong>$1</strong>');
       var mathData = protectMath(src);
@@ -881,7 +1005,7 @@ mark.search-highlight {{
           var pre = code.parentElement;
           var container = document.createElement('div');
           container.className = 'mermaid';
-          container.id = 'mermaid-' + i;
+          container.id = 'mermaid-' + lang + '-' + i;
           container.textContent = code.textContent;
           pre.replaceWith(container);
         }});
@@ -891,6 +1015,11 @@ mark.search-highlight {{
       tocContainer.innerHTML = '';
       buildOverview();
       buildTOC();
+
+      state.cache[lang] = {{
+        content: contentEl.innerHTML,
+        toc: tocContainer.innerHTML
+      }};
 
       contentEl.style.display = 'block';
       loadingEl.style.display = 'none';
@@ -907,12 +1036,26 @@ mark.search-highlight {{
     }});
   }}
 
-  renderGuide();
+  renderLanguage(state.lang);
   setupSearch();
   setupProgressBar();
   setupMobileMenu();
   setupKeyboard();
+  setupLangToggle();
   setupTocDelegation();
+
+  function setupLangToggle() {{
+    var toggle = document.getElementById('lang-toggle');
+    if (!toggle) return;
+    toggle.addEventListener('click', function(e) {{
+      var t = e.target;
+      if (t.tagName === 'A' && t.hasAttribute('data-lang')) {{
+        e.preventDefault();
+        var newLang = t.getAttribute('data-lang');
+        if (newLang !== state.lang) renderLanguage(newLang);
+      }}
+    }});
+  }}
 
   function setupTocDelegation() {{
     tocContainer.addEventListener('click', function(e) {{
@@ -1131,13 +1274,14 @@ mark.search-highlight {{
 
 
 def main():
-    md = read_chapters()
-    md = md.replace("</textarea>", "&lt;/textarea&gt;")
-    html = build_html(md)
+    md_ko = read_chapters("ko").replace("</textarea>", "&lt;/textarea&gt;")
+    md_en = read_chapters("en").replace("</textarea>", "&lt;/textarea&gt;")
+    html = build_html(md_ko, md_en)
     with open(OUTPUT, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"Built {OUTPUT}")
-    print(f"  MD content: {len(md):,} chars")
+    print(f"  KO content: {len(md_ko):,} chars")
+    print(f"  EN content: {len(md_en):,} chars")
     print(f"  HTML output: {len(html):,} chars")
 
 
