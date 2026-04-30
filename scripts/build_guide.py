@@ -45,12 +45,6 @@ OVERVIEW_CSS = """\
   color: var(--text-heading);
   margin: 0 0 10px 0;
 }
-.guide-overview .overview-subtitle {
-  font-size: 17px;
-  color: var(--text-muted);
-  letter-spacing: -0.014em;
-  margin: 0;
-}
 .overview-group { margin-top: 36px; }
 .overview-group:first-child { margin-top: 0; }
 .overview-group-label {
@@ -145,10 +139,6 @@ OVERVIEW_JS = r"""
     oTitle.className = 'overview-title';
     oTitle.textContent = OVERVIEW_TITLE;
     header.appendChild(oTitle);
-    var oSub = document.createElement('p');
-    oSub.className = 'overview-subtitle';
-    oSub.textContent = 'SLAM · Spatial AI의 계보 추적 · 전 ' + total + '장';
-    header.appendChild(oSub);
     overview.appendChild(header);
 
     chapterGroups.forEach(function(group) {
