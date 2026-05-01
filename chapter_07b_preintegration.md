@@ -76,7 +76,7 @@ Forster의 preintegration은 discrete하다. IMU 측정 사이를 piecewise-cons
 
 ## 7b.7 차용의 지형
 
-> 🔗 **차용.** Factor graph 위에서 IMU factor를 평가·최적화하는 골격은 Ch.6에서 정리한 [Dellaert의 GTSAM](https://gtsam.org/) 전통 그대로다. Forster의 `ImuFactor`는 GTSAM의 `NoiseModelFactor` 인터페이스에 꽂혀 visual reprojection factor와 나란히 하나의 `Values` 객체로 최적화되었다. 수학이 아니라 소프트웨어 구조의 상속이었다.
+> 🔗 **차용.** Factor graph 위에서 IMU factor를 평가·최적화하는 골격은 Ch.6에서 정리한 [Dellaert의 GTSAM](https://gtsam.org/) 전통 그대로다. Forster의 `ImuFactor`는 GTSAM의 `NoiseModelFactor` 인터페이스에 꽂혀 visual reprojection factor와 나란히 하나의 `Values` 객체로 최적화되었다. 소프트웨어 구조의 상속이었다.
 
 > 🔗 **차용.** Bias를 random walk으로 다루는 방식은 Ch.4가 기록한 Kalman filter의 state propagation 관습에서 왔다. Lupton 이전부터 항법 커뮤니티가 "bias를 상태에 포함하고 process noise를 작게 주는" 모델을 썼고, preintegration 시대에는 이것이 bias random walk factor로 재해석됐다.
 

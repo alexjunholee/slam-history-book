@@ -80,7 +80,7 @@ $$\Delta\mathbf{p}_{ij} = \sum_{k=i}^{j-1}\!\left[\Delta\mathbf{v}_{ik}\Delta t 
 
 EuRoC MAV 전체 11개 시퀀스 평균 RMSE ATE(절대 궤적 오차)에서 ORB-SLAM3(mono-inertial)는 Table II에서 0.043 m로 보고된다. 같은 표에서 VINS-Mono는 0.110 m로 집계되며, Kimera(stereo-inertial)는 0.119 m였다.
 
-VI 모드와 Atlas가 결합하면 무인기나 핸드헬드 장치가 조명이 달라지거나 추적을 잃어도 이전 지도로 돌아올 수 있다. 버전 번호를 바꾼 것이 아니라 시스템의 성격이 달라진 것이다.
+VI 모드와 Atlas가 결합하면 무인기나 핸드헬드 장치가 조명이 달라지거나 추적을 잃어도 이전 지도로 돌아올 수 있다. 시스템의 성격이 달라진 것이다.
 
 ---
 

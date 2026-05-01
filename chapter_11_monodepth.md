@@ -70,7 +70,7 @@ Ranftl의 해법은 **affine-invariant loss**였다. 각 이미지의 depth pred
 
 depth prior를 첫 프레임에 주입하면 초기화가 빨라지고 scale을 대략 고정할 수 있다. [Teed와 Deng이 2021년 발표한 DROID-SLAM](https://arxiv.org/abs/2108.10869)은 recurrent optical flow와 BA를 묶은 구조인데, 이 계통에서 나온 후속 연구들이 monocular depth prior를 geometric initialization에 붙이는 방식을 실험했다.
 
-scale recovery 쪽은 더 직접적이었다. monocular visual odometry(VO)는 달리면서 scale drift가 쌓인다. depth network 예측을 주기적인 scale anchor로 쓰면 이 drift를 억제할 수 있다. 완벽한 해법이 아니라 실용적 패치지만, 순수 VO보다 훨씬 긴 거리에서 버텼다.
+scale recovery 쪽은 더 직접적이었다. monocular visual odometry(VO)는 달리면서 scale drift가 쌓인다. depth network 예측을 주기적인 scale anchor로 쓰면 이 drift를 억제할 수 있다. 실용적 패치였고, 순수 VO보다 훨씬 긴 거리에서 버텼다.
 
 > 📜 **예언 vs 실제.** Eigen은 2014년 논문에서 surface normal 등 3D geometry 정보와의 결합을 자연스러운 확장 방향으로 언급했다. joint multi-task learning은 이후 PAD-Net·VPD 등으로 부분 실현됐다. 그러나 2024년 시점 실질적 영향은 task를 합친 것보다 ViT backbone 공유로 왔다고 볼 여지가 크다. 예측한 방향과 실제 경로는 달랐다. `[기술변화]`
 
