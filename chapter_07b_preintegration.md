@@ -10,7 +10,7 @@ Preintegration이 필요해진 이유는 IMU가 싸졌기 때문이다.
 
 스트랩다운 관성항법의 뿌리는 1950년대 항공우주에 있다. 잠수함·미사일의 ring laser gyro는 수만 달러 장비였고 로봇공학 커뮤니티가 쓸 일은 없었다. 흐름을 바꾼 것은 MEMS(Micro-Electro-Mechanical Systems)였다. Analog Devices의 ADXL, InvenSense의 MPU 시리즈가 6축 IMU를 수 달러로 끌어내렸다. iPhone에 IMU가 들어간 것이 2007년, 2010년대 초반에는 연구용 드론·핸드헬드 장비가 당연히 MEMS IMU를 달았다. 스마트폰 수십억 대가 단가를 떨어뜨리는 시점과 Visual SLAM이 monocular scale ambiguity(Ch.5 §🧭)를 진지하게 고민하는 시점이 겹쳤다.
 
-측정 모델은 단순하다. 가속도계는 중력이 섞인 specific force $\tilde{\mathbf{a}} = \mathbf{R}_w^b(\mathbf{a}^w - \mathbf{g}^w) + \mathbf{b}^a + \boldsymbol{\eta}^a$를, 자이로스코프는 angular velocity $\tilde{\boldsymbol{\omega}} = \boldsymbol{\omega}_b^b + \mathbf{b}^g + \boldsymbol{\eta}^g$를 준다. 여기서 $\mathbf{b}$는 bias, $\boldsymbol{\eta}$는 white noise다. 수식보다 수식이 강요하는 사실이 더 중요했다. 중력이 항상 섞이고, bias는 시간에 따라 천천히 떠다니며(random walk), MEMS 노이즈는 고주파다. IMU는 gravity-aligned world frame을 강요하고 온도·전원 상태마다 bias가 조금씩 달라지는 까다로운 동반자였다.
+측정 모델은 단순하다. 가속도계는 중력이 섞인 specific force $\tilde{\mathbf{a}} = \mathbf{R}_w^b(\mathbf{a}^w - \mathbf{g}^w) + \mathbf{b}^a + \boldsymbol{\eta}^a$를, 자이로스코프는 angular velocity $\tilde{\boldsymbol{\omega}} = \boldsymbol{\omega}_b^b + \mathbf{b}^g + \boldsymbol{\eta}^g$를 준다. 여기서 $\mathbf{b}$는 bias, $\boldsymbol{\eta}$는 white noise다. 수식이 강요하는 사실이 더 무거웠다. 중력이 항상 섞이고, bias는 시간에 따라 천천히 떠다니며(random walk), MEMS 노이즈는 고주파다. IMU는 gravity-aligned world frame을 강요하고 온도·전원 상태마다 bias가 조금씩 달라지는 까다로운 동반자였다.
 
 ---
 

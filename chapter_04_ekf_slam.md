@@ -36,7 +36,7 @@ Leonard와 Durrant-Whyte의 1991년 논문 ["Simultaneous Map Building and Local
 
 ## 4.3 EKF-SLAM의 공식
 
-Extended Kalman Filter(EKF)가 SLAM에 적용된 것은 선택이라기보다 자연스러운 수렴이었다. 1988년 이전부터 비선형 시스템 추정에 사용되던 EKF는 predict-update 두 단계로 작동한다.
+Extended Kalman Filter(EKF)가 SLAM에 적용된 것은 자연스러운 수렴이었다. 1988년 이전부터 비선형 시스템 추정에 사용되던 EKF는 predict-update 두 단계로 작동한다.
 
 predict 단계: 로봇이 움직이면 모션 모델 $f(\cdot)$로 state를 예측하고, Jacobian $\mathbf{F}$로 공분산을 전파.
 
@@ -59,7 +59,7 @@ $$\mathbf{P} = (\mathbf{I} - \mathbf{K}\mathbf{H})\mathbf{P}^-$$
 
 ## 4.4 확장성의 벽
 
-2003년 ICCV에서 Davison이 웹캠 하나로 실시간 3D 추적을 시연했을 때, 수십 개 수준의 feature로 책상 하나 크기의 공간을 매핑했다. 당시 상업용 SLAM 시스템이 없던 환경에서 실시간 단안 추적은 드문 시연이었다. 문제는 그 한계가 알고리즘의 한계가 아니라 공분산 행렬의 크기에서 온다는 점이었다.
+2003년 ICCV에서 Davison이 웹캠 하나로 실시간 3D 추적을 시연했을 때, 수십 개 수준의 feature로 책상 하나 크기의 공간을 매핑했다. 당시 상업용 SLAM 시스템이 없던 환경에서 실시간 단안 추적은 드문 시연이었다. 그 한계는 공분산 행렬의 크기에서 왔다.
 
 100 landmarks에서 covariance 행렬은 $306 \times 306$ (6DOF pose + 3D landmark 100개 기준, state 차원 $6 + 3 \times 100 = 306$). 1,000개면 $3006 \times 3006$. 매 시간 단계마다 이것을 역행렬 연산과 함께 갱신해야 한다. 더불어 EKF는 joint 분포 전체를 한 덩어리로 유지하기 때문에, 새 landmark가 추가되면 기존 모든 landmark와의 cross-correlation이 즉시 생성된다. 지도가 커질수록 update 비용이 기하급수적으로 증가한다.
 

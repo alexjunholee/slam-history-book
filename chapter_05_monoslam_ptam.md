@@ -1,6 +1,6 @@
 # Ch.5 — MonoSLAM → PTAM: 실시간의 몽상과 분리 혁명
 
-앞 챕터는 EKF-SLAM이 어떻게 확률론적으로 일관된 지도 구축 방법을 완성했는지, 그리고 그 공분산 행렬이 landmark 수 $N$에 대해 $O(N^2)$로 커지는 구조적 벽에 부딪혔는지를 보였다. 이론이 틀려서가 아니라, 설계가 그렇게 생겼을 뿐이다. Davison과 Klein은 여기서부터 각자 다른 방향으로 걸었다.
+앞 챕터는 EKF-SLAM이 어떻게 확률론적으로 일관된 지도 구축 방법을 완성했는지, 그리고 그 공분산 행렬이 landmark 수 $N$에 대해 $O(N^2)$로 커지는 구조적 벽에 부딪혔는지를 보였다. 설계가 그렇게 생긴 결과였다. Davison과 Klein은 여기서부터 각자 다른 방향으로 걸었다.
 
 2003년, Davison은 Imperial College 실험실에서 웹캠 한 대를 노트북에 꽂았다. 1988년 Smith와 Cheeseman이 세운 확률 공간관계 수학, 그 위에 Leonard와 Durrant-Whyte가 얹은 EKF-SLAM 틀을 그대로 가져왔지만 센서는 카메라 하나뿐이었다. IMU도 스테레오도 레이저도 없는 상태에서 Shi-Tomasi 1994 코너 검출기와 Kalman 예측-갱신 루프만 붙여 실시간으로 돌렸다. 당시 기준으로 무모한 조합이었다.
 
@@ -10,7 +10,7 @@
 
 ## 1. 2003년의 데모
 
-2003년 ICCV에서 Davison이 공개한 [Real-Time Simultaneous Localisation and Mapping with a Single Camera](https://doi.org/10.1109/ICCV.2003.1238654)는 장내를 술렁이게 했다. 결과가 놀라웠기 때문이 아니다. *그것이 가능하다는 것*이 충격이었다.
+2003년 ICCV에서 Davison이 공개한 [Real-Time Simultaneous Localisation and Mapping with a Single Camera](https://doi.org/10.1109/ICCV.2003.1238654)는 장내를 술렁이게 했다. *그것이 가능하다는 것* 자체가 충격이었다.
 
 당시 SLAM 분야의 주류는 레이저 센서였다. LiDAR는 2D 거리를 직접 제공했고, 스테레오 카메라는 픽셀 수준에서 깊이를 복원했다. 단안 카메라는 깊이 정보 자체가 없었다. 단안으로 3D 구조를 추정하려면 최소 두 프레임이 필요했고, 초기 깊이 추정의 불확실성이 EKF 상태 벡터 전체로 전파되었다. 이론적으로 가능했지만 실시간으로 돌린다는 것은 별개의 문제였다.
 

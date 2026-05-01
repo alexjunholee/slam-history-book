@@ -6,11 +6,11 @@
 
 2003년으로 돌아가 보면 풍경이 다르다. Andrew Davison은 Imperial College London의 실험실에서 노트북 한 대와 웹캠 한 대로 실시간 3D 추적을 시연했다. [MonoSLAM](https://www.doc.ic.ac.uk/~ajd/Publications/davison_iccv2003.pdf)이라 불린 그 시스템은 30Hz의 데스크톱 처리 속도에서 한 프레임당 10여 개의 특징만 주시하며 수십 개 규모의 희박한 지도를 유지했다. 한 방의 책상 하나. 카메라가 책상 밖으로 나가면 지도가 발산했다. 그것이 당시 최고였다.
 
-오늘날 핸드폰 AR이 순간 추적하는 특징점 수의 수백분의 일 수준이 당시 최고치였고, 그 격차를 채우는 데 23년이 걸렸다. 격차 자체보다 놀라운 것은 *어떤 경로*로 채워졌는가다.
+오늘날 핸드폰 AR이 순간 추적하는 특징점 수의 수백분의 일 수준이 당시 최고치였고, 그 격차를 채우는 데 23년이 걸렸다. *어떤 경로*로 채워졌는지가 이 책의 관심사다.
 
 ---
 
-SLAM의 역사는 단일한 발전 곡선이 아니다. 네 가지 서로 다른 전통이 독립적으로 진행되다가 충돌하며 서로를 흡수한 흔적이다. 사진측량학자들은 100년 전에 bundle adjustment를 손으로 풀었다. 로봇공학자들은 1986년 [Smith-Cheeseman](https://arxiv.org/abs/1304.3111)의 확률적 공간관계 프레임부터 지도를 확률의 언어로 다루기 시작했고, 이 문제 설정에 "SLAM"이라는 이름이 붙은 것은 그보다 9년 뒤인 [Durrant-Whyte & Leonard의 1995년 survey](https://ieeexplore.ieee.org/document/476131)에서였다. 컴퓨터 비전 연구자들은 실시간 특징점 추적에 집착했다. 그리고 2020년대의 딥러닝 공동체는 이 모든 것을 단일 네트워크로 흡수하려 시도하고 있다.
+SLAM의 역사는 네 가지 서로 다른 전통이 독립적으로 진행되다가 충돌하며 서로를 흡수한 흔적이다. 사진측량학자들은 100년 전에 bundle adjustment를 손으로 풀었다. 로봇공학자들은 1986년 [Smith-Cheeseman](https://arxiv.org/abs/1304.3111)의 확률적 공간관계 프레임부터 지도를 확률의 언어로 다루기 시작했고, 이 문제 설정에 "SLAM"이라는 이름이 붙은 것은 그보다 9년 뒤인 [Durrant-Whyte & Leonard의 1995년 survey](https://ieeexplore.ieee.org/document/476131)에서였다. 컴퓨터 비전 연구자들은 실시간 특징점 추적에 집착했다. 그리고 2020년대의 딥러닝 공동체는 이 모든 것을 단일 네트워크로 흡수하려 시도하고 있다.
 
 이 책이 던지는 질문은 "어떻게"가 아니라 "왜 이런 방식으로"다. EKF 기반 SLAM이 graph-based로 교체된 것은 기술의 자연스러운 진화였는가, 아니면 몇 사람의 선택이 가른 우연이었는가. Feature-based와 direct method의 분기는 처음부터 예견된 것이었는가. 딥러닝이 geometry 파이프라인을 대체하는 속도가 이토록 더딘 이유는 무엇인가. Counterfactual이 의미 있는 질문은, 선택지가 실제로 존재했을 때뿐이다. 이 책은 그 선택지들이 실제로 존재했음을 드러낸다.
 
@@ -46,7 +46,7 @@ SLAM의 역사는 단일한 발전 곡선이 아니다. 네 가지 서로 다른
 
 ---
 
-범위를 정해야 지도가 된다. Foundation model이 SLAM을 대체할 것인가 같은 질문은 이 책의 관심사가 아니다. 과거에 무슨 일이 있었고 왜 그랬는가가 재료다. 어떤 연구가 틀렸다는 주장도 목표가 아니다. 당시 제약 조건에서 그 선택이 어떤 의미였는지를 드러내는 것이 목표에 가깝다. homogeneous coordinates, epipolar geometry, EKF 공식은 독자가 이미 안다고 가정한다. 개념의 해설이 아니라 계보의 추적이 이 책의 일이고, 어떤 카메라나 LiDAR를 고를 것인가는 다른 책의 주제다.
+범위를 정해야 지도가 된다. Foundation model이 SLAM을 대체할 것인가 같은 질문은 이 책의 관심사가 아니다. 과거에 무슨 일이 있었고 왜 그랬는가가 재료다. 당시 제약 조건에서 그 선택이 어떤 의미였는지를 드러내는 것이 목표에 가깝다. homogeneous coordinates, epipolar geometry, EKF 공식은 독자가 이미 안다고 가정한다. 계보의 추적이 이 책의 일이고, 어떤 카메라나 LiDAR를 고를 것인가는 다른 책의 주제다.
 
 수식과 정리·증명까지 체계적으로 짚고 싶다면 [SLAM Handbook](https://github.com/SLAM-Handbook-contributors/slam-handbook-public-release)이 있다. Carlone, Kim, Barfoot, Cremers, Dellaert가 편집해 Cambridge University Press에서 2026년에 나온 이 책은 18개 챕터에 SLAM의 현재 이론과 시스템을 총정리한다. 이 책은 그 상태에 이르기까지의 경로를 기록한다.
 

@@ -2,7 +2,7 @@
 
 Ch.6의 graph SLAM 혁명은 포즈 그래프 최적화를 SLAM의 표준 언어로 굳혔다. Kümmerle(2011)의 g²o와 Kaess(2012)의 iSAM2는 대규모 지도에서 반복 최적화를 실현했고, loop closure의 비용을 현실적인 수준으로 낮췄다. 최적화 이론이 완성을 향해 달려가던 그 흐름에서 3부가 시작된다. 2부가 "어떻게 오차를 줄이는가"를 질문했다면, 3부는 그 질문에 이미 답이 나와 있다는 전제 위에서 시작한다. 남은 과제는 프론트엔드였다. 어떤 특징을 어떻게 뽑아 추적할 것인가.
 
-Klein과 Murray가 2007년 PTAM으로 tracking과 mapping을 두 스레드로 분리했을 때, 그것은 실험실 데모였다. 넓이가 아니라 깊이가 입증된 아이디어였고, 소규모 실내 장면 이상에서는 무너졌다. Raúl Mur-Artal이 2015년 Zaragoza대학에서 그 구조를 가져올 때, 그는 세 가지를 함께 들고 왔다. Rublee(2011)의 ORB 디스크립터, Gálvez-López(2012)의 DBoW2 visual vocabulary, 그리고 Strasdat(2011)의 Essential graph 아이디어. PTAM이 빠른 프로토타입이었다면 ORB-SLAM은 10년짜리 표준이었다.
+Klein과 Murray가 2007년 PTAM으로 tracking과 mapping을 두 스레드로 분리했을 때, 그것은 실험실 데모였다. 깊이가 입증된 아이디어였고, 소규모 실내 장면 이상에서는 무너졌다. Raúl Mur-Artal이 2015년 Zaragoza대학에서 그 구조를 가져올 때, 그는 세 가지를 함께 들고 왔다. Rublee(2011)의 ORB 디스크립터, Gálvez-López(2012)의 DBoW2 visual vocabulary, 그리고 Strasdat(2011)의 Essential graph 아이디어. PTAM이 빠른 프로토타입이었다면 ORB-SLAM은 10년짜리 표준이었다.
 
 ---
 

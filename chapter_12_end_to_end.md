@@ -50,13 +50,13 @@ Tinghui Zhou(UC Berkeley)가 같은 해에 발표한 [Zhou et al. 2017. SfMLearn
 
 ## 12.4 반성의 기록
 
-Kendall은 이 실패를 외면하지 않았다. 박사학위를 마친 2019년, 그는 Wayve로 자리를 옮겨 자율주행용 imitation learning과 world model 연구로 방향을 틀었다. 학습 기반 localization을 포기한 것이 아니라, "이미지 한 장에서 절대 pose를 회귀한다"는 문제 정의가 틀렸다고 판단한 것이었다.
+Kendall은 이 실패를 외면하지 않았다. 박사학위를 마친 2019년, 그는 Wayve로 자리를 옮겨 자율주행용 imitation learning과 world model 연구로 방향을 틀었다. "이미지 한 장에서 절대 pose를 회귀한다"는 문제 정의가 틀렸다고 판단한 결과였다. 학습 기반 localization 자체를 포기한 것은 아니었다.
 
 Federico Tombari 그룹(TU Munich, 이후 Google)도 같은 시기에 [CNN-SLAM(Tateno et al. 2017)](https://arxiv.org/abs/1704.03489)을 시도했다. CNN이 예측한 dense depth를 직접(direct) monocular SLAM의 깊이 측정과 융합하려는 접근이었다. 학습 부분이 dense depth에 국한되었다는 점에서 완전한 end-to-end는 아니었지만, "CNN이 단안 SLAM의 스케일·저텍스처 문제를 해결해 줄 수 있지 않을까"라는 기대의 한 갈래였다. 성능은 장면에 따라 들쭉날쭉했고, 정확도에서 일관된 우위를 보이지 못했다.
 
 > 📜 **예언 vs 실제.** Kendall은 PoseNet 논문(2015)에서 불확실성 추정, temporal 정보 통합, 더 넓은 규모의 장면으로의 확장을 다음 과제로 꼽았다. 세 방향 모두 실행되었다—Bayesian PoseNet(2016), LSTM PoseNet(2016), 복수의 outdoor 확장 실험들. 그러나 각 시도가 새 벽에 부딪혔고, 연구자들은 결국 이 접근법 전체를 포기했다. 예언이 합리적이었어도 플랫폼 자체가 틀렸으면 소용없다. `[무산]`
 
-일부 시도는 다른 방향으로 살아남았다. SfMLearner의 photometric self-supervision은 MonoDepth2(Godard 2019), 나아가 DROID-SLAM(Teed & Deng 2021)의 훈련 전략 안에 흡수되었다. DeepVO가 보여준 LSTM 기반 temporal modeling은 시각-관성 학습 연구에서 변형된 형태로 재등장했다. 아이디어는 사라진 게 아니라 용도가 바뀌었다.
+일부 시도는 다른 방향으로 살아남았다. SfMLearner의 photometric self-supervision은 MonoDepth2(Godard 2019), 나아가 DROID-SLAM(Teed & Deng 2021)의 훈련 전략 안에 흡수되었다. DeepVO가 보여준 LSTM 기반 temporal modeling은 시각-관성 학습 연구에서 변형된 형태로 재등장했다. 아이디어의 용도가 바뀌었을 뿐이다.
 
 > 📜 **예언 vs 실제.** Zhou는 SfMLearner 논문(2017)에서 dynamic object 처리와 photometric noise에 대한 강건성을 남은 과제로 제시했다. [GeoNet(Yin & Shi 2018)](https://arxiv.org/abs/1803.02276)을 비롯한 후속 self-supervised 연구들이 부분적으로 이 방향을 밀었다. 그러나 self-supervised VO 단독으로 SLAM을 대체하는 경로는 주류에 합류하지 못했다. photometric self-supervision 자체는 계보를 이어갔지만, end-to-end VO라는 목표는 분야가 기각했다. `[기술변화]`
 
@@ -68,9 +68,9 @@ Federico Tombari 그룹(TU Munich, 이후 Google)도 같은 시기에 [CNN-SLAM(
 
 > 🔗 **차용.** 이 원칙의 실천은 13장에서 다루는 CodeSLAM(Bloesch 2018)과 DROID-SLAM(Teed & Deng 2021)에서 구체화된다. 두 시스템 모두 factor graph 또는 bundle adjustment라는 기하학적 뼈대를 유지하고, 학습 부분은 feature 추출이나 depth prior 형성에 국한한다. PoseNet이 버린 뼈대가 사실 포기할 수 없는 것이었다는 확인이다.
 
-고전 파이프라인이 학습 기반 대안에 일관되게 우월한 것이 아니었다. ORB-SLAM도 textureless 환경에서, 야간에서, 비에서 자주 실패했다. 문제는 고전 SLAM의 견고함이 아니라 end-to-end의 오류가 더 불투명하고 더 예측 불가능하다는 데 있었다.
+고전 파이프라인이 학습 기반 대안에 일관되게 우월한 것이 아니었다. ORB-SLAM도 textureless 환경에서, 야간에서, 비에서 자주 실패했다. 문제는 end-to-end의 오류가 더 불투명하고 더 예측 불가능하다는 데 있었다.
 
-실패는 데이터셋이나 아키텍처의 문제가 아니었다. 이미지에서 바로 pose로 직결하는 경로에 30년짜리 기하학 지식이 통째로 빠져 있었다.
+실패의 원인은 데이터셋이나 아키텍처에 있지 않았다. 이미지에서 바로 pose로 직결하는 경로에 30년짜리 기하학 지식이 통째로 빠져 있었다.
 
 ---
 

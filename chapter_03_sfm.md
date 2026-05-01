@@ -88,7 +88,7 @@ COLMAP이 Bundler와 가장 크게 달라진 점은 세 곳이다.
 
 셋째, 기하적 검증. 매칭된 특징점 쌍에 대해 fundamental matrix와 homography 두 모델로 각각 RANSAC을 돌린다. Fundamental matrix는 일반적인 비평면 장면, homography는 평면 장면이나 순수 회전을 모델링한다. COLMAP은 두 모델의 inlier 수를 비교해 장면 유형을 판별하고, 어느 쪽에도 들어오지 않는 매칭을 걸러낸다. 불량 매칭과 평면-퇴화(planar degeneracy) 상황에서 Bundler보다 버텼다.
 
-> 🔗 **차용.** COLMAP의 incremental bundle adjustment 전략은 Snavely의 Bundler 파이프라인을 모듈화하고 각 단계의 품질 관리를 추가한 것이다. 알고리즘의 핵심 수학(essential matrix 추정, triangulation, Levenberg-Marquardt)은 Hartley & Zisserman 교과서의 것이다. COLMAP의 기여는 새 수학보다 엔지니어링 판단의 체계화에 있었다.
+> 🔗 **차용.** COLMAP의 incremental bundle adjustment 전략은 Snavely의 Bundler 파이프라인을 모듈화하고 각 단계의 품질 관리를 추가한 것이다. 알고리즘의 핵심 수학(essential matrix 추정, triangulation, Levenberg-Marquardt)은 Hartley & Zisserman 교과서의 것이다. COLMAP의 기여는 엔지니어링 판단의 체계화에 있었다.
 
 COLMAP이 사실상 표준이 된 것은 성능 때문만이 아니었다. 코드베이스가 정돈되어 있었고, 문서도 충분했으며, CUDA 가속으로 수천 장도 시간 내에 돌렸다. 2020년 NeRF가 나온 뒤 모든 NeRF 학습 코드가 COLMAP 출력(카메라 포즈 + sparse point cloud)을 입력으로 받았다. 3D Gaussian Splatting도 마찬가지였다. COLMAP은 SfM 도구이기 이전에 3D 재구성 연구의 입구가 되었다.
 

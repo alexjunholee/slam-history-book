@@ -18,7 +18,7 @@ Milford와 Gordon Wyeth는 Queensland University of Technology(QUT) 로보틱스
 
 > 📜 **예언 vs 실제.** Milford·Wyeth는 2008년 T-RO 논문 Conclusion에서 RatSLAM이 "vision-only SLAM의 대안적 접근"이며, 기존 state-of-the-art SLAM에게는 도전이 될 만한 환경—장거리 경로, 큰 누적 오차, 시각적 모호성—에서 반복적이고 신뢰도 높은 loop closure를 수행한다고 주장했다. 대체가 아니라 대안이라는 주장이었다. 실제로 이 주장은 부분적으로 맞았다. RatSLAM은 특정 benchmark에서 경쟁력을 보였다. 그러나 이후 분야 전체의 흐름에서는 2012년 이후 graph-based SLAM과 visual odometry가 정확도·속도 모두에서 앞서 나갔고, 위상 지도는 지금도 일부 place recognition 연구에 등장하지만, metric-topological 통합이라는 RatSLAM의 원래 야망은 다른 방식으로 이어지지 않았다. `[부분적중+무산]`
 
-RatSLAM이 남긴 것은 알고리즘 자체가 아니었다. "장소 표현이 기하학 없이도 가능하다"는 아이디어가 place recognition 문헌에 스며들었다. 2012년 [SeqSLAM](https://doi.org/10.1109/ICRA.2012.6224623)이 같은 Milford 그룹에서 나왔고, 이미지 시퀀스 비교 기반 장소 인식은 visual place recognition 벤치마크의 한 축이 됐다. 계보 자체는 살아남았고, 다만 형태가 달라졌다.
+RatSLAM이 남긴 것은 "장소 표현이 기하학 없이도 가능하다"는 아이디어였다. 그 아이디어는 place recognition 문헌에 스며들었다. 2012년 [SeqSLAM](https://doi.org/10.1109/ICRA.2012.6224623)이 같은 Milford 그룹에서 나왔고, 이미지 시퀀스 비교 기반 장소 인식은 visual place recognition 벤치마크의 한 축이 됐다. 계보 자체는 살아남았고, 다만 형태가 달라졌다.
 
 ---
 
@@ -26,7 +26,7 @@ RatSLAM이 남긴 것은 알고리즘 자체가 아니었다. "장소 표현이 
 
 RatSLAM은 biologically-inspired SLAM의 가장 완성된 사례였지만 혼자가 아니었다. 2000년대 중반부터 2010년대 초반까지 인지 지도, entorhinal grid cell, hippocampal replay를 모방한 SLAM 변형들이 꾸준히 나왔다. 모두 비슷한 문제를 안고 있었다.
 
-생물학적 모델은 뇌가 *어떻게* 공간을 표현하는지 기술하지만, 그것이 *왜* 그 방식인지, 그 방식이 공학적 목적에도 맞는지는 다른 질문이다. 쥐의 해마는 수억 년의 진화가 특정 환경과 행동 패턴에 맞게 빚은 구조다. 로봇이 작동하는 조건과 같지 않다.
+생물학적 모델은 뇌가 *어떻게* 공간을 표현하는지 기술한다. 그것이 *왜* 그 방식인지, 그 방식이 공학적 목적에도 맞는지는 다른 질문이다. 쥐의 해마는 수억 년의 진화가 특정 환경과 행동 패턴에 맞게 빚은 구조다. 로봇이 작동하는 조건과 같지 않다.
 
 공학적 SLAM은 미터 이하의 위치 추정 정확도, 실시간 처리, 새로운 환경에 대한 빠른 적응, 검증 가능한 오류 경계를 요구한다. 인지 모델은 이 조건들을 보장하기 어려웠다. 신경과학과 로봇공학은 서로에게서 영감을 얻을 수 있지만, 그 간격은 짧지 않았다.
 
@@ -68,7 +68,7 @@ SLAM++ 이후 2017-2019년 사이에 [SemanticFusion](https://arxiv.org/abs/1609
 
 왜 semantic-first SLAM은 주류가 되지 못했나. 원인은 두 곳에 있었다. 하나는 의존성이었다. Semantic SLAM은 segmentation이 정확해야 했는데, segmentation이 틀리면 지도 전체가 오염됐다. 기하학적 파이프라인은 feature matching이 부분적으로 실패해도 robust estimation으로 버텼다. 다른 하나는 일반화였다. 특정 객체 클래스로 훈련한 semantic prior는 그 클래스 밖에서 쓸모가 없었다. SLAM이 들어가야 할 환경은 그 prior가 상정한 세계보다 훨씬 넓었다.
 
-축소된 것은 object-as-landmark 경로였지, semantic 자체는 아니었다. 같은 시기 다른 경로가 살아남았다. [SuMa++](https://doi.org/10.1109/IROS40897.2019.8967704)(Chen et al., IROS 2019)가 LiDAR point cloud에 semantic class를 덧씌워 동적 물체를 걸러냈고, [Kimera](https://doi.org/10.1109/ICRA40945.2020.9196885)(Rosinol et al., ICRA 2020)가 metric-semantic mesh와 3D scene graph를 묶었다. [Hydra](https://doi.org/10.15607/RSS.2022.XVIII.050)(Hughes et al., RSS 2022)는 그 scene graph를 실시간·계층적으로 확장했고, [ConceptGraphs](https://doi.org/10.1109/ICRA57147.2024.10610243)(Gu et al., ICRA 2024)와 [Clio](https://doi.org/10.1109/LRA.2024.3451395)(Maggio et al., RA-L 2024)에 이르러 open-vocabulary foundation feature가 그 위에 얹혔다. Semantic은 landmark 자리가 아니라 지도의 상위 layer로 올라가 살아남았다. 이 계보는 2026년까지 진행 중이고, [Ch.15b](chapter_15b_dynamic.md)(Dynamic·static 분리의 semantic 귀환), [Ch.16](chapter_16_foundation_3d.md)(foundation 3D·metric-semantic 본체), [Ch.19 §19.7](chapter_19_open_problems.md#197-semantic-표현의-귀환과-open-world)(Semantic의 귀환)에서 이어 다룬다.
+축소된 것은 object-as-landmark 경로였다. 같은 시기 다른 경로가 살아남았다. [SuMa++](https://doi.org/10.1109/IROS40897.2019.8967704)(Chen et al., IROS 2019)가 LiDAR point cloud에 semantic class를 덧씌워 동적 물체를 걸러냈고, [Kimera](https://doi.org/10.1109/ICRA40945.2020.9196885)(Rosinol et al., ICRA 2020)가 metric-semantic mesh와 3D scene graph를 묶었다. [Hydra](https://doi.org/10.15607/RSS.2022.XVIII.050)(Hughes et al., RSS 2022)는 그 scene graph를 실시간·계층적으로 확장했고, [ConceptGraphs](https://doi.org/10.1109/ICRA57147.2024.10610243)(Gu et al., ICRA 2024)와 [Clio](https://doi.org/10.1109/LRA.2024.3451395)(Maggio et al., RA-L 2024)에 이르러 open-vocabulary foundation feature가 그 위에 얹혔다. Semantic은 지도의 상위 layer로 올라가 살아남았다. 이 계보는 2026년까지 진행 중이고, [Ch.15b](chapter_15b_dynamic.md)(Dynamic·static 분리의 semantic 귀환), [Ch.16](chapter_16_foundation_3d.md)(foundation 3D·metric-semantic 본체), [Ch.19 §19.7](chapter_19_open_problems.md#197-semantic-표현의-귀환과-open-world)(Semantic의 귀환)에서 이어 다룬다.
 
 ---
 
@@ -86,7 +86,7 @@ SLAM++ 이후 2017-2019년 사이에 [SemanticFusion](https://arxiv.org/abs/1609
 
 계보가 죽는다는 것이 무엇을 뜻하는지는 사례마다 다르다. RatSLAM의 topological map 아이디어는 SeqSLAM으로 이어졌고, 그 후예가 visual place recognition 분야에서 살아 있다. SLAM++의 object-level map 직관은 2022년 이후 NeRF와 Gaussian splatting이 언어와 결합하면서 다른 형태로 돌아왔다. [LERF](https://arxiv.org/abs/2303.09553)(Kerr et al., 2023)와 [LangSplat](https://arxiv.org/abs/2312.16084)(Qin et al., 2023)이 그 경우다.
 
-Event camera SLAM은 경로가 달랐다. 알고리즘이 막혔던 것이 아니라 하드웨어가 아직 거기까지 오지 못했던 것이었다. 2022년 이후 640×480 이상의 event camera가 시장에 나왔고, 고속 드론과 HDR 환경에서의 필요가 분명해졌다. [Guillermo Gallego](https://arxiv.org/abs/1904.08405)(TU Berlin)를 중심으로 한 event vision 커뮤니티는 2020-2024년 사이에 event-based depth estimation과 ego-motion 추정에서 경쟁력 있는 결과를 냈다.
+Event camera SLAM은 경로가 달랐다. 하드웨어가 아직 거기까지 오지 못한 상태였다. 2022년 이후 640×480 이상의 event camera가 시장에 나왔고, 고속 드론과 HDR 환경에서의 필요가 분명해졌다. [Guillermo Gallego](https://arxiv.org/abs/1904.08405)(TU Berlin)를 중심으로 한 event vision 커뮤니티는 2020-2024년 사이에 event-based depth estimation과 ego-motion 추정에서 경쟁력 있는 결과를 냈다.
 
 영감이 좋아도 공학이 따라오는 데 시간이 걸리고, 센서가 새로워도 알고리즘은 따로 만들어야 한다. 그 간격을 메우는 데 얼마나 걸리느냐는 알고리즘의 성숙도와 하드웨어의 실용화 속도에 달렸다. 그리고 그 사이에 더 나은 대안이 먼저 자리를 잡느냐도 변수였다.
 
