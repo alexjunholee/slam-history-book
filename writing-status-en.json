@@ -11,7 +11,7 @@
   "_note": "English edition of slam-history-book. Source Korean chapters are complete (see writing-status.json). Each chapter progresses independently.",
   "project": "slam-history-book-en",
   "source_status": "writing-status.json",
-  "style_guide": "/Users/alex/Library/CloudStorage/Dropbox/repos/STYLE_PROSE_EN.md",
+  "style_guide": "/Users/alex/Library/CloudStorage/Dropbox/repos/writing-tools/policies/STYLE_PROSE_EN.md",
   "chapters": {
     "ch00": {
       "title": "SLAM Solved?",
