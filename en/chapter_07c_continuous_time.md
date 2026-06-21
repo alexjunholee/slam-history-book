@@ -4,7 +4,7 @@ The preintegration Ch.7b organized was an engineering move that compressed IMU m
 
 In 2012, in Toronto, [Paul Furgale, Timothy Barfoot, and Gabe Sibley](https://asrl.utias.utoronto.ca/~tdb/bib/furgale_iros12.pdf) formalized the question in an IROS paper. In one image captured by a rolling shutter, each row is projected from a different pose in time. While a spinning LiDAR completes one rotation, the vehicle travels several meters. The IMU pours out samples at 1 kHz while the camera runs at 30 Hz. The most natural way to tie these sensors into a single optimization was to treat the pose not as a "frame" but as a "function of time $t$." Furgale, Barfoot, and Sibley picked the B-spline, and that choice became the official starting point of the branch known as continuous-time trajectory estimation.
 
-Ten years later, the Handbook places this branch, alongside manifolds, as one of the "two fundamental tools" of SLAM. The reason earlier chapters of this book have never pulled this tool out is that the grammar of Visual-Inertial was largely completed on discrete keyframes. This chapter fills that gap.
+Ten years later, the Handbook places this branch, alongside manifolds, as one of the "two fundamental tools" of SLAM. Earlier visual-inertial chapters stayed on discrete keyframes because that grammar was largely completed there. Continuous-time trajectory estimation fills the remaining gap.
 
 ---
 

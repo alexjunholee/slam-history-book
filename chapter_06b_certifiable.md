@@ -56,7 +56,7 @@ $$\mathcal{I} = \boldsymbol{J}^\top \boldsymbol{\Sigma}^{-1} \boldsymbol{J} = \b
 
 [Kasra Khosoussi와 Timothy Barfoot의 2014년 이후 작업](https://arxiv.org/abs/1709.08601)이 이 연결을 정립했다. Khosoussi는 Sydney에서 Dissanayake·Huang 지도로 박사과정을 밟았고, 이후 MIT와 Toronto를 거쳤다. 3D PGO로 일반화된 형태에서는 Laplacian과 SE(3) adjoint representation의 Kronecker 결합이 등장해 위상·기하 정보를 분리해 다루게 한다. "측정 선택 기준"을 FIM 전체 대신 6배 작은 Laplacian으로 근사 가능하다는 것이 Ch.6이 자리만 두고 지나간 "루프 클로저 선택"의 수학적 근거가 된다.
 
-Ch.4 §4.8이 짚은 EKF-SLAM의 consistency 문제도 이와 맞닿는다. Julier-Uhlmann이 2001년 지적한 EKF의 over-confidence는 CRLB로 재해석하면 근사 선형화가 Fisher information을 과대 추정한다는 말이다. Handbook §6.2가 FIM 챕터를 convex relaxation 옆에 붙여둔 까닭이다. 전역 최솟값과 그 정확도는 쌍으로 다뤄야 한다.
+Ch.4 §4.8이 짚은 EKF-SLAM의 consistency 문제도 같은 질문으로 이어진다. Julier-Uhlmann이 2001년 지적한 EKF의 over-confidence는 CRLB로 재해석하면 근사 선형화가 Fisher information을 과대 추정한다는 말이다. Handbook §6.2가 FIM 챕터를 convex relaxation 옆에 붙여둔 까닭이다. 전역 최솟값과 그 정확도는 쌍으로 다뤄야 한다.
 
 > 🔗 **차용.** [Kirchhoff의 Matrix-Tree Theorem(1847)](https://en.wikipedia.org/wiki/Kirchhoff%27s_theorem)은 전기 회로망 분석 도구로 태어나 조합론을 거쳐 측정 설계 문헌으로 이식됐고, 2010년대 Khosoussi를 통해 SLAM active perception의 언어가 됐다. 한 정리의 180년 이주 경로다.
 

@@ -146,4 +146,4 @@ The three lineages of Part 3 (the mature period) close this way. While ORB-SLAM 
 
 When AnyLoc appeared in 2023, Sivic's name was in the references, not the acknowledgements. The person who plugged BoW into image retrieval in 2003, and who was co-author on NetVLAD in 2016 when that approach was pushed past its limits. At the end of that lineage, AnyLoc pushed the door Sivic had opened over toward the foundation-model side.
 
-Part 4 begins with a different kind of intrusion — not a place-recognition module borrowed from vision, but the geometry-first assumption at the core of every lineage in Part 3. The next chapter follows the crack from an unexpected direction: a graduate student at NYU, a depth-estimation CNN, and the slow unraveling of the premise that geometry must come from geometry.
+Part 4 begins with a different kind of intrusion — not a place-recognition module borrowed from vision, but the geometry-first assumption at the core of every lineage in Part 3. The pressure comes from an unexpected direction: a graduate student at NYU, a depth-estimation CNN, and the slow unraveling of the premise that geometry must come from geometry.
