@@ -1,8 +1,8 @@
 # Ch.8 — Direct 계보: DTAM에서 DSO까지
 
-Richard Newcombe는 Andrew Davison의 박사과정 학생이었다. Imperial College에서 MonoSLAM의 30-landmark 한계를 직접 목격한 그는 2011년 정반대의 선택을 했다—모든 픽셀을 쓰기로. Davison이 "몇 개의 점만 추적하면 충분하다"는 EKF의 논리에 기대어 실시간을 증명했다면, Newcombe는 GPU 한 장을 얹고 화면 전체를 써도 실시간이 가능하다는 것을 보여줬다. DTAM은 MonoSLAM의 직계지만, 그 방법론적 DNA는 완전히 뒤집혀 있다.
+Richard Newcombe는 Andrew Davison의 박사과정 학생이었다. Imperial College에서 MonoSLAM의 30-landmark 한계를 직접 목격한 그는 2011년 정반대의 선택을 했다. 모든 픽셀을 쓰기로 한 것이다. Davison이 "몇 개의 점만 추적하면 충분하다"는 EKF의 논리에 기대어 실시간을 증명했다면, Newcombe는 GPU 한 장을 얹고 화면 전체를 써도 실시간이 가능하다는 것을 보여줬다. DTAM은 MonoSLAM의 직계지만, 그 방법론적 DNA는 완전히 뒤집혀 있다.
 
-Ch.7에서 살펴본 ORB-SLAM 계보는 feature를 먼저 뽑고 그 feature만 추적하는 방식이었다. Harris 코너와 ORB 디스크립터가 걸러낸 수백 개의 점—나머지 픽셀은 버려진다. Direct 계보는 이 선택을 거부했다. 버릴 픽셀이 없다—이미지 자체가 측정값이다.
+ORB-SLAM 계보는 feature를 먼저 뽑고 그 feature만 추적하는 방식이었다. Harris 코너와 ORB 디스크립터가 걸러낸 수백 개의 점만 남고 나머지 픽셀은 버려진다. Direct 계보는 이 선택을 거부했다. 버릴 픽셀이 없으며 이미지 자체가 측정값이다.
 
 같은 해 뮌헨에서는 Daniel Cremers가 다른 경로를 걷고 있었다. Computer vision의 variational 방법론(Gauss-Newton image alignment, 광학 흐름의 수식 언어)을 SLAM 전체에 이식하는 작업이었다. Cremers의 제자 Jakob Engel은 2014년 LSD-SLAM을, 2016년 DSO를 내놓았다. 두 논문은 서로 다른 밀도에서 같은 질문을 던졌다. feature를 추출하는 대신 픽셀의 밝기를 직접 비교하면 어떤 일이 생기는가.
 
@@ -10,9 +10,9 @@ Ch.7에서 살펴본 ORB-SLAM 계보는 feature를 먼저 뽑고 그 feature만 
 
 ## 1. 모든 픽셀: DTAM
 
-2011년 ICCV에서 Newcombe와 공동저자 Lovegrove, Davison이 발표한 [Newcombe, Lovegrove & Davison 2011. DTAM](https://doi.org/10.1109/ICCV.2011.6126513)은 "Dense Tracking and Mapping in Real-Time"의 약자다. 이름 그대로 추적과 지도 구축 양쪽을, 모든 픽셀을 사용해, 실시간으로 수행한다.
+2011년 ICCV에서 Newcombe와 공동저자 Lovegrove, Davison이 발표한 [Newcombe, Lovegrove & Davison 2011. DTAM](https://doi.org/10.1109/ICCV.2011.6126513)은 "Dense Tracking and Mapping in Real-Time"의 약자다. 이름 그대로 모든 픽셀을 사용해 추적과 지도 구축을 실시간으로 수행한다.
 
-시스템의 핵심은 두 부분이다. 추적 단계에서는 현재 프레임 전체를 cost volume과 비교하는 photometric alignment를 수행한다. 특징점 추출 없이, 디스크립터 매칭 없이, 픽셀 intensity의 차이만 최소화한다. 지도 구축 단계에서는 multi-baseline stereo 방식으로 depth map을 추정하고, total variation regularization으로 smooth한 dense 3D 모델을 유지한다.
+시스템은 두 부분으로 구성된다. 추적 단계에서는 현재 프레임 전체를 cost volume과 비교하는 photometric alignment를 수행한다. 특징점 추출이나 디스크립터 매칭 없이 픽셀 intensity의 차이만 최소화한다. 지도 구축 단계에서는 multi-baseline stereo 방식으로 depth map을 추정하고, total variation regularization으로 smooth한 dense 3D 모델을 유지한다.
 
 $$E(\mathbf{u}) = \sum_{i} \rho\left( I_i\bigl(\pi(KT_i\mathbf{p}(\mathbf{u}))\bigr) - I_r\bigl(\pi(\mathbf{p}(\mathbf{u}))\bigr) \right) + \lambda \,\text{TV}(\mathbf{u})$$
 
@@ -20,7 +20,7 @@ $$E(\mathbf{u}) = \sum_{i} \rho\left( I_i\bigl(\pi(KT_i\mathbf{p}(\mathbf{u}))\b
 
 > 🔗 **차용.** DTAM의 dense volumetric 접근은 depth camera 기반 연구, 특히 [Curless & Levoy 1996](https://doi.org/10.1145/237170.237269)의 TSDF 아이디어에서 부분 영감을 받았으나, 단안(monocular) 카메라에 적용했다는 점이 핵심 차이다. 이후 Newcombe 자신이 주도한 [KinectFusion](https://doi.org/10.1109/ISMAR.2011.6092378)(2011, ISMAR)이 오히려 depth sensor 버전으로 이 아이디어를 완성시키는 역방향 흐름이 나타난다.
 
-결과는 충격적이었다. 실내 scene 전체가 실시간으로 복원되는 영상은 2011년 ICCV 발표 직후 YouTube에 공개되어 수만 회 조회를 기록했다. 그러나 약점도 명확했다. GPU 없이는 돌아가지 않았고, 조명 변화에 취약했으며, 실외 대규모 환경으로는 확장되지 않았다.
+실내 scene 전체가 실시간으로 복원되는 영상은 2011년 ICCV 발표 직후 YouTube에 공개되어 수만 회 조회를 기록했다. 그러나 GPU 없이는 돌아가지 않았고, 조명 변화에 취약했으며, 실외 대규모 환경으로는 확장되지 않았다.
 
 <!-- DEMO: dtam_photometric_residual.html -->
 
@@ -38,7 +38,7 @@ CPU에서 실시간으로 동작한다는 점이 LSD-SLAM의 실용적 의미였
 
 LSD-SLAM은 실외 대규모 환경에서도 동작하는 장면을 공개했다. 자전거를 타고 수십 미터를 이동하는 동안 semi-dense map이 구축되는 데모는 direct 방식의 확장 가능성을 보여줬다. KITTI 벤치마크에서 당시 top-tier feature-based 방법과 비교 가능한 수준이었다.
 
-그러나 조명 변화가 문제였다. 터널 진입, 창문 역광, 갑작스러운 플래시—photometric consistency를 가정하는 순간, 이런 상황은 시스템을 즉시 destabilize했다.
+그러나 조명 변화가 문제였다. 터널 진입, 창문 역광, 갑작스러운 플래시에서는 photometric consistency 가정이 깨져 시스템이 즉시 destabilize됐다.
 
 <!-- DEMO: lsd_slam_semidense.html -->
 
@@ -46,7 +46,7 @@ LSD-SLAM은 실외 대규모 환경에서도 동작하는 장면을 공개했다
 
 ## 3. Sparse Direct의 완성: DSO
 
-[Engel, Koltun & Cremers 2018. DSO (PAMI)](https://doi.org/10.1109/TPAMI.2017.2658577)는 2016년 arXiv에 먼저 공개되었다. "Direct Sparse Odometry"는 이름이 이미 포지셔닝을 담고 있다. LSD-SLAM보다 더 sparse하게, 그러나 DTAM보다 훨씬 적은 픽셀로, 대신 photometric calibration을 철저히 하겠다.
+[Engel, Koltun & Cremers 2018. DSO (PAMI)](https://doi.org/10.1109/TPAMI.2017.2658577)는 2016년 arXiv에 먼저 공개되었다. "Direct Sparse Odometry"는 LSD-SLAM보다 sparse하고 DTAM보다 훨씬 적은 픽셀을 쓰되, photometric calibration을 철저히 했다.
 
 시스템은 각 키프레임에서 gradient가 높은 픽셀 약 2,000개를 선택한다. ORB-SLAM2의 기본 설정(nFeatures=1000)에 비해 많고, LSD-SLAM의 semi-dense(gradient 있는 픽셀 전체)보다 훨씬 적다. 이 픽셀들에 대해 sliding window bundle adjustment를 수행하는데, 최적화 변수가 camera pose뿐 아니라 inverse depth, affine brightness 파라미터 $(a_i, b_i)$까지 포함한다. 윈도우를 벗어난 프레임은 marginalization으로 제거되며, 이 과정에서 Schur complement를 이용해 계산 비용을 O(N)으로 유지한다.
 
@@ -58,17 +58,17 @@ $$E_{pj} = \sum_{\mathbf{p} \in \mathcal{N}_p} w_{\mathbf{p}} \left\| \left( I_j
 
 > 🔗 **차용.** Photometric camera calibration의 형식적 기반은 [Debevec & Malik 1997](https://doi.org/10.1145/258734.258884)의 HDR 복원 작업에서 비롯된다. 그들이 여러 장의 사진에서 camera response function을 복원하기 위해 세운 photometric 모델을 DSO는 실시간 SLAM의 최적화 변수로 가져왔다.
 
-결과는 인상적이었다. TUM monocular dataset에서 DSO는 ORB-SLAM2를 여러 시퀀스에서 능가한다고 보고했다. 특히 feature가 희박한 환경(평탄한 벽이 많은 실내 복도)에서 DSO가 ORB-SLAM2보다 낮은 ATE를 기록했다. photometric 정보를 직접 쓰면 원론적으로 더 많은 정보를 활용한다는 주장의 경험적 근거였다.
+TUM monocular dataset에서 DSO는 ORB-SLAM2를 여러 시퀀스에서 능가한다고 보고했다. 특히 feature가 희박한 환경(평탄한 벽이 많은 실내 복도)에서 DSO가 ORB-SLAM2보다 낮은 ATE를 기록했다. photometric 정보를 직접 쓰면 원론적으로 더 많은 정보를 활용한다는 주장의 경험적 근거였다.
 
-> 📜 **예언 vs 실제.** DSO는 사전 photometric calibration을 요구했고, 그 의존성은 곧 후속 연구의 표적이 되었다. 2018년 Bergmann, Wang, Cremers의 [online photometric calibration](https://doi.org/10.1109/LRA.2017.2777002)이 한 방향이었다—캘리브레이션을 사전에 하지 않고 SLAM 실행 중 노출·response·vignetting을 동시에 추정한다. 그럼에도 end-user 관점의 배포 장벽은 2026년 기준 여전히 남아 있다. consumer 카메라에서 photometric 파라미터를 안정적으로 추출하는 과정이 완전히 자동화되지 못한 채 카메라별 사전 세팅을 요구한다. `[진행형]`
+> 📜 **예언 vs 실제.** DSO는 사전 photometric calibration을 요구했고, 그 의존성은 곧 후속 연구의 표적이 되었다. 2018년 Bergmann, Wang, Cremers의 [online photometric calibration](https://doi.org/10.1109/LRA.2017.2777002)은 SLAM 실행 중 노출 시간·response function·vignetting attenuation을 함께 추정했다. 논문은 auto-exposure video를 실시간으로 보정해, 평가 데이터에서 사전에 보정한 영상과 대등한 VO 정확도를 보고했다. DSO가 드러낸 사전 photometric calibration 의존성에는 이 후속 연구가 직접 답했다.
 
-> 📜 **예언 vs 실제.** DTAM은 GPU 한 장에 의존한 실시간 dense SLAM이었고, dense 재구성의 접근성 확대는 자연스러운 다음 과제로 놓였다. 그 실현 경로는 직진이 아니었다. 순수 mono dense는 NeRF와 3DGS가 등장하는 2020년대까지 실시간 배포 가능한 형태로 나오지 않았다. 대신 Newcombe 자신이 주도한 KinectFusion이 RGB-D depth sensor를 사용해 GPU dense 재구성을 2011년에 바로 완성했다—sensor 교체로 문제를 우회한 것이다. `[기술변화]`
+> 📜 **예언 vs 실제.** DTAM은 GPU 한 장에 의존한 실시간 dense SLAM이었고, dense 재구성의 접근성 확대는 자연스러운 다음 과제로 놓였다. 그 실현 경로는 직진이 아니었다. 순수 mono dense는 NeRF와 3DGS가 등장하는 2020년대까지 실시간 배포 가능한 형태로 나오지 않았다. 대신 Newcombe 자신이 주도한 KinectFusion이 RGB-D depth sensor를 사용해 GPU dense 재구성을 2011년에 바로 완성했다. sensor 교체로 문제를 우회한 것이다.
 
 ---
 
 ## 4. VI-DSO와 계보의 확장
 
-2018년 von Stumberg, Usenko, Cremers는 DSO에 IMU를 결합한 [VI-DSO](https://doi.org/10.1109/ICRA.2018.8462905)를 ICRA 2018에서 발표했다. 동기는 단순했다. photometric direct method의 가장 큰 실패 모드인 조명 급변 상황에서 IMU의 관성 측정이 pose 추적을 보조할 수 있다. 또한 mono 카메라의 scale ambiguity를 IMU로 해소할 수 있다.
+2018년 von Stumberg, Usenko, Cremers는 DSO에 IMU를 결합한 [VI-DSO](https://doi.org/10.1109/ICRA.2018.8462905)를 ICRA 2018에서 발표했다. photometric direct method의 실패 모드인 조명 급변 상황에서 IMU의 관성 측정이 pose 추적을 보조할 수 있고, mono 카메라의 scale ambiguity도 IMU로 해소할 수 있다.
 
 VI-DSO는 DSO의 windowed photometric bundle adjustment에 IMU preintegration factor를 추가한다. IMU preintegration 방식은 [Forster et al.의 2017년 논문](https://doi.org/10.1109/TRO.2016.2597321)에서 차용했다. 결과적으로 scale이 복원되고 극단적 조명 조건에서 robustness가 향상되었다.
 
@@ -82,7 +82,7 @@ Cremers 그룹의 후속 작업들, [Basalt](https://arxiv.org/abs/1904.06504)(2
 
 Direct method는 이론적으로 더 많은 정보를 쓴다. feature detector가 버리는 픽셀들, 즉 gradient가 낮아도 consistent한 영역을 추적에 활용한다. photometric residual은 feature descriptor의 discretization 없이 연속적인 최적화 landscape를 제공한다.
 
-그럼에도 2026년 기준 대다수 배포 시스템은 feature-based다. 이유는 여러 층에 걸쳐 있다.
+그럼에도 2026년 기준 대다수 배포 시스템은 feature-based다.
 
 첫째, photometric calibration 의존성이다. DSO가 가정하는 vignetting 보정, response curve 보정, 노출 제어는 consumer camera에서 그냥 얻어지지 않는다. 스마트폰 카메라는 HDR 합성, auto-exposure, 실시간 화이트 밸런스를 자체적으로 적용하며, 그 파이프라인은 사용자에게 공개되지 않는다. DSO의 photometric 모델은 이런 카메라에서 기본 가정이 깨진다.
 

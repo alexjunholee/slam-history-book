@@ -1,6 +1,6 @@
 # Ch.5 — MonoSLAM → PTAM: 실시간의 몽상과 분리 혁명
 
-앞 챕터는 EKF-SLAM이 어떻게 확률론적으로 일관된 지도 구축 방법을 완성했는지, 그리고 그 공분산 행렬이 landmark 수 $N$에 대해 $O(N^2)$로 커지는 구조적 벽에 부딪혔는지를 보였다. 설계가 그렇게 생긴 결과였다. Davison과 Klein은 여기서부터 각자 다른 방향으로 걸었다.
+EKF-SLAM은 확률론적으로 일관된 지도 구축 방법을 완성했지만, 공분산 행렬이 landmark 수 $N$에 대해 $O(N^2)$로 커지는 구조적 벽에 부딪혔다. Davison과 Klein은 여기서부터 각자 다른 방향으로 걸었다.
 
 2003년, Davison은 Imperial College 실험실에서 웹캠 한 대를 노트북에 꽂았다. 1988년 Smith와 Cheeseman이 세운 확률 공간관계 수학, 그 위에 Leonard와 Durrant-Whyte가 얹은 EKF-SLAM 틀을 그대로 가져왔지만 센서는 카메라 하나뿐이었다. IMU도 스테레오도 레이저도 없는 상태에서 Shi-Tomasi 1994 코너 검출기와 Kalman 예측-갱신 루프만 붙여 실시간으로 돌렸다. 당시 기준으로 무모한 조합이었다.
 
@@ -22,13 +22,13 @@ Davison이 단안을 고른 것은 실용적 제약 때문이었다. IMU는 추�
 
 2007년 IEEE PAMI에 실린 [MonoSLAM](https://doi.org/10.1109/TPAMI.2007.1049)는 Davison, Ian Reid, Nicholas Molton, Olivier Stasse의 공동 저자로, ICCV 2003 데모의 완성된 논문 형태였다.
 
-MonoSLAM의 상태 벡터는 [Smith-Cheeseman(1988)](https://arxiv.org/abs/1304.3111)과 [Leonard-Durrant-Whyte(1991)](https://ieeexplore.ieee.org/document/174711/)의 정식(Ch.4)을 단안 카메라에 직접 이식했다. 카메라 상태 $\mathbf{x}_v \in \mathbb{R}^{13}$ — 위치 3, 사원수 방향 4, 속도 3, 각속도 3 — 과 landmark 집합 $\mathbf{y}_i \in \mathbb{R}^3$를 하나의 벡터 $\mathbf{x} = (\mathbf{x}_v^\top, \mathbf{y}_1^\top, \ldots, \mathbf{y}_N^\top)^\top \in \mathbb{R}^{13+3N}$에 담고, 그 전체 공분산 $(13+3N)\times(13+3N)$ 행렬 $\mathbf{P}$를 매 프레임 predict-update 루프로 유지했다. predict 단계에서는 카메라 운동 모델 $f$의 자코비안 $\mathbf{F}$로 공분산을 전파했고($\mathbf{P}^- = \mathbf{F}\mathbf{P}\mathbf{F}^\top + \mathbf{Q}$), update 단계에서는 투영 함수의 자코비안 $\mathbf{H}_i$로 칼만 이득을 계산해 상태와 공분산을 갱신했다. EKF predict-update 수식 자체는 Ch.4 §4.3의 것과 동일하다. 달라진 것은 상태 벡터 안에 카메라 속도·각속도가 함께 들어간 점이었다(이동 물체인 카메라의 동역학 모델이 필요했기 때문이다).
+MonoSLAM의 상태 벡터는 [Smith-Cheeseman(1988)](https://arxiv.org/abs/1304.3111)과 [Leonard-Durrant-Whyte(1991)](https://ieeexplore.ieee.org/document/174711/)의 정식(Ch.4)을 단안 카메라에 직접 이식했다. 카메라 상태 $\mathbf{x}_v \in \mathbb{R}^{13}$(위치 3, 사원수 방향 4, 속도 3, 각속도 3)과 landmark 집합 $\mathbf{y}_i \in \mathbb{R}^3$를 하나의 벡터 $\mathbf{x} = (\mathbf{x}_v^\top, \mathbf{y}_1^\top, \ldots, \mathbf{y}_N^\top)^\top \in \mathbb{R}^{13+3N}$에 담고, 그 전체 공분산 $(13+3N)\times(13+3N)$ 행렬 $\mathbf{P}$를 매 프레임 predict-update 루프로 유지했다. predict 단계에서는 카메라 운동 모델 $f$의 자코비안 $\mathbf{F}$로 공분산을 전파했고($\mathbf{P}^- = \mathbf{F}\mathbf{P}\mathbf{F}^\top + \mathbf{Q}$), update 단계에서는 투영 함수의 자코비안 $\mathbf{H}_i$로 칼만 이득을 계산해 상태와 공분산을 갱신했다. EKF predict-update 수식 자체는 Ch.4 §4.3의 것과 동일하다. 달라진 것은 상태 벡터 안에 카메라 속도·각속도가 함께 들어간 점이었다(이동 물체인 카메라의 동역학 모델이 필요했기 때문이다).
 
 공분산 갱신 $(\mathbf{I} - \mathbf{K}_i\mathbf{H}_i)\mathbf{P}^-$의 지배 비용은 $(13+3N)^2$ 행렬 곱셈으로, landmark 수 $N$에 대해 $O(N^2)$였다. 논문 §III은 30 Hz 실시간 처리에서 유지 가능한 feature 수의 상한이 "약 100개" 수준이라고 명시한다.
 
 > 🔗 **차용.** MonoSLAM의 EKF 상태 벡터 구조는 Smith-Cheeseman-Durrant-Whyte(1988-1991)의 확률적 공간관계 표현을 단안 카메라에 직접 이식한 것이다. Kalman 필터 자체는 1960년부터 있었지만, 로봇 pose와 landmark를 같은 벡터에 넣는 "augmented state vector" 관행이 확립된 것은 Leonard-Durrant-Whyte 1991의 스타일이었다.
 
-이 숫자는 시스템 한계를 드러냈다. Davison은 이를 알고 있었다. Davison은 논문에서 sub-mapping 전략으로의 확장을 향후 방향으로 제시했다. 그러나 EKF 내부에서 계층적 구조를 만드는 것은 근본적으로 어려웠다. 공분산 행렬이 모든 landmark 간 상관관계를 빠짐없이 담고 있었기 때문이다.
+이 숫자는 시스템 한계를 드러냈다. Davison은 논문에서 sub-mapping 전략으로의 확장을 향후 방향으로 제시했다. 그러나 EKF 내부에서 계층적 구조를 만드는 것은 근본적으로 어려웠다. 공분산 행렬이 모든 landmark 간 상관관계를 빠짐없이 담고 있었기 때문이다.
 
 [Shi-Tomasi(1994)](https://doi.org/10.1109/CVPR.1994.323794) 코너가 MonoSLAM의 시각 특징으로 선택된 것도 이 맥락에서 읽힌다. "Good Features to Track"의 선택 기준은 추적하기 좋은 점을 고르는 것이었다. 애초에 추적이 실패할 가능성이 낮은 코너만 상태 벡터에 넣으면 EKF의 갱신이 더 안정적이었다. PAMI 논문은 광각 렌즈에서 매 프레임 약 12개의 특징이 안정적으로 보이도록 map management를 구성한다고 명시한다. 이 한정된 수의 특징이 모두 잘 추적되는 한, EKF는 돌아갔다.
 
@@ -44,29 +44,29 @@ MonoSLAM의 상태 벡터는 [Smith-Cheeseman(1988)](https://arxiv.org/abs/1304.
 
 Klein은 당시 Murray 그룹 박사과정이었다. Murray 그룹은 Oxford Active Vision Laboratory의 직계였고, 몇 년 전까지 Davison이 박사과정 학생으로 있던 바로 그 방이었다. Murray는 Davison의 지도교수였다. Klein이 MonoSLAM을 보지 않았을 수 없다. 그가 본 건 EKF가 아니라, 단안 카메라가 실시간으로 돈다는 사실 그 자체였다.
 
-가능성은 확인됐다. 남은 건 "어떻게 확장할 것인가"였다. Klein은 EKF를 버리기로 했다.
+단안 실시간의 가능성은 확인됐다. 확장을 위해 Klein은 EKF를 버리기로 했다.
 
 ---
 
 ## 4. 분리
 
-PTAM의 핵심 아이디어는 하나였다. Tracking(카메라 pose 추적)과 Mapping(3D 지도 구축)을 분리해서 두 개의 병렬 스레드로 실행한다.
+PTAM은 Tracking(카메라 pose 추적)과 Mapping(3D 지도 구축)을 분리해 두 개의 병렬 스레드에서 실행했다.
 
 EKF에서 이 둘은 같은 루프 안에 섞여 있었다. 매 프레임마다 예측-갱신 한 사이클을 돌리면서, 카메라가 움직이면 상태를 예측하고 이미지에서 landmark를 찾으면 다시 갱신했다.
 
-PTAM은 이것을 풀었다. Tracking 스레드는 매 프레임 카메라 pose를 추정하는 일만 한다. 현재 keyframe 집합에서 보이는 3D 점들의 2D 투영과 실제 관측을 매칭해서 pose를 실시간으로 계산한다. Mapping 스레드는 새 keyframe이 추가될 때마다 bundle adjustment를 실행한다. Tracking 스레드가 독립적으로 돌아가기 때문에 Mapping이 느려져도 무방했다.
+PTAM은 Tracking과 Mapping을 나눴다. Tracking 스레드는 매 프레임 카메라 pose를 추정하는 일만 한다. 현재 keyframe 집합에서 보이는 3D 점들의 2D 투영과 실제 관측을 매칭해서 pose를 실시간으로 계산한다. Mapping 스레드는 새 keyframe이 추가될 때마다 bundle adjustment를 실행한다. Tracking 스레드가 독립적으로 돌아가기 때문에 Mapping이 느려져도 무방했다.
 
 Mapping 스레드의 bundle adjustment는 keyframe 집합 $\mathcal{K}$와 3D 점 집합 $\mathcal{P}$에 대해 재투영 오차의 합을 최소화했다:
 $$\min_{\{\mathbf{T}_k\}, \{\mathbf{p}_j\}} \sum_{k \in \mathcal{K}} \sum_{j \in \mathcal{P}_k} \rho\!\left(\left\|\mathbf{z}_{kj} - \pi(\mathbf{T}_k,\, \mathbf{p}_j)\right\|^2_{\mathbf{\Sigma}_{kj}}\right)$$
 여기서 $\mathbf{T}_k \in SE(3)$는 keyframe $k$의 pose, $\mathbf{p}_j \in \mathbb{R}^3$는 3D 점, $\pi$는 카메라 투영 함수, $\mathbf{z}_{kj}$는 keyframe $k$에서 점 $j$의 관측 픽셀 좌표, $\mathbf{\Sigma}_{kj}$는 측정 공분산, $\rho$는 Huber 함수 등의 robust kernel이다. Mapping 스레드는 이 최적화를 Levenberg–Marquardt로 반복해서 풀었다. 비동기로 돌기 때문에 Tracking 스레드의 실시간성에 영향을 주지 않았다.
 
-> 🔗 **차용.** PTAM의 Mapping 스레드에서 실행되는 bundle adjustment는 [Triggs et al. 1999 "Bundle Adjustment — A Modern Synthesis"](https://doi.org/10.1007/3-540-44480-7_21)의 직접 적용이다. 1부에서 다룬 사진측량의 100년 전통이 SLAM backend에 처음으로 제대로 자리를 잡은 지점이 여기다. EKF에서는 공분산 행렬의 크기 제약 때문에 전체 BA가 불가능했다. 스레드 분리로 그 제약이 사라졌다.
+> 🔗 **차용.** PTAM의 Mapping 스레드에서 실행되는 bundle adjustment는 [Triggs et al. 1999 "Bundle Adjustment — A Modern Synthesis"](https://doi.org/10.1007/3-540-44480-7_21)의 직접 적용이다. 1부에서 다룬 사진측량의 100년 전통이 실시간 SLAM backend의 중심으로 들어온 지점이다. EKF-SLAM에서는 공분산 행렬의 크기 때문에 대규모 joint update가 부담이었고, 스레드 분리는 keyframe BA를 tracking과 비동기로 실행하게 했다.
 
-이 분리는 단순해 보이지만 결과는 달랐다. Mapping 스레드가 비동기로 bundle adjustment를 실행하기 때문에, 지도에 들어갈 수 있는 landmark 수가 EKF의 $O(N^2)$ 제약을 벗어났다. PTAM이 사용한 keyframe의 수는 수백 개였다. 각 keyframe에는 수백 개의 patch feature가 있었다. MonoSLAM의 수십 landmark 규모와는 다른 세계였다.
+Mapping 스레드가 비동기로 bundle adjustment를 실행하면서, 지도에 들어갈 수 있는 landmark 수가 EKF의 $O(N^2)$ 제약을 벗어났다. PTAM이 사용한 keyframe의 수는 수백 개였다. 각 keyframe에는 수백 개의 patch feature가 있었다. MonoSLAM의 수십 landmark 규모와는 다른 세계였다.
 
-초기 맵 구축 방법도 달랐다. PTAM은 사용자가 카메라를 천천히 움직이는 초기화 단계에서 [Nistér 2004](https://doi.org/10.1109/TPAMI.2004.17)의 5-point 알고리즘 계열(PTAM 논문은 그 후속인 Stewénius·Engels·Nistér 2006을 인용)로 essential matrix를 추정하고, 첫 keyframe 쌍에서 초기 3D 구조를 복원했다. 이것 역시 차용이었다.
+초기 맵 구축 방법도 달랐다. PTAM은 사용자가 카메라를 천천히 움직이는 초기화 단계에서 [Nistér 2004](https://doi.org/10.1109/TPAMI.2004.17)의 5-point 알고리즘 계열(PTAM 논문은 그 후속인 Stewénius·Engels·Nistér 2006을 인용)로 essential matrix를 추정하고, 첫 keyframe 쌍에서 초기 3D 구조를 복원했다.
 
-Essential matrix $\mathbf{E}$는 두 카메라 좌표계 사이의 순수 기하관계를 담는 $3\times 3$ 행렬로, 대응점 쌍 $(\mathbf{p}, \mathbf{p}')$에 대해 ${\mathbf{p}'}^\top \mathbf{E}\, \mathbf{p} = 0$을 만족한다. $\mathbf{E}$는 내부적으로 $\mathbf{E} = \mathbf{t}_\times \mathbf{R}$ ($\mathbf{t}_\times$는 병진의 반대칭 행렬, $\mathbf{R}$은 회전)으로 분해되므로 자유도가 5이다. 따라서 최소 5쌍의 대응점으로 유일해(최대 10개 실수 해)를 구할 수 있다. Nistér의 기여는 이 5-point 연립방정식을 Gröbner basis를 이용해 효율적으로 풀어 RANSAC 루프 안에서 실시간으로 돌릴 수 있게 한 것이다. PTAM은 이 solver를 초기화 단계에서 RANSAC과 함께 사용해 첫 두 keyframe 사이의 상대 pose를 추정하고 초기 3D 점군을 삼각측량으로 복원했다.
+Essential matrix $\mathbf{E}$는 두 카메라 좌표계 사이의 순수 기하관계를 담는 $3\times 3$ 행렬로, 대응점 쌍 $(\mathbf{p}, \mathbf{p}')$에 대해 ${\mathbf{p}'}^\top \mathbf{E}\, \mathbf{p} = 0$을 만족한다. $\mathbf{E}$는 내부적으로 $\mathbf{E} = \mathbf{t}_\times \mathbf{R}$ ($\mathbf{t}_\times$는 병진의 반대칭 행렬, $\mathbf{R}$은 회전)으로 분해되므로 자유도가 5이다. 최소 5쌍의 대응점으로 문제를 정할 수 있지만 해가 유일한 것은 아니며, 일반적으로 복소수 범위에서 최대 10개의 후보가 나온다. Nistér의 기여는 이 5-point 연립방정식을 효율적으로 풀어 RANSAC 루프 안에서 실시간으로 돌릴 수 있게 한 것이다. PTAM은 이 solver를 초기화 단계에서 RANSAC과 함께 사용해 첫 두 keyframe 사이의 상대 pose를 추정하고 초기 3D 점군을 삼각측량으로 복원했다.
 
 > 🔗 **차용.** PTAM의 5-point essential matrix 초기화는 David Nistér 2004 "An Efficient Solution to the Five-Point Relative Pose Problem"이 열어 놓은 minimal-solver 계보를 따른다(PTAM 논문은 그 후속 Stewénius·Engels·Nistér 2006 ISPRS를 직접 인용). 5-point solver는 단안 카메라의 초기 맵 구축에 필요한 최소 대응쌍을 사용하는 minimal solver였고, PTAM은 이 솔버를 RANSAC 루프에 태워 초기 두 keyframe의 상대 pose를 실시간에 가깝게 추정했다.
 
@@ -78,9 +78,9 @@ Essential matrix $\mathbf{E}$는 두 카메라 좌표계 사이의 순수 기하
 
 PTAM은 AR(증강현실) 워크스페이스를 대상으로 설계되었다. 논문 제목에도 "Small AR Workspaces"가 명시되어 있다. Tracking 스레드의 재현성이 좋았고, 실시간성이 확실했기 때문에 AR 응용에 바로 쓸 수 있었다.
 
-상업적 흡수는 빠르게 일어났다. 2010년대 초 Metaio(독일 AR 스타트업, 2015년 Apple에 인수)와 Qualcomm의 Vuforia SDK는 PTAM과 유사한 tracking/mapping 분리 구조를 채용했다. 소비자 스마트폰에서 처음으로 안정적인 planar AR이 돌아갔다.
+2010년대 초 Metaio(독일 AR 스타트업, 2015년 Apple에 인수)와 Qualcomm의 Vuforia SDK는 PTAM과 유사한 tracking/mapping 분리 구조를 채용했다. 이런 상용 SDK는 안정적인 planar AR을 소비자 스마트폰으로 확산시켰다.
 
-학계에서의 영향은 더 직접적이었다. 2015년 Raul Mur-Artal, J.M.M. Montiel, Juan D. Tardós가 발표한 [ORB-SLAM](https://arxiv.org/abs/1502.00956)은 PTAM의 구조를 계승했다. 특징점은 patch에서 ORB 디스크립터로 바꾸고, keyframe 관리는 covisibility graph로 정교화했으며, loop closure를 새로 얹었다. PTAM이 없었으면 ORB-SLAM의 설계도가 달랐을 것이다.
+2015년 Raul Mur-Artal, J.M.M. Montiel, Juan D. Tardós가 발표한 [ORB-SLAM](https://arxiv.org/abs/1502.00956)은 PTAM의 구조를 계승했다. 특징점은 patch에서 ORB 디스크립터로 바꾸고, keyframe 관리는 covisibility graph로 정교화했으며, loop closure를 새로 얹었다. PTAM이 없었으면 ORB-SLAM의 설계도가 달랐을 것이다.
 
 2018년 Qin, Li, Shen의 [VINS-Mono](https://arxiv.org/abs/1708.03852) 역시 sliding window 최적화 + loop closure의 이중 스레드 구조를 갖는다. tracking/mapping 분리의 계보가 VIO로 확장된 사례다.
 
@@ -102,11 +102,11 @@ Klein & Murray는 그 대가를 기꺼이 치렀다. AR 응용에서 중요한 �
 
 > **Davison 2007 PAMI MonoSLAM**: Davison은 Conclusion에서 더 큰 실내·실외 환경, 더 빠른 움직임, 가림·조명 변화가 있는 복잡한 장면을 다음 과제로 꼽았다. 구체 수단으로 sub-map 전략과 100 Hz 이상의 고프레임률 CMOS 카메라를 거론했고, sparse map을 "higher-order entities"(표면 등)의 dense 표현으로 확장할 여지도 함께 언급했다.
 >
-> 이 예측들의 운명은 각기 달랐다. Sub-map 아이디어는 PTAM의 keyframe 구조와 ORB-SLAM의 covisibility graph를 거쳐 부분적으로 흡수되었다. 그러나 EKF를 유지하면서 계층적 확장을 달성한 시스템은 나오지 않았다 — 계층화는 BA 기반 아키텍처 전환과 함께 왔다. 고프레임률 카메라는 2010년대 이벤트 카메라 연구에서 다른 경로로 구체화되었다. 동적 장면 강건성은 2026년 기준 여전히 열려 있다. DynaSLAM, FlowSLAM 등 여러 시도가 있었지만 "기본 파이프라인에 포함된 해법"은 아직 없다. IMU 통합은 Davison이 Future Work에서 직접 지목하진 않았지만(관련 연구는 논문 본문에서 참조) 2010년대 Visual-Inertial Odometry(VIO) 연구 붐이 맡은 방향이다. 확률론적 일관성이라는 관심사 자체는 폐기되지 않고 factor graph·GBP 쪽으로 옮겨갔다 — Davison 본인은 23년 뒤 Handbook Ch.18에서 이 이동을 "representation 변경의 연속"으로 묘사하며 MonoSLAM을 계보의 한 단계로 재배치한다. `[진행형]`
+> 이 예측들의 운명은 각기 달랐다. Sub-map 아이디어는 PTAM의 keyframe 구조와 ORB-SLAM의 covisibility graph를 거쳐 부분적으로 흡수되었다. 그러나 EKF를 유지하면서 계층적 확장을 달성한 시스템은 나오지 않았다. 계층화는 BA 기반 아키텍처 전환과 함께 왔다. 고프레임률 카메라는 2010년대 이벤트 카메라 연구에서 다른 경로로 구체화되었다. 동적 장면 강건성은 2026년 기준 여전히 열려 있다. DynaSLAM, FlowSLAM 등 여러 시도가 있었지만 "기본 파이프라인에 포함된 해법"은 아직 없다. IMU 통합은 Davison이 Future Work에서 직접 지목하진 않았지만(관련 연구는 논문 본문에서 참조) 2010년대 Visual-Inertial Odometry(VIO) 연구 붐이 맡은 방향이다. 확률론적 일관성이라는 관심사 자체는 폐기되지 않고 factor graph·GBP 쪽으로 옮겨갔다. Davison 본인은 23년 뒤 Handbook Ch.18에서 이 이동을 "representation 변경의 연속"으로 묘사하며 MonoSLAM을 계보의 한 단계로 재배치한다.
 
 > **Klein & Murray 2007 PTAM**: Klein과 Murray는 §8(Failure modes / Mapping inadequacies)에서 시스템의 한계로 corner-기반 추적의 모션 블러 취약성, point cloud 중심의 지도가 가진 기하 이해 부족, 그리고 "not designed to close large loops in the SLAM sense"를 열거했다. 즉, 큰 루프의 전역 일관성 확보가 PTAM의 설계 범위 밖임을 분명히 했다.
 >
-> 2015년 ORB-SLAM은 이 한계들을 정면으로 겨냥했다. [DBoW2](http://doriangalvez.com/papers/GalvezTRO12.pdf) 기반 appearance loop closure와 covisibility graph 기반 keyframe 관리가 얹혔고, 특징은 patch 대신 ORB descriptor로 교체됐다. PTAM이 "우리 문제가 아니다"라고 선을 그은 곳에서 ORB-SLAM이 지도 확장을 이어 받은 구도다. Klein & Murray 자신이 명시적으로 "appearance-based loop closure가 답"이라고 적은 것은 아니지만, 한계 지점의 지적이 후속 계보의 출발점으로 정확히 맞았다. `[한계 지점 적중]`
+> 2015년 ORB-SLAM은 이 한계들을 정면으로 겨냥했다. [DBoW2](http://doriangalvez.com/papers/GalvezTRO12.pdf) 기반 appearance loop closure와 covisibility graph 기반 keyframe 관리가 얹혔고, 특징은 patch 대신 ORB descriptor로 교체됐다. PTAM이 "우리 문제가 아니다"라고 선을 그은 곳에서 ORB-SLAM이 지도 확장을 이어 받은 구도다. Klein & Murray 자신이 명시적으로 "appearance-based loop closure가 답"이라고 적은 것은 아니지만, 한계 지점의 지적이 후속 계보의 출발점으로 정확히 맞았다.
 
 ---
 

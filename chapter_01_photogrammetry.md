@@ -6,9 +6,9 @@
 
 ## 1. 20세기 초 유리판과 Stereophotogrammetry
 
-1901년 [Carl Pulfrich](https://en.wikipedia.org/wiki/Carl_Pulfrich)는 함부르크 자연과학자 회의에서 Zeiss 광학연구소가 제작한 **입체 측량기(stereocomparator)**를 발표했다 (1899년 뮌헨에서 입체 거리계 시제품을 먼저 공개한 뒤의 정식 공개). 두 카메라 시점에서 같은 점을 찍고, 유리판 위의 좌표 차이를 읽어 거리를 산출하는 장치였다. 원리는 단순했다: 두 시점의 시차(parallax)가 깊이와 역비례한다. 수학은 그리스 시대의 삼각법이었고, 새로운 것은 광학 기기의 정밀도였다.
+1901년 [Carl Pulfrich](https://en.wikipedia.org/wiki/Carl_Pulfrich)는 함부르크 자연과학자 회의에서 Zeiss 광학연구소가 제작한 **입체 측량기(stereocomparator)**를 발표했다(1899년 뮌헨에서 입체 거리계 시제품을 먼저 공개한 뒤의 정식 공개). 두 카메라 시점에서 같은 점을 찍고, 유리판 위의 좌표 차이를 읽어 거리를 산출하는 장치였다. 원리는 단순했다: 두 시점의 시차(parallax)가 깊이와 역비례한다. 수학은 그리스 시대의 삼각법이었고, 새로운 것은 광학 기기의 정밀도였다.
 
-한 세대 앞선 흐름으로, [Albrecht Meydenbauer](https://de.wikipedia.org/wiki/Albrecht_Meydenbauer)는 건축물 보존을 위한 **건축 사진측량(architectural photogrammetry)**을 체계화했다. 1858년 그는 베츨라 대성당 외벽을 측량하다 추락사고를 겪은 뒤, 사진으로 대신할 수 있다는 생각을 품었다. 1885년 그는 프로이센 왕립 사진측량국(Königlich Preussische Messbild-Anstalt)을 설립했다.
+한 세대 앞선 흐름으로, [Albrecht Meydenbauer](https://www.uni-marburg.de/de/fotomarburg/histfoto/gliederung/messbilder/messbildverfahren)는 건축물 보존을 위한 **건축 사진측량(architectural photogrammetry)**을 체계화했다. 1858년 그는 베츨라 대성당 외벽을 측량하다 추락할 뻔한 뒤, 사진으로 직접 측량을 대신할 수 있다는 생각을 품었다. 1885년 그는 프로이센 왕립 사진측량국(Königlich Preussische Messbild-Anstalt)을 설립했다.
 
 이 두 흐름이 합쳐진 전통이 20세기 항공 측량으로 이어졌다. 비행기 위에서 지형을 찍고, 두 시점 사진으로 3차원 지도를 만드는 aerotriangulation이다. 수동 계산기의 시대였다.
 
@@ -22,9 +22,9 @@ Pulfrich와 Meydenbauer가 광학 기기로 해결한 문제를, Brown은 수식
 
 [Duane C. Brown](https://digital.hagley.org/08206139_solution)은 미국 공군 탄도미사일 개발 체계의 측량 엔지니어였다. 위성 궤도와 지상 좌표를 함께 추정하는 문제, 즉 다수의 카메라 시점과 다수의 지상 제어점을 동시에 최적화하는 문제를 다루었다.
 
-1958년 보고서 "A Solution to the General Problem of Multiple Station Analytical Stereotriangulation"(RCA-MTP Data Reduction Technical Report No. 43, AFMTC-TR-58-8)에서 Brown은 **bundle adjustment**를 수치적으로 공식화한 초기 문헌 중 하나를 남겼다 (같은 시기 Helmut Schmid도 공동 발명자로 함께 거론된다).
+1958년 보고서 "A Solution to the General Problem of Multiple Station Analytical Stereotriangulation"(RCA-MTP Data Reduction Technical Report No. 43, AFMTC-TR-58-8)에서 Brown은 **bundle adjustment**를 수치적으로 공식화한 초기 문헌 중 하나를 남겼다(같은 시기 Helmut Schmid도 공동 발명자로 함께 거론된다).
 
-핵심은 **reprojection error**다. 카메라 $i$에서 관측된 2D 이미지 좌표 $x_{ij} \in \mathbb{R}^2$와, 3D 점 $X_j \in \mathbb{R}^3$을 내부 행렬 $K_i$·외부 행렬 $[R_i | t_i]$로 투영한 예측 좌표 $\pi(K_i, R_i, t_i, X_j)$의 차이를 최소화한다:
+**Reprojection error**는 카메라 $i$에서 관측된 2D 이미지 좌표 $x_{ij} \in \mathbb{R}^2$와, 3D 점 $X_j \in \mathbb{R}^3$을 내부 행렬 $K_i$·외부 행렬 $[R_i | t_i]$로 투영한 예측 좌표 $\pi(K_i, R_i, t_i, X_j)$의 차이다. 이 차이를 최소화한다:
 
 $$E = \sum_{i,j} \| x_{ij} - \pi(K_i, R_i, t_i, X_j) \|^2$$
 
@@ -42,17 +42,17 @@ Reprojection error 최소화는 비선형 최소제곱 문제다. 해석적 해�
 
 1944년 [Kenneth Levenberg](https://cs.uwaterloo.ca/~y328yu/classics/levenberg.pdf)는 Gauss-Newton과 steepest descent를 댐핑 파라미터 $\lambda$로 보간하는 방법을 발표했다. $\lambda$가 클수록 steepest descent에 가까워져 안전하게 수렴하고, 작을수록 Gauss-Newton의 빠른 수렴을 활용한다. 이 전략은 목적함수에 $\lambda \mathbf{I}$를 더한 수식으로 표현되어 수치 안정성을 높였다. 컴퓨터 비전보다 20년 앞선 시점이었다. 1963년 [Donald Marquardt](https://epubs.siam.org/doi/10.1137/0111030)는 같은 아이디어를 독립적으로 재발견해 더 명시적으로 공식화했다. **Levenberg-Marquardt(LM) 알고리즘**이라는 이름으로 굳어졌다.
 
-LM 알고리즘이 컴퓨터 비전에서 BA의 표준 solver가 되기까지 약 35년이 더 걸렸다. 분야 간 벽이 그 시간을 만들었다.
+LM 알고리즘이 컴퓨터 비전에서 BA의 표준 solver가 되기까지 약 35년이 더 걸렸다.
 
 ---
 
 ## 4. 1999년 Triggs et al. — 100년 유산 통합
 
-Levenberg-Marquardt가 수치 도구를 준비해 둔 지 35년 뒤, 컴퓨터 비전은 마침내 그 도구를 가져갔다.
+Levenberg-Marquardt가 수치 도구를 준비해 둔 지 35년 뒤, 컴퓨터 비전은 그 도구를 BA에 적용했다.
 
 1999년 Vision Algorithms Workshop에서 Bill Triggs, Philip McLauchlan, Richard Hartley, Andrew Fitzgibbon은 ["Bundle Adjustment — A Modern Synthesis"](https://link.springer.com/chapter/10.1007/3-540-44480-7_21)를 발표했다.
 
-이 논문이 한 일은, 20세기 측량학과 항공 사진측량에 흩어져 있던 BA 이론을 컴퓨터 비전 커뮤니티의 언어로 번역해 종합하는 것이었다. Triggs et al.이 기여한 것은 두 가지다. 첫째, sparse BA의 구조적 성질을 명시했다. Hessian 행렬의 희소 블록 구조(Schur complement trick)를 이용하면 카메라-점 결합 최적화를 훨씬 효율적으로 수행할 수 있다. 둘째, gauge freedom(기준틀의 임의성)을 명시적으로 다루었다.
+이 논문은 20세기 측량학과 항공 사진측량에 흩어져 있던 BA 이론을 컴퓨터 비전 커뮤니티의 언어로 번역해 종합했다. Triggs et al.은 sparse BA의 구조적 성질을 명시했다. Hessian 행렬의 희소 블록 구조(Schur complement trick)를 이용하면 카메라-점 결합 최적화를 훨씬 효율적으로 수행할 수 있다. 또한 gauge freedom(기준틀의 임의성)을 명시적으로 다루었다.
 
 이 논문이 나오고 7년 후, Noah Snavely의 [Photo Tourism(2006)](https://phototour.cs.washington.edu/Photo_Tourism.pdf)은 인터넷에 흩어진 사진 수백 장에서 노트르담·트레비 분수 같은 유명 랜드마크를 자동 재구성했다. 그로부터 10년 후 Johannes Schönberger의 [COLMAP(2016)](https://openaccess.thecvf.com/content_cvpr_2016/papers/Schonberger_Structure-From-Motion_Revisited_CVPR_2016_paper.pdf)은 수만~수십만 장 규모의 robust incremental SfM을 오픈소스로 공개하며, 이미 백만 장대까지 가 있던 연구 흐름을 누구나 재현할 수 있는 도구로 가져왔다. Triggs의 언어가 없었다면 그 경로는 훨씬 느렸을 것이다.
 
@@ -60,7 +60,7 @@ Levenberg-Marquardt가 수치 도구를 준비해 둔 지 35년 뒤, 컴퓨터 �
 
 ## 5. Reprojection Error — 개념의 형성
 
-Triggs et al.이 어떤 오차 함수를 최소화하는지 서술했다면, 그 함수 자체가 어떻게 현재 형태로 정착했는지는 별도로 추적할 만하다.
+Triggs et al.이 최소화할 오차 함수를 정리했다면, 그 함수가 현재 형태로 정착한 과정은 별도의 계보를 이룬다.
 
 이 오차 함수가 지금 형태로 자리 잡기까지 두 번의 전환이 있었다.
 
@@ -76,15 +76,15 @@ Triggs et al.(1999)은 그 공식을 컴퓨터 비전 교과서 언어로 다듬
 
 ## 6. SLAM Backend의 뼈대 — 2026년까지
 
-"SLAM"이라는 약어 자체는 1995년 [Durrant-Whyte·Leonard의 survey](https://ieeexplore.ieee.org/document/476131)에서 표준 용어로 정립됐지만, 그 backend의 수학은 이 챕터가 추적해 온 1958년 Brown의 reprojection 공식을 거의 그대로 물려받는다. 오늘날 SLAM 최적화 backend를 보자. ORB-SLAM3는 g2o를 통해 SE(3) 자세와 3D landmark 위치를 동시 최적화한다. LIO-SAM은 GTSAM의 factor graph 위에서 LM 알고리즘을 돌린다. DROID-SLAM은 GRU-based optical flow로 업데이트 방향을 구하지만, 최종 bundle adjustment 레이어는 여전히 Schur complement trick을 쓴다.
+"SLAM"이라는 약어는 [Durrant-Whyte·Leonard의 1995년 survey](https://ieeexplore.ieee.org/document/476131)를 포함한 1990년대 문헌을 거치며 널리 쓰이기 시작했지만, 그 backend의 수학은 1958년 Brown의 reprojection 공식을 거의 그대로 물려받는다. 오늘날 ORB-SLAM3는 g2o를 통해 SE(3) 자세와 3D landmark 위치를 동시 최적화한다. LIO-SAM은 GTSAM의 factor graph 위에서 LM 알고리즘을 돌린다. DROID-SLAM은 GRU-based optical flow로 업데이트 방향을 구하지만, 최종 bundle adjustment 레이어는 여전히 Schur complement trick을 쓴다.
 
 Lie group과 factor graph가 1999년의 행렬 표기를 대체했고, 신경망이 기술자 계산을 넘겨받았지만, 연산의 본질은 그대로다. 다수의 시점에서 관측된 점들의 reprojection error를 최소화해 카메라 자세와 맵을 동시에 추정한다. Pulfrich의 유리판이 픽셀 배열로 바뀌고, 손 계산이 GPU로 바뀌었을 뿐이다.
 
-이 연속성은 분야의 강점이자 취약점이다. 강점: 100년의 수렴성 증명과 실용 검증이 무료로 따라온다. 취약점: BA의 전제(static world, point feature, Gaussian noise)가 현실 환경과 어긋날 때 대안이 없다.
+이 연속성은 분야의 강점이자 취약점이다. 100년의 수렴성 증명과 실용 검증이 무료로 따라온다. 그러나 BA의 전제(static world, point feature, Gaussian noise)가 현실 환경과 어긋날 때는 대안이 없다.
 
 ---
 
-> 📜 **예언 vs 실제.** Triggs et al.(1999)은 대규모 BA — 수천 대 카메라, 수백만 점 규모 — 로의 확장을 주요 도전으로 꼽은 것으로 널리 읽힌다. 그 방향성은 이후 20년에 걸쳐 달성되었다. 2006년 Snavely의 Photo Tourism이 인터넷 사진 수백 장으로 랜드마크를 재구성했고, 2016년 COLMAP은 그 흐름의 robust incremental SfM 구현체를 표준화했다. 다만 Triggs가 상상한 "직접 확장"이 아니었다. incremental BA와 visibility graph pruning 위에 vocabulary tree 루프 클로저가 얹힌, 엔지니어링 층의 결과였다. `[적중]`
+> 📜 **예언 vs 실제.** Triggs et al.(1999)은 수천 대 카메라와 수백만 점을 다루는 대규모 BA로의 확장을 주요 도전으로 꼽은 것으로 널리 읽힌다. 그 방향성은 이후 20년에 걸쳐 달성되었다. 2006년 Snavely의 Photo Tourism이 인터넷 사진 수백 장으로 랜드마크를 재구성했고, 2016년 COLMAP은 그 흐름의 robust incremental SfM 구현체를 표준화했다. 다만 Triggs가 상상한 "직접 확장"이 아니었다. incremental BA와 visibility graph pruning 위에 vocabulary tree 루프 클로저가 얹힌, 엔지니어링 층의 결과였다.
 
 ---
 
@@ -96,4 +96,4 @@ Lie group과 factor graph가 1999년의 행렬 표기를 대체했고, 신경망
 
 ---
 
-BA의 전제(static world, point feature, Gaussian noise)가 무너지기 시작하는 것은 카메라가 이동하는 물체를 만났을 때다. 측량사는 다리를 측량하지 로봇 축구 경기장을 측량하지 않았다. 그 균열은 Ch.2에서 시작된다: 컴퓨터 비전이 단순한 특징점 매칭 너머로 움직이던 시기, Harris corner와 optical flow가 이 유산을 실시간으로 이어받으려 한 첫 번째 시도들이다.
+BA의 전제(static world, point feature, Gaussian noise)가 무너지기 시작하는 것은 카메라가 이동하는 물체를 만났을 때다. 측량사는 다리를 측량하지 로봇 축구 경기장을 측량하지 않았다. 그 균열은 Ch.2에서 시작된다. 컴퓨터 비전은 Harris corner와 optical flow로 이 유산을 실시간으로 이어받으려 했다.

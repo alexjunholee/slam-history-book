@@ -106,10 +106,10 @@ OVERVIEW_JS = r"""
     var chapters = {};
 
     h1s.forEach(function(h1) {
-      var m = h1.textContent.trim().match(/(?:Chapter|Ch\.?)\s*(\d+)\s*[\u2014\u2013-]\s*(.+)/);
+      var m = h1.textContent.trim().match(/(?:Chapter|Ch\.?)\s*(\d+[a-z]?)\s*[\u2014\u2013-]\s*(.+)/i);
       if (!m) return;
-      var chNum = parseInt(m[1], 10);
-      if (!h1.id) h1.id = 'chapter-' + chNum;
+      var chKey = m[1].toLowerCase();
+      if (!h1.id) h1.id = 'chapter-' + chKey;
 
       var sections = [];
       var node = h1.nextElementSibling;
@@ -124,7 +124,7 @@ OVERVIEW_JS = r"""
         node = node.nextElementSibling;
       }
 
-      chapters[chNum] = { title: m[2].trim(), id: h1.id, sections: sections };
+      chapters[chKey] = { title: m[2].trim(), id: h1.id, sections: sections };
     });
 
     var total = Object.keys(chapters).length;
@@ -153,8 +153,8 @@ OVERVIEW_JS = r"""
       label.textContent = group.label;
       groupEl.appendChild(label);
 
-      valid.forEach(function(chNum) {
-        var ch = chapters[chNum];
+      valid.forEach(function(chKey) {
+        var ch = chapters[chKey];
         var chWrap = document.createElement('div');
         chWrap.className = 'overview-chapter';
 
@@ -163,7 +163,7 @@ OVERVIEW_JS = r"""
         chLink.href = '#' + ch.id;
         var numSpan = document.createElement('span');
         numSpan.className = 'overview-chapter-num';
-        numSpan.textContent = 'Ch.' + chNum;
+        numSpan.textContent = 'Ch.' + chKey;
         chLink.appendChild(numSpan);
         chLink.appendChild(document.createTextNode(ch.title));
         chWrap.appendChild(chLink);
@@ -808,10 +808,10 @@ mark.search-highlight {{
       groups: [
         {{ label: '0 · 서문',        chapters: [0] }},
         {{ label: '1 · 선사시대',    chapters: [1, 2, 3] }},
-        {{ label: '2 · 고전 SLAM',   chapters: [4, 5, 6] }},
-        {{ label: '3 · 성숙기',      chapters: [7, 8, 9, 10] }},
+        {{ label: '2 · 고전 SLAM',   chapters: [4, 5, 6, '6b'] }},
+        {{ label: '3 · 성숙기',      chapters: [7, '7b', '7c', 8, 9, 10] }},
         {{ label: '4 · 러닝 융합기', chapters: [11, 12, 13] }},
-        {{ label: '5 · 표현의 혁명', chapters: [14, 15, 16] }},
+        {{ label: '5 · 표현의 혁명', chapters: [14, 15, '15b', 16] }},
         {{ label: '6 · 옆길과 결론', chapters: [17, 18, 19] }}
       ]
     }},
@@ -825,10 +825,10 @@ mark.search-highlight {{
       groups: [
         {{ label: '0 · Preface',            chapters: [0] }},
         {{ label: '1 · Prehistory',         chapters: [1, 2, 3] }},
-        {{ label: '2 · Classical SLAM',     chapters: [4, 5, 6] }},
-        {{ label: '3 · Maturity',           chapters: [7, 8, 9, 10] }},
+        {{ label: '2 · Classical SLAM',     chapters: [4, 5, 6, '6b'] }},
+        {{ label: '3 · Maturity',           chapters: [7, '7b', '7c', 8, 9, 10] }},
         {{ label: '4 · Learning fusion',    chapters: [11, 12, 13] }},
-        {{ label: '5 · Representation',     chapters: [14, 15, 16] }},
+        {{ label: '5 · Representation',     chapters: [14, 15, '15b', 16] }},
         {{ label: '6 · Sidetracks & close', chapters: [17, 18, 19] }}
       ]
     }}
@@ -1002,8 +1002,8 @@ mark.search-highlight {{
       }}
 
       tocContainer.innerHTML = '';
-      buildOverview();
       buildTOC();
+      buildOverview();
 
       state.cache[lang] = {{
         content: contentEl.innerHTML,
@@ -1058,24 +1058,36 @@ mark.search-highlight {{
   function buildTOC() {{
     var headings = contentEl.querySelectorAll('h1, h2');
     var fragment = document.createDocumentFragment();
+    var usedHeadingIds = Object.create(null);
 
     headings.forEach(function(heading) {{
-      if (!heading.id) {{
-        heading.id = heading.textContent
+      var baseId = heading.id;
+      if (!baseId) {{
+        baseId = heading.textContent
           .toLowerCase()
           .replace(/[^\w\s가-힣-]/g, '')
           .replace(/\s+/g, '-')
           .substring(0, 60);
       }}
+      if (!baseId) baseId = 'section';
+
+      var uniqueId = baseId;
+      var suffix = 2;
+      while (usedHeadingIds[uniqueId]) {{
+        uniqueId = baseId + '-' + suffix;
+        suffix += 1;
+      }}
+      usedHeadingIds[uniqueId] = true;
+      heading.id = uniqueId;
 
       if (heading.tagName === 'H1') {{
-        var m = heading.textContent.trim().match(/Ch\.?\s*(\d+)/);
+        var m = heading.textContent.trim().match(/Ch\.?\s*(\d+[a-z]?)/i);
         if (m) {{
-          var chNum = parseInt(m[1], 10);
-          if (GROUP_FIRST[chNum]) {{
+          var chKey = m[1].toLowerCase();
+          if (GROUP_FIRST[chKey]) {{
             var label = document.createElement('div');
             label.className = 'toc-group-label';
-            label.textContent = GROUP_FIRST[chNum];
+            label.textContent = GROUP_FIRST[chKey];
             fragment.appendChild(label);
           }}
         }}
