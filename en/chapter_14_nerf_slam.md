@@ -42,7 +42,7 @@ The objective has two terms: a color loss $\mathcal{L}_{\text{color}} = \|\hat{C
 
 iMAP was a proof of concept that operated on small indoor scenes but had two structural limitations. First, the single MLP forgot earlier regions as it learned new ones, exhibiting catastrophic forgetting. Keyframe replay partially mitigated this effect without removing its cause. Second, the MLP's representational capacity became insufficient as scenes grew because every forward pass treated the entire space as one function.
 
-> 📜 **Prediction vs. outcome.** In iMAP's conclusion, Sucar wrote that "future directions for iMAP include how to make more structured and compositional representations that reason explicitly about the self similarity in scenes." Structured and compositional representations became central to later work. Five months later, an ETH Zürich pre-release of NICE-SLAM partitioned space hierarchically with a multi-resolution voxel feature grid. Wang et al.'s Co-SLAM (2023) later combined hash-grid and coordinate encodings and reported more than 15 Hz on an RTX 3090 Ti. Explicit reasoning about self-similarity received less attention in mainstream NeRF-SLAM, and approaches that refined a single MLP also became less central.
+> 📜 **Prediction vs. outcome.** In iMAP's conclusion, Sucar wrote that "future directions for iMAP include how to make more structured and compositional representations that reason explicitly about the self similarity in scenes." Structured and compositional representations became central to later work. Five months later, an ETH Zürich pre-release of NICE-SLAM partitioned space hierarchically with a multi-resolution voxel feature grid. Wang et al.'s Co-SLAM (2023) later combined hash-grid and coordinate encodings and reported 10–17 Hz on an RTX 3090 Ti. Explicit reasoning about self-similarity received less attention in mainstream NeRF-SLAM, and approaches that refined a single MLP also became less central.
 
 ---
 
@@ -68,7 +68,7 @@ At SIGGRAPH 2022, Thomas Müller's [Müller et al. 2022. Instant-NGP](https://nv
 
 From late 2022 onward, systems following iMAP and NICE-SLAM developed in two directions: more efficient implicit representations and combinations of a NeRF map with a classical SLAM backend.
 
-UCL's [Wang et al. (2023) **Co-SLAM**](https://arxiv.org/abs/2304.14377) followed the first direction. It combined a multi-resolution hash grid with one-blob encoding in a joint coordinate and parametric representation. The hash grid represented densely observed regions efficiently, while the coordinate encoding supplied a smooth prior over unobserved areas, balancing convergence speed with surface completeness. The paper reported more than 15 Hz on Replica with an RTX 3090 Ti, bringing NeRF-based SLAM close to real-time operation.
+UCL's [Wang et al. (2023) **Co-SLAM**](https://arxiv.org/abs/2304.14377) followed the first direction. It combined a multi-resolution hash grid with one-blob encoding in a joint coordinate and parametric representation. The hash grid represented densely observed regions efficiently, while the coordinate encoding supplied a smooth prior over unobserved areas, balancing convergence speed with surface completeness. The paper reported 15–17 Hz on Replica with an RTX 3090 Ti, bringing NeRF-based SLAM close to real-time operation.
 
 At the same CVPR, [Johari et al.'s **ESLAM**](https://arxiv.org/abs/2211.11704) from Idiap and EPFL addressed the same problem differently. It replaced the 3D feature grid with multi-scale axis-aligned feature planes, reducing memory growth from $O(n^3)$ to $O(n^2)$, and decoded TSDF rather than volume density to accelerate convergence.
 
@@ -92,7 +92,7 @@ NICE-SLAM's grid, Instant-NGP's hash encoding, and Co-SLAM's dual encoding all a
 
 ## 🧭 Still open
 
-**Real-time NeRF-SLAM.** As of 2023, iMAP and NICE-SLAM were far from real time. Co-SLAM reported more than 15 Hz on an RTX 3090 Ti but remained too slow for mobile and embedded robotic hardware. Gaussian Splatting (Ch.15) later addressed speed by returning to an explicit representation, while implicit neural fields still did not support conventional real-time SLAM at 30 fps or more without a consumer GPU. Instant-NGP greatly accelerated rendering, but the combined tracking-and-mapping loop remained constrained.
+**Real-time NeRF-SLAM.** As of 2023, iMAP and NICE-SLAM were far from real time. Co-SLAM reported 10–17 Hz on an RTX 3090 Ti but remained too slow for mobile and embedded robotic hardware. Gaussian Splatting (Ch.15) later addressed speed by returning to an explicit representation, while implicit neural fields still did not support conventional real-time SLAM at 30 fps or more without a consumer GPU. Instant-NGP greatly accelerated rendering, but the combined tracking-and-mapping loop remained constrained.
 
 **Large-scale outdoor environments.** Methods such as [Block-NeRF](https://arxiv.org/abs/2202.05263) (2022, Tancik et al.) partition space into many local NeRFs, but do not yet integrate cleanly with SLAM's requirements for loop closure and global consistency. City-scale NeRF-SLAM remains an open problem.
 

@@ -42,7 +42,7 @@ Imperial College Dyson Robot Learning Lab의 Edgar Sucar가 2021년 ICCV에 발�
 
 iMAP은 개념 증명이었다. 소규모 실내 장면에서 동작했지만 두 가지 구조적 문제가 있었다. 첫째, 단일 MLP는 새로운 영역이 추가될수록 이전 영역을 잊어버렸다. 신경망의 catastrophic forgetting 문제다. Sucar는 keyframe replay로 부분 완화했으나 근본 해결이 아니었다. 둘째, 장면이 커질수록 단일 MLP의 표현력이 부족해졌다. MLP의 forward pass는 파라미터 수와 무관하게 전체 공간을 하나의 함수로 취급하기 때문이다.
 
-> 📜 **예언 vs 실제.** Sucar는 iMAP 논문 Conclusion에서 "future directions for iMAP include how to make more structured and compositional representations that reason explicitly about the self similarity in scenes"라고 적었다. 구조화·합성적 표현 방향은 실제로 후속 연구의 중심 줄기가 되었다. 5개월 뒤 ETH 취리히의 NICE-SLAM 사전공개는 multi-resolution voxel feature grid로 공간을 계층적으로 쪼갰고, Wang et al.의 Co-SLAM(2023)은 hash grid와 coordinate encoding을 합성해 RTX 3090 Ti에서 초당 15프레임을 넘겼다고 보고했다. 다만 "self-similarity를 명시적으로 추론하는" 쪽은 NeRF-SLAM 본류에서 크게 발전하지 않았고, 단일 MLP를 정교화하는 계보 역시 중심에서 밀려났다.
+> 📜 **예언 vs 실제.** Sucar는 iMAP 논문 Conclusion에서 "future directions for iMAP include how to make more structured and compositional representations that reason explicitly about the self similarity in scenes"라고 적었다. 구조화·합성적 표현 방향은 실제로 후속 연구의 중심 줄기가 되었다. 5개월 뒤 ETH 취리히의 NICE-SLAM 사전공개는 multi-resolution voxel feature grid로 공간을 계층적으로 쪼갰고, Wang et al.의 Co-SLAM(2023)은 hash grid와 coordinate encoding을 합성해 RTX 3090 Ti에서 초당 10-17프레임을 보고했다. 다만 "self-similarity를 명시적으로 추론하는" 쪽은 NeRF-SLAM 본류에서 크게 발전하지 않았고, 단일 MLP를 정교화하는 계보 역시 중심에서 밀려났다.
 
 ---
 
@@ -68,7 +68,7 @@ Thomas Müller의 [Müller et al. 2022. Instant-NGP](https://nvlabs.github.io/in
 
 iMAP·NICE-SLAM 이후 2022년 말부터 여러 시스템이 갈래를 나눴다. 한 방향은 implicit representation을 더 효율적으로 만드는 것, 다른 방향은 전통 SLAM의 강건한 backend를 NeRF map과 결합하는 것이었다.
 
-UCL의 [Wang et al.(2023) **Co-SLAM**](https://arxiv.org/abs/2304.14377)은 전자에 속한다. joint coordinate·parametric encoding을 써서 multi-resolution hash grid와 one-blob 인코딩을 결합했다. 두 표현이 서로 보완하도록 설계해 빠른 수렴과 surface completeness를 함께 노렸다. hash grid가 관측된 dense 영역을 빠르게 채우고, coordinate encoding이 미관측 영역에 smooth prior를 제공하는 방식이었다. 논문은 Replica 데이터셋과 RTX 3090 Ti 환경에서 초당 15프레임을 넘는 처리량을 보고했다. NeRF 기반 SLAM이 준실시간 영역에 닿은 사례였다.
+UCL의 [Wang et al.(2023) **Co-SLAM**](https://arxiv.org/abs/2304.14377)은 전자에 속한다. joint coordinate·parametric encoding을 써서 multi-resolution hash grid와 one-blob 인코딩을 결합했다. 두 표현이 서로 보완하도록 설계해 빠른 수렴과 surface completeness를 함께 노렸다. hash grid가 관측된 dense 영역을 빠르게 채우고, coordinate encoding이 미관측 영역에 smooth prior를 제공하는 방식이었다. 논문은 Replica 데이터셋과 RTX 3090 Ti 환경에서 초당 15-17프레임의 처리량을 보고했다. NeRF 기반 SLAM이 준실시간 영역에 닿은 사례였다.
 
 같은 해 같은 CVPR에서 Idiap/EPFL의 [Johari et al.의 **ESLAM**](https://arxiv.org/abs/2211.11704)은 비슷한 문제를 다른 각도에서 풀었다. 3D feature grid 대신 multi-scale axis-aligned feature plane을 써 메모리 증가를 $O(n^3)$에서 $O(n^2)$로 낮추고, volume density 대신 TSDF를 decoding 목표로 삼아 수렴을 가속했다.
 
@@ -92,7 +92,7 @@ NICE-SLAM의 격자, Instant-NGP의 hash encoding, Co-SLAM의 이중 인코딩�
 
 ## 🧭 아직 열린 것
 
-**실시간 NeRF-SLAM.** 2023년 기준 iMAP·NICE-SLAM은 실시간과 거리가 있었고, Co-SLAM이 RTX 3090 Ti에서 초당 15프레임을 넘는 준실시간 처리량을 보고했지만 모바일·로봇 임베디드 환경의 실시간에는 여전히 미치지 못했다. Gaussian Splatting(Ch.15)이 명시적 표현으로의 복귀를 통해 속도 문제를 다른 방식으로 해결했지만, implicit neural field 자체의 고전적 실시간 SLAM(30fps 이상, 소비자 GPU 없이)은 미완으로 남아 있다. Instant-NGP가 렌더링 속도를 극적으로 높였음에도 동시 추적·지도 구축 루프의 전체 처리량은 여전히 제약이 있다.
+**실시간 NeRF-SLAM.** 2023년 기준 iMAP·NICE-SLAM은 실시간과 거리가 있었고, Co-SLAM이 RTX 3090 Ti에서 초당 10-17프레임의 준실시간 처리량을 보고했지만 모바일·로봇 임베디드 환경의 실시간에는 여전히 미치지 못했다. Gaussian Splatting(Ch.15)이 명시적 표현으로의 복귀를 통해 속도 문제를 다른 방식으로 해결했지만, implicit neural field 자체의 고전적 실시간 SLAM(30fps 이상, 소비자 GPU 없이)은 미완으로 남아 있다. Instant-NGP가 렌더링 속도를 극적으로 높였음에도 동시 추적·지도 구축 루프의 전체 처리량은 여전히 제약이 있다.
 
 **대규모 야외 환경.** [Block-NeRF](https://arxiv.org/abs/2202.05263)(2022, Tancik et al.)처럼 공간을 여러 국소 NeRF로 분할하는 시도는 있었지만, SLAM의 루프 클로저·전역 일관성 요구와 매끄럽게 맞물리지 못했다. 도시 규모 NeRF-SLAM은 개방형 문제다.
 
