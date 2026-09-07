@@ -14,7 +14,7 @@ The system runs three threads: Tracking, Local Mapping, and Loop Closing. PTAM h
 
 > 🔗 **Borrowed.** PTAM's Tracking–Mapping split (Klein & Murray, 2007) carried directly into ORB-SLAM's Tracking–LocalMapping structure. Mur-Artal acknowledged the debt in §3 of the paper. ORB-SLAM added a third thread and isolated loop closure as an independent module.
 
-Mur-Artal chose the ORB (Oriented FAST and Rotated BRIEF) descriptor for specific reasons. SIFT and SURF carried patent restrictions, while BRIEF was fast but weak under rotation. ORB added rotation invariance to FAST keypoints; Rublee et al. presented it at ICCV 2011. It runs tens of times faster than SIFT, and its binary representation allows matching by Hamming distance in real time on a CPU.
+Mur-Artal chose the ORB (Oriented FAST and Rotated BRIEF) descriptor for specific reasons. SIFT and SURF carried patent restrictions, while BRIEF was fast but weak under rotation. ORB added rotation invariance to FAST keypoints; Rublee et al. presented it at ICCV 2011. The original experiments reported roughly two orders of magnitude, or about 100 times, higher speed than SIFT, and its binary representation allows matching by Hamming distance in real time on a CPU.
 
 ORB obtains scale invariance from an image pyramid. The original image is shrunk by a scale factor $s$ (1.2 in ORB-SLAM) over 8 levels, and FAST keypoints are detected independently at each level. An intensity centroid defines each keypoint's orientation: the first-order moment of pixel intensity gives the patch center, and the orientation angle $\theta$ rotates the BRIEF bit-comparison pairs. The result is a 256-bit rotation-invariant descriptor. XOR followed by popcount computes the Hamming distance between two descriptors.
 
@@ -22,7 +22,7 @@ ORB obtains scale invariance from an image pyramid. The original image is shrunk
 
 The keyframe-selection policy departs from PTAM's. PTAM added keyframes aggressively; ORB-SLAM removes redundancy using a covisibility graph. In the **covisibility graph**, edge weights count the landmarks shared between keyframes. Two keyframes connect when they share 15 or more landmarks. Local Mapping uses this graph to select a local window and runs BA only within it.
 
-On KITTI sequence 00 (a full 4.5 km loop), ORB-SLAM recorded 1.2% translation drift. PTAM, the comparison target at the time, could not close the loop and had no absolute scale. The Essential graph and DBoW2 allowed ORB-SLAM to recognize the loop and absorb the drift.
+On KITTI sequence 00 (a full 4.5 km loop), ORB-SLAM recorded 1.2% translation drift. PTAM, the comparison target at the time, could not close the large loop. Absolute scale remained ambiguous in both monocular systems. The Essential graph and DBoW2 allowed ORB-SLAM to recognize the loop and absorb the drift.
 
 The **Essential graph** is a subgraph of the covisibility graph. It keeps only edges with 100 or more shared landmarks, the spanning tree, and the loop-closure edges. When a loop is detected the whole graph is optimized as a pose graph. Even with thousands of keyframes the edges of the Essential graph stay sparse. Optimization finishes within seconds.
 
@@ -30,11 +30,11 @@ The **Essential graph** is a subgraph of the covisibility graph. It keeps only e
 
 Place recognition for loop closure is handled by DBoW2. [Gálvez-López & Tardós 2012. DBoW2](https://doi.org/10.1109/TRO.2012.2197158) is a vocabulary tree for binary descriptors. ORB descriptors are hierarchically clustered with k-medians (k-means++ seeding) to build a tree-structured vocabulary. Once the branching factor $k_w$ and depth $L_w$ are fixed, the number of leaf nodes (words) becomes $k_w^{L_w}$. The DBoW2 paper reports an example with $k_w=10$, $L_w=6$ trained into a vocabulary of one million words, and the public ORB-SLAM implementation uses a vocabulary of similar size. Each word carries a TF-IDF (Term Frequency–Inverse Document Frequency) weight: the more frequently a given word appears across the entire keyframe database, the lower its IDF weight, so discriminative words carry more influence. A keyframe is represented by this weighted BoW vector and stored in an inverted index. When a new frame arrives, descending the vocabulary tree to determine the word takes O(log(k^L))=O(L), and the inverted index pulls up candidate keyframes directly. The whole map is never traversed.
 
-The Tracking thread estimates the current pose in every frame. Using the previous frame's pose as an initial value, the system matches features and then uses **EPnP** (Efficient Perspective-n-Point) to compute $\mathbf{T}_{cw} \in SE(3)$. EPnP minimizes reprojection error over 3D–2D correspondences $\{(\mathbf{X}_i, \mathbf{u}_i)\}$:
+The Tracking thread estimates the current pose in every frame. After feature matching with the previous frame, motion-only bundle adjustment refines $\mathbf{T}_{cw} \in SE(3)$. The basic reprojection objective over 3D–2D correspondences $\{(\mathbf{X}_i, \mathbf{u}_i)\}$ is:
 
 $$\mathbf{T}^* = \arg\min_{\mathbf{T}} \sum_i \left\| \mathbf{u}_i - \pi(\mathbf{T}\mathbf{X}_i) \right\|^2$$
 
-Here $\pi$ is the camera projection function, $\mathbf{X}_i$ is the world coordinate of a map point, and $\mathbf{u}_i$ is the image coordinate. After the initial estimate, RANSAC removes outliers, and a g²o-based local BA on inliers alone jointly optimizes the pose of the current keyframe and its covisibility-graph neighbors, along with the map points.
+Here $\pi$ is the camera projection function, $\mathbf{X}_i$ is a map point in world coordinates, and $\mathbf{u}_i$ is its image observation. Pose optimization uses a robust loss and observation weights, holding map points fixed while changing only the current camera pose. EPnP and RANSAC supply initial pose hypotheses during relocalization. The separate Local Mapping thread performs local BA over neighboring keyframes and map points.
 
 ---
 
@@ -44,7 +44,7 @@ ORB-SLAM (2015) was monocular only. A single camera cannot recover scale: image 
 
 [Mur-Artal & Tardós 2017. ORB-SLAM2](https://doi.org/10.1109/TRO.2017.2705103) addresses the problem by adding stereo and RGB-D. Stereo has a known baseline and triangulates depth directly; RGB-D provides a measured depth value. Both recover metric scale.
 
-The structure is the same three threads as mono. Only the front end changes with the sensor type. Stereo extracts ORB from a rectified image pair and computes depth by left-right matching. Feature points near the baseline are classified as **stereo landmarks**, while far points where depth estimation is impossible are classified as **monocular landmarks**. This mixed approach uses the strengths of stereo and mono at once.
+The structure is the same three threads as mono. Only the front end changes with the sensor type. Stereo extracts ORB from a rectified image pair and computes depth by left-right matching. Features matched across the pair provide **stereo observations**, while features seen in only one image provide **monocular observations**. Points with depth estimates are further classified as close or far using a threshold proportional to the baseline length.
 
 **Stereo initialization** runs immediately from the first frame, unlike monocular initialization. The monocular mode builds a map from the Essential Matrix or Homography between two frames and retains scale ambiguity. Stereo computes depth at the first keyframe from the horizontal disparity $d$ between left and right images, the baseline $b$, and focal length $f$:
 
@@ -52,7 +52,7 @@ $$Z = \frac{b \cdot f}{d}$$
 
 Feature points with depth $Z$ below the threshold $Z_{\max}=40b$ are registered as 3D map points at once. RGB-D initialization works on the same principle. The depth value $Z$ at pixel $(u, v)$ is read from the depth image, and back-projection yields the 3D coordinate. In both cases, because scale is fixed, Local BA can run right after the first frame.
 
-On the Machine Hall 01 sequence of the EuRoC MAV (Micro Aerial Vehicle) dataset, ORB-SLAM2 (stereo) recorded an absolute translation error of 0.035 m in Table II. The same table uses Stereo LSD-SLAM as the comparison target, showing the feature-based method's precision advantage numerically. ORB-SLAM2 also ranked near the top among methods then published on KITTI odometry.
+On the Machine Hall 01 sequence of the EuRoC MAV (Micro Aerial Vehicle) dataset, ORB-SLAM2 (stereo) recorded an absolute translation error of 0.035 m in Table II. The same table uses Stereo LSD-SLAM as the comparison target, showing lower error for ORB-SLAM2 under those evaluation conditions. ORB-SLAM2 also ranked near the top among methods then published on KITTI odometry.
 
 On the day in May 2017 when the paper appeared in IEEE TRO, Mur-Artal and Tardós pushed the source to GitHub alongside it. Two people in the Zaragoza team released mono, stereo, and RGB-D modes on a single codebase. GitHub stars passed several thousand afterward, and ROS wrappers came out of the community.
 
@@ -64,7 +64,7 @@ On the day in May 2017 when the paper appeared in IEEE TRO, Mur-Artal and Tardó
 
 ORB-SLAM3 added two core extensions: **Atlas** (multi-map) and **Visual-Inertial** mode.
 
-Atlas holds several separate maps simultaneously. When tracking fails, the existing map is suspended and a new one starts; if the system later revisits the same place, it merges the maps. ORB-SLAM and ORB-SLAM2 had to restart after a tracking failure. Campos identified this as the limitation he encountered most often during his PhD, and Atlas was his response. ORB-SLAM3 reinitializes after failure while retaining the previous map.
+Atlas holds several separate maps simultaneously. When tracking fails, the existing map is suspended and a new one starts; if the system later revisits the same place, it merges the maps. ORB-SLAM and ORB-SLAM2 already attempted relocalization in the existing map. When recovery failed and a new map was started, however, they lacked Atlas's ability to retain and merge separate maps. ORB-SLAM3 presents Atlas as a response to that limitation. ORB-SLAM3 reinitializes after failure while retaining the previous map.
 
 Visual-Inertial (VI) mode integrates IMU data. Campos adopted the formulation that Forster et al. proposed at RSS 2015 as "IMU Preintegration on Manifold" and extended in IEEE TRO 2016 as [On-Manifold Preintegration for Real-Time Visual-Inertial Odometry](https://doi.org/10.1109/TRO.2016.2597321). The IMU bridges rapid motions that can make visual tracking fail. VI-SLAM also resolves a monocular camera's scale ambiguity: accelerometer measurements provide absolute scale together with the direction of gravity.
 

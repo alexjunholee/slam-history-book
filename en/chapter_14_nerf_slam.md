@@ -52,7 +52,7 @@ Zihan Zhu and Songyou Peng at ETH Zürich addressed iMAP's single-MLP limitation
 
 NICE-SLAM partitions space into an explicit voxel grid and stores a learnable feature vector at each voxel. During rendering, trilinear interpolation combines features from the voxels surrounding a sample coordinate, and a small MLP decodes them into color and occupancy. Most spatial information resides in the grid, reducing the required MLP size.
 
-NICE-SLAM organized three grid resolutions hierarchically. The coarse grid stored overall geometry, the middle grid stored structural detail, and the fine grid stored texture. Adding a new region required updating only its corresponding voxel features, substantially reducing catastrophic forgetting elsewhere.
+NICE-SLAM organized three grid resolutions hierarchically. The coarse-to-fine grids represented geometry at multiple levels, while a separate color feature grid and decoder represented appearance. Adding a new region required updating only its corresponding voxel features, substantially reducing catastrophic forgetting elsewhere.
 
 Like iMAP, NICE-SLAM froze the MLP and grid features while optimizing pose during tracking. During mapping, it updated the grid features. On Replica and ScanNet, the system handled larger spaces than iMAP and reconstructed finer details.
 
@@ -96,8 +96,8 @@ NICE-SLAM's grid, Instant-NGP's hash encoding, and Co-SLAM's dual encoding all a
 
 **Large-scale outdoor environments.** Methods such as [Block-NeRF](https://arxiv.org/abs/2202.05263) (2022, Tancik et al.) partition space into many local NeRFs, but do not yet integrate cleanly with SLAM's requirements for loop closure and global consistency. City-scale NeRF-SLAM remains an open problem.
 
-**Semantic and editable implicit maps.** Because a NeRF map is optimized for rendering, inserting semantic labels and editing the map afterward are difficult. Removing an object or reclassifying a region is substantially harder than in a TSDF or point cloud. Language-guided NeRF editing is under development in systems such as [LERF](https://arxiv.org/abs/2303.09553) and the [Nerfstudio](https://arxiv.org/abs/2302.04264) ecosystem, but real-time integration with SLAM remained a research problem as of 2026.
+**Semantic and editable implicit maps.** Because a NeRF map is optimized for rendering, inserting semantic labels and editing the map afterward are difficult. Removing an object or reclassifying a region is substantially harder than in a TSDF or point cloud. [LERF](https://arxiv.org/abs/2303.09553) aligns language features with space for semantic queries; it does not itself provide object deletion or editing. Semantic representations and editing are explored using tools such as [Nerfstudio](https://arxiv.org/abs/2302.04264), but real-time integration with SLAM remained a research problem as of 2026.
 
 ---
 
-As iMAP and NICE-SLAM developed implicit fields, other researchers reconsidered explicit map representations. Millions of small ellipsoids placed throughout space promised faster rendering and more intuitive editing than a map encoded in MLP weights or a feature grid. Before Bernhard Kerbl's SIGGRAPH 2023 paper, that possibility remained a hypothesis.
+As iMAP and NICE-SLAM developed implicit fields, other researchers reconsidered explicit map representations. Millions of small ellipsoids placed throughout space promised faster rendering and more intuitive editing than a map encoded in MLP weights or a feature grid. Splatting already had predecessors such as EWA splatting in 2001. Bernhard Kerbl's SIGGRAPH 2023 paper demonstrated the combination of trainable 3D Gaussians and a fast differentiable renderer.

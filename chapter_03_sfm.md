@@ -2,7 +2,7 @@
 
 Harris와 Lowe가 이미지 안에서 "볼 만한 점"을 골라내는 방법을 다듬는 동안, 다른 계보는 그 점들이 두 장의 사진에 동시에 찍혔을 때 무엇을 알 수 있는가를 물었다. 특징을 *검출*하는 문제와 특징으로부터 *공간을 재구성*하는 문제는 같은 시기에 각자 발전했고, 2000년대 중반에야 하나의 파이프라인으로 합쳐졌다.
 
-1981년 케임브리지 이론심리학자 H.C. Longuet-Higgins는 *Nature*에 세 페이지짜리 논문을 실었다. 제목은 "[A Computer Algorithm for Reconstructing a Scene from Two Projections](https://cseweb.ucsd.edu/classes/fa01/cse291/hclh/SceneReconstruction.pdf)". 그는 두 장의 사진에 찍힌 같은 점들의 좌표 여덟 쌍만으로 카메라가 어떻게 움직였는지, 그리고 그 장면이 3차원에서 어떤 형태인지를 동시에 풀어낼 수 있음을 보였다. 로봇공학자도 컴퓨터 비전 연구자도 아니었다. 그 세 페이지에서 Structure from Motion(SfM)이 시작되었고, 2016년 Johannes Schönberger의 COLMAP이 나오면서야 그 수학이 공학으로 구현되었다.
+1981년 케임브리지 이론심리학자 H.C. Longuet-Higgins는 *Nature*에 세 페이지짜리 논문을 실었다. 제목은 "[A Computer Algorithm for Reconstructing a Scene from Two Projections](https://cseweb.ucsd.edu/classes/fa01/cse291/hclh/SceneReconstruction.pdf)". 그는 두 장의 사진에 찍힌 같은 점들의 좌표 여덟 쌍으로 카메라의 상대 운동과 장면 구조를 복원하는 선형 알고리즘을 제시했다. 로봇공학자도 컴퓨터 비전 연구자도 아니었다. 사진측량과 motion perception에 선행 연구가 있었으므로 이 논문을 SfM 전체의 시작으로 볼 수는 없지만, 현대 컴퓨터 비전의 two-view geometry를 여는 영향력 있는 전환점이었다. 이후 self-calibration, incremental SfM, Bundler와 대규모 인터넷 사진 재구성이 이어졌고, Johannes Schönberger의 2016년 COLMAP은 그 축적을 강건한 범용 오픈소스 파이프라인으로 정리했다.
 
 ---
 
@@ -20,7 +20,7 @@ Essential matrix는 스케일 모호성을 제거하면 자유도가 5이다. �
 
 문제는 수치 안정성이었다. 이미지 좌표가 수백~수천 픽셀 단위이면 계수행렬의 원소 크기가 크게 달라져 SVD가 불안정해진다.
 
-> 🔗 **차용.** Hartley는 1997년 정규화된 8-point algorithm([In Defense of the Eight-Point Algorithm](https://www.cse.unr.edu/~bebis/CS485/Handouts/hartley.pdf))에서 이미지 좌표를 평균 0, 평균 거리 $\sqrt{2}$로 선형 변환한 뒤 essential matrix를 추정하는 방식을 내놓았다. Longuet-Higgins의 기하학은 그대로 두고, 수치 조건만 고쳤다. 이 정규화 절차는 이후 다중 뷰 기하 교재와 구현에서 널리 채택됐다.
+> 🔗 **차용.** Hartley는 1997년 정규화된 8-point algorithm([In Defense of the Eight-Point Algorithm](https://www.cse.unr.edu/~bebis/CS485/Handouts/hartley.pdf))에서 이미지 좌표를 평균 0, 평균 거리 $\sqrt{2}$로 선형 변환한 뒤 fundamental matrix를 추정하고 원래 좌표계로 되돌리는 방식을 내놓았다. 카메라 내부 파라미터로 좌표를 보정하는 정규화와는 목적이 다르다. Longuet-Higgins의 기하학은 그대로 두고, 수치 조건만 고쳤다. 이 정규화 절차는 이후 다중 뷰 기하 교재와 구현에서 널리 채택됐다.
 
 Fundamental matrix $\mathbf{F}$는 essential matrix의 일반화다. 카메라 내부 파라미터 $\mathbf{K}$를 알지 못해도 $\mathbf{x}_2^\top \mathbf{F} \mathbf{x}_1 = 0$이 성립한다. 두 카메라의 내부 파라미터를 각각 $\mathbf{K}_1$, $\mathbf{K}_2$라 하면 관계는 $\mathbf{F} = \mathbf{K}_2^{-\top} \mathbf{E} \mathbf{K}_1^{-1}$이다. 같은 카메라로 찍은 경우($\mathbf{K}_1 = \mathbf{K}_2 = \mathbf{K}$)에는 $\mathbf{F} = \mathbf{K}^{-\top} \mathbf{E} \mathbf{K}^{-1}$로 단순화된다. SfM 파이프라인에서 $\mathbf{K}$를 모를 때는 $\mathbf{F}$를 먼저 추정하고, $\mathbf{K}$를 알 때는 $\mathbf{E}$를 직접 푼다.
 
@@ -40,19 +40,19 @@ $$\mathbf{W} = \mathbf{M} \mathbf{S}$$
 
 > 🔗 **차용.** Nistér, Naroditsky, Bergen의 2004년 CVPR 논문 "Visual Odometry"는 실시간 에고모션 추정을 이 계보의 응용 문제로 돌려놓은 것으로 후속 문헌에 널리 인용된다. Tomasi-Kanade의 batch factorization을 그대로 쓰는 대신 짧은 윈도우 안에서 프레임 간 상대 포즈를 풀어나가는 쪽으로 방향이 옮겨갔고, 이는 batch 정확도 대신 latency를 택하는 흐름의 초기 지점으로 남았다.
 
-Orthographic/affine 가정이 한계였다. Affine 카메라는 원근 왜곡(perspective distortion)을 무시한다. 이 모델은 장면의 깊이 변화가 카메라까지의 거리에 비해 충분히 작을 때(즉 원거리 소물 촬영)에만 유효하다. 카메라와 가까운 장면, 시야각이 넓은 렌즈, 혹은 전경·배경 깊이 차이가 큰 환경에서는 오차가 컸다. 1990년대 후반부터 perspective camera로의 확장이 여러 방향에서 시도되었고, 이는 bundle adjustment의 재발견으로 이어졌다.
+Orthographic/affine 가정이 한계였다. Affine 카메라는 원근 왜곡(perspective distortion)을 무시한다. 이 모델은 장면의 깊이 변화가 카메라까지의 거리에 비해 충분히 작을 때(예를 들어 원거리의 작은 물체를 촬영할 때)에만 유효하다. 카메라와 가까운 장면, 시야각이 넓은 렌즈, 혹은 전경·배경 깊이 차이가 큰 환경에서는 오차가 컸다. 1990년대 후반부터 perspective camera로의 확장이 여러 방향에서 시도되었고, 이는 bundle adjustment의 재발견으로 이어졌다.
 
 ---
 
 ## 3.3 Hartley & Zisserman과 정전(canon)화
 
-Tomasi-Kanade의 factorization이 multiple view 문제의 틀을 잡았다면, 남은 과제는 perspective camera로의 확장과 흩어진 수학을 하나의 언어로 묶는 일이었다.
+Tomasi-Kanade의 factorization이 다중 시점 문제의 틀을 잡았다면, 남은 과제는 원근 카메라로의 확장과 흩어진 수학을 하나의 언어로 묶는 일이었다.
 
 2000년 Richard Hartley와 Andrew Zisserman의 680쪽 교과서 *[Multiple View Geometry in Computer Vision](https://www.robots.ox.ac.uk/~vgg/hzbook/)*이 나왔다. 1981년부터 1990년대까지 여기저기 흩어진 SfM 수학을 사영기하(projective geometry)의 언어로 통합했다.
 
 Hartley & Zisserman은 essential matrix, fundamental matrix, homography, camera calibration, bundle adjustment를 사영기하의 단일 프레임워크로 묶었다. 각자 따로 다뤄지던 개념들의 공통 뿌리가 한 교과서 안에서 드러났다.
 
-Hartley & Zisserman은 bundle adjustment를 특히 무게 있게 다뤘다. Triggs et al.(1999)이 Ch.1에서 정식 도입한 reprojection error 최소화 문제를 사영기하 프레임워크 안에 놓고 *robust cost function* $\rho$를 명시적으로 얹었다. outlier가 섞인 실제 데이터에서 최적화가 무너지지 않도록 Huber나 Cauchy 함수로 오차를 눌렀다. Levenberg-Marquardt로 풀되, Jacobian의 희소 구조를 써서 계산량을 줄였다.
+Hartley & Zisserman은 bundle adjustment를 특히 무게 있게 다뤘다. Ch.1에서 Triggs et al.(1999)의 종합을 통해 살펴본 reprojection error 최소화 문제를 사영기하 프레임워크 안에 놓고 *robust cost function* $\rho$를 명시적으로 얹었다. outlier가 섞인 실제 데이터에서 최적화가 무너지지 않도록 Huber나 Cauchy 함수로 오차를 눌렀다. Levenberg-Marquardt로 풀되, Jacobian의 희소 구조를 써서 계산량을 줄였다.
 
 2000년대 초반 SLAM·VO 논문 대부분이 이 교과서를 표준 참조로 달았다. 개념 정의가 이 책 하나로 통일되면서, Photo Tourism 같은 대규모 응용은 개념 재정의 없이 구현에 집중할 수 있었다.
 
@@ -76,7 +76,7 @@ Snavely의 파이프라인은 다음 순서로 작동했다. SIFT 특징 검출�
 
 ## 3.5 COLMAP — 공학적 성숙
 
-> 📜 **예언 vs 실제.** Snavely et al. 2006 "Discussion and future work" 섹션은 "Ultimately, we wish to scale up our reconstruction algorithm to handle millions of photographs"라고 명시하며, 더 나은 이미지 등록 순서, 렌즈 왜곡 모델링, 반복 구조 처리, 비연결 구조 재구성을 남은 과제로 꼽았다. 규모 확장은 COLMAP(Schönberger 2016)과 OpenSfM이 수만~수십만 장 규모로 이어받았고, 실시간·온라인 처리는 SfM이 아니라 SLAM 계보가 별도로 답했다(incremental refinement 대신 fixed-lag smoother와 loop closure로). Snavely가 명시한 항목 중에서는 규모 확장이 가장 명확히 채워졌다.
+> 📜 **예언 vs 실제.** Snavely et al. 2006 "Discussion and future work" 섹션은 "Ultimately, we wish to scale up our reconstruction algorithm to handle millions of photographs"라고 명시하며, 더 나은 이미지 등록 순서, 렌즈 왜곡 모델링, 반복 구조 처리, 비연결 구조 재구성을 남은 과제로 꼽았다. 규모 확장은 COLMAP(Schönberger 2016)과 OpenSfM이 수만~수십만 장 규모로 이어받았고, 실시간·온라인 처리는 SfM이 아니라 SLAM 계보가 별도로 답했다(incremental refinement 대신 fixed-lag smoother와 loop closure로). 이는 규모 확장 방향의 진전이지만, 여기 든 규모만으로 수백만 장이라는 목표가 달성됐다고 할 수는 없다.
 
 2016년 Johannes Schönberger와 Jan-Michael Frahm은 CVPR 논문 "[Structure-from-Motion Revisited](https://openaccess.thecvf.com/content_cvpr_2016/papers/Schonberger_Structure-From-Motion_Revisited_CVPR_2016_paper.pdf)"를 발표했다. Bundler 이후 십 년간 쌓인 개선들을 체계적으로 묶은 재설계였다.
 
@@ -102,7 +102,7 @@ SfM은 *오프라인*이다. 모든 이미지를 수집한 뒤 처리하므로 �
 
 SLAM은 *온라인*이다. 센서 데이터가 실시간으로 유입되고, 현재 시점의 로봇 위치를 그 자리에서 내놓아야 한다. 과거 데이터를 무한정 참조할 수 없으며, 지도가 자라면서 계산량이 커지고, 루프를 완주해 처음 방문한 장소로 돌아왔을 때 accumulated drift를 교정해야 한다.
 
-두 분야는 루프 클로저에서 갈린다. SfM에서는 global bundle adjustment가 모든 불일치를 정리한다. SLAM에서는 루프가 닫히는 순간을 탐지해서 그 시점의 drift를 국소적으로 교정해야 한다. 이를 위한 기법(visual place recognition, pose graph optimization, covisibility-based local optimization)은 SfM에 존재하지 않는 SLAM 고유의 문제였다.
+두 분야는 온라인 처리의 제약에서 차이가 난다. SLAM은 이동 중 재방문을 탐지하고 누적된 drift를 교정해야 하며, 그 교정은 루프가 연결하는 여러 포즈에 걸칠 수 있다. SfM과 SLAM은 bundle adjustment와 영상 검색 같은 도구를 공유하지만, 언제 어떤 상태를 갱신할지 정하는 실행 조건이 다르다.
 
 불확실성 전파도 달랐다. SLAM은 현재 포즈의 불확실성을 실시간으로 추적하고 새 관측마다 갱신한다. EKF나 factor graph 형태의 probabilistic 표현이 필요하다. SfM에서는 최적화가 끝난 뒤 covariance를 사후에 계산하면 되고, 실시간 추적은 필수가 아니다.
 
@@ -112,7 +112,7 @@ Davison의 [MonoSLAM(2003)](https://www.doc.ic.ac.uk/~ajd/Publications/davison_i
 
 ## 3.7 🧭 아직 열린 것
 
-**동적 물체 포함 SfM.** COLMAP을 비롯한 주류 범용 SfM 파이프라인은 static world를 가정한다. 장면의 포인트가 움직이지 않는다는 전제로 bundle adjustment를 풀기 때문에, 자동차나 보행자가 많은 장면에서는 오염된 매칭이 최적화를 왜곡한다. RANSAC이 일부를 걸러내고 Dynamic SfM 연구는 segmentation이나 물체별 motion을 모델링하지만, 이 장에서 검토한 공개 구현 가운데 COLMAP과 같은 범용 도구로 정착한 사례는 확인되지 않았다.
+**동적 물체 포함 SfM.** COLMAP을 비롯한 주류 범용 SfM 파이프라인은 정적인 세계를 가정한다. 장면의 포인트가 움직이지 않는다는 전제로 bundle adjustment를 풀기 때문에, 자동차나 보행자가 많은 장면에서는 오염된 매칭이 최적화를 왜곡한다. RANSAC이 일부를 걸러내고 Dynamic SfM 연구는 segmentation이나 물체별 motion을 모델링하지만, 이 장에서 검토한 공개 구현 가운데 COLMAP과 같은 범용 도구로 정착한 사례는 확인되지 않았다.
 
 **SfM과 SLAM의 경계 흐려짐.** 2023년 [DUSt3R](https://arxiv.org/abs/2312.14132)(Wang et al.)는 사전 훈련된 네트워크 하나로 이미지 두 장을 받아 dense point map과 카메라 포즈를 동시에 냈다. 특징점 매칭도 RANSAC도 bundle adjustment 초기화도 거치지 않았다. [MASt3R](https://arxiv.org/abs/2406.09756)(2024)로 확장되면서 수십 장 재구성도 됐다. 전통적인 SfM 파이프라인의 각 모듈이 하나씩 대체되고 있다. COLMAP이 NeRF·3DGS의 입구였다면, DUSt3R 류는 그 입구마저 바꾸려 한다. 이 패러다임이 COLMAP을 실질적으로 밀어낼지, 특정 도메인에서만 이길지는 아직 모른다.
 

@@ -1,12 +1,12 @@
 # Ch.6b — Certifiable SLAM: 지역 최솟값을 넘어서
 
-Lu-Milios에서 g2o·GTSAM에 이르는 계보는 한 가지 문제를 남겨두었다. 포즈 그래프 최적화는 비볼록 문제이고, Gauss-Newton·LM이 내놓는 해는 지역 최솟값일 수 있다. 실무자들은 "odometry 초기값이 있으면 대체로 잘 풀린다"는 민속적 관찰로 지내왔지만, 어느 현장에서는 백엔드가 엉뚱한 지점에서 수렴했는데도 경고음은 울리지 않았다. 2015년 MIT의 Luca Carlone이 그 민속을 수학으로 대체하기 시작했다. Carlone의 Lagrangian duality 시도는 2019년 Rosen의 SE-Sync, Briales-Gonzalez-Jimenez의 Cartan-Sync, Yang-Carlone의 TEASER, Papalia의 CORA로 이어졌다. 도구는 모두 SLAM 바깥에서 왔다: 오퍼레이션스 리서치의 Shor relaxation, 수학 최적화의 Burer-Monteiro factorization, 미분기하의 Riemannian optimization, 그래프 이론의 Kirchhoff Matrix-Tree였다.
+Lu-Milios에서 g2o·GTSAM에 이르는 계보는 한 가지 문제를 남겨두었다. 포즈 그래프 최적화는 비볼록 문제이고, Gauss-Newton·LM이 내놓는 해는 지역 최솟값일 수 있다. 실무자들은 "odometry 초기값이 있으면 대체로 잘 풀린다"는 경험칙에 의존했지만, 어느 현장에서는 백엔드가 엉뚱한 지점에서 수렴하고도 실패 신호를 내지 않았다. 2015년 MIT의 Luca Carlone이 그 경험칙을 수학으로 대체하기 시작했다. Carlone의 Lagrangian duality 시도는 2019년 Rosen의 SE-Sync, Briales-Gonzalez-Jimenez의 Cartan-Sync, Yang-Carlone의 TEASER, Papalia의 CORA로 이어졌다. 이때 쓰인 도구는 모두 SLAM 바깥에서 왔다. 오퍼레이션스 리서치의 Shor relaxation, 수학 최적화의 Burer-Monteiro factorization, 미분기하의 Riemannian optimization, 그래프 이론의 Kirchhoff Matrix-Tree였다.
 
 ---
 
 ## 6b.1 지역 최솟값이라는 오래된 불안
 
-Ch.6 §6.7은 그래프 SLAM 백엔드의 첫 문제로 초기값 의존성을 꼽았다. 비용 함수가 회전 변수 $\boldsymbol{R}_i \in \mathrm{SO}(3)$ 위에서 비볼록이기 때문에, 초기 추정이 참값에서 멀면 Gauss-Newton은 엉뚱한 분지로 빨려 들어간다. Handbook §6.1의 parking garage 예시에서는 같은 입력의 무작위 초기화 네 번 중 하나만 SE-Sync가 도달한 전역 최솟값에 붙고, 나머지 셋은 육안으로도 바닥이 접힌 지역 최솟값에 안착한다.
+Ch.6 §6.7은 그래프 SLAM 백엔드의 첫 문제로 초기값 의존성을 꼽았다. 비용 함수가 회전 변수 $\boldsymbol{R}_i \in \mathrm{SO}(3)$ 위에서 비볼록이기 때문에, 초기 추정이 참값에서 멀면 Gauss-Newton은 잘못된 해의 분지에 수렴한다. Handbook §6.1의 parking garage 예시에서는 같은 입력의 무작위 초기화 네 번 중 하나만 SE-Sync가 도달한 전역 최솟값에 붙고, 나머지 셋은 육안으로도 바닥이 접힌 지역 최솟값에 안착한다.
 
 2000년대 후반까지 커뮤니티는 두 갈래로 대응했다. odometry를 신뢰해 초기값 품질을 확보했고, 루프 클로저 검증과 아웃라이어 제거를 전단에서 철저히 했다. 둘 다 유효했지만, 수렴한 값이 진짜 최솟값인지 판정하는 도구는 아니었다. Huang과 Dissanayake가 2010년 무렵 짚은 문제는 단순했다. 초기값이 아무리 좋아도 데이터 자체가 모호하면 최적화기는 틀린 답에 가서 멈출 수 있다. PGO가 NP-hard라는 것도 그 무렵 정식화됐다. 그런데도 현장에서는 g2o가 대체로 잘 풀렸다. 이론은 최악을 말하고 실무는 평균을 보는 간극을 2010년대 중반 백엔드 이론 연구자들이 파고들었다. Gauss-Newton이 수렴했다고 해서 전역 최적이라는 뜻은 아니다. 이상적인 2차 조건 아래의 국소 최솟값은 기울기가 0이고 헤시안이 양의 준정부호지만, 정지 기준이나 수치 문제 때문에 그 조건을 만족하기 전에 멈출 수도 있다. 백엔드가 "수렴했다"고 신호를 보내면 실패가 가장 눈에 띄지 않는다.
 
@@ -22,11 +22,11 @@ Shor의 아이디어는 $\boldsymbol{x}^\top \boldsymbol{M}\boldsymbol{x} = \mat
 
 $$d^* = \min_{\boldsymbol{X}\in\mathbb{S}^n} \mathrm{tr}(\boldsymbol{C}\boldsymbol{X}) \;\; \text{s.t.} \;\; \mathrm{tr}(\boldsymbol{A}_i\boldsymbol{X})=b_i,\; \boldsymbol{X}\succeq 0.$$
 
-쓸모는 이중성 부등식 $d^* \le p^*$에 있다. SDP 최솟값은 원 QCQP 최솟값의 아래쪽 경계다. 후보해 $\hat{\boldsymbol{x}}$가 있을 때 $f(\hat{\boldsymbol{x}}) - d^*$가 그 후보의 최적성 간극의 상한이 된다. 여기서 "certifiable"이라는 이름이 나온다. 전역적으로 못 풀어도, 가진 해가 얼마나 나쁜지의 상한은 풀 수 있다. SDP 해 $\boldsymbol{X}^*$가 rank-1로 떨어지면 $\boldsymbol{X}^* = \boldsymbol{x}^*\boldsymbol{x}^{*\top}$에서 $\boldsymbol{x}^*$가 원 QCQP의 전역 최솟값이다. 이 "favorable situation"이 SLAM에서 얼마나 자주 일어나는지가 이후 논문들의 주제가 된다.
+쓸모는 이중성 부등식 $d^* \le p^*$에 있다. SDP 최솟값은 원 QCQP 최솟값의 아래쪽 경계다. 후보해 $\hat{\boldsymbol{x}}$가 있을 때 $f(\hat{\boldsymbol{x}}) - d^*$가 그 후보의 최적성 간극의 상한이 된다. 여기서 "certifiable"이라는 이름이 나온다. 전역적으로 못 풀어도, 가진 해가 얼마나 나쁜지의 상한은 풀 수 있다. SDP 해 $\boldsymbol{X}^*$가 rank-1로 떨어지면 $\boldsymbol{X}^* = \boldsymbol{x}^*\boldsymbol{x}^{*\top}$에서 $\boldsymbol{x}^*$가 원 QCQP의 전역 최적해다. 이 "favorable situation"이 SLAM에서 얼마나 자주 일어나는지가 이후 논문들의 주제가 된다.
 
 이 계보의 출발점은 Carlone이 2015년 IROS와 ICRA에서 발표한 두 편의 논문, [Carlone et al. 2015 "Lagrangian duality in 3D SLAM"](https://arxiv.org/abs/1506.00746)과 [Carlone & Dellaert 2015 "Planar pose graph optimization"](https://doi.org/10.1109/ICRA.2015.7139264)이다. 2D PGO에서 duality gap이 대개 0임을 경험적으로 보였고, 3D로 확장 가능함을 시사했다. Carlone은 2014년 TRO 서베이에서 g2o·GTSAM 초기화 기법을 정리한 직후였고, odometry와 루프 클로저가 충돌할 때 최적화가 자주 틀린 지점에서 멈추는 것을 본 뒤였다. 2015년 논문은 "duality gap이 보통 0"임을 보고할 뿐, 언제 성립하는지의 닫힌 조건은 주지 못했다.
 
-같은 시기 [Briales & Gonzalez-Jimenez (2017)](https://arxiv.org/abs/1702.03235)의 Cartan-Sync가 SO(3) synchronization으로 같은 프로그램을 밀었다. 수학 쪽에서는 Boumal·Absil·Sepulchre가 Riemannian optimization을, 최적화 쪽에서는 Burer-Monteiro의 low-rank SDP factorization이 2003년부터 자리잡고 있었다. 흩어진 재료들이 2019년 한 편의 논문에서 조립된다.
+같은 시기 [Briales & Gonzalez-Jimenez (2017)](https://arxiv.org/abs/1702.03235)의 Cartan-Sync가 SO(3) synchronization으로 같은 프로그램을 밀었다. 수학 쪽에서는 Boumal·Absil·Sepulchre가 Riemannian optimization을, 최적화 쪽에서는 Burer-Monteiro의 low-rank SDP factorization이 2003년부터 자리 잡고 있었다. 흩어진 재료들이 2019년 한 편의 논문에서 조립된다.
 
 ---
 
@@ -38,7 +38,7 @@ $$d^* = \min_{\boldsymbol{X}\in\mathbb{S}^n} \mathrm{tr}(\boldsymbol{C}\boldsymb
 
 두 정리가 이 조립을 정당화한다. Theorem 6.1 **exact recovery**: 측정 노이즈가 어떤 상수 $\beta$보다 작으면 SDP relaxation의 유일 해 $\boldsymbol{Z}^*$가 rank $d$이고, 원 MLE의 전역 최솟값을 정확히 복원한다. 일반적인 벡터 QCQP의 rank-1 조건과 달리, 여기서는 $\boldsymbol{Z}=\boldsymbol{R}^\top\boldsymbol{R}$이고 $\boldsymbol{R}\in\mathbb{R}^{d\times dn}$이므로 exact solution의 rank가 $d$다. 다만 $\beta$는 ground-truth에 의존해 사전에는 모른다. Theorem 6.2는 Boumal et al.의 결과로, Stiefel manifold 위에서 찾은 2차 임계점이 rank-deficient하면 곧 전역 최솟값임을 보장한다. 이 두 정리가 Riemannian Staircase를 가능케 한다. rank를 작게 두고 시작해 2차 임계점을 찾고 rank-deficiency를 검사하고, 안 맞으면 rank를 하나 올린다. rank가 $dn + 1$에 닿으면 모든 $\boldsymbol{Y}$가 row rank-deficient가 되므로 유한 단계 내 반드시 멈춘다. 실무 데이터셋에서는 보통 한 계단이면 끝난다.
 
-sphere·torus·garage 벤치마크에서 SE-Sync는 g2o·GTSAM 수준 속도로 수렴하며 a posteriori certificate를 함께 냈다. g2o·GTSAM은 빨랐지만 답을 언제 믿을지 침묵했고, Rosen의 알고리즘은 끝에 suboptimality bound를 하나 더 토해낸다. 이 bound가 0이면 해는 증명 가능하게 전역 최적이다. Lu-Milios 이후 20년 만에 백엔드가 "이 해가 진짜 최솟값인가"에 '예/아니오'를 찍을 수 있게 됐다.
+sphere·torus·garage 벤치마크에서 SE-Sync는 g2o·GTSAM 수준 속도로 수렴하며 a posteriori certificate를 함께 냈다. g2o·GTSAM은 빨랐지만 답을 언제 믿을지 알려 주지 않았고, Rosen의 알고리즘은 suboptimality bound까지 계산한다. 이 bound가 0이면 해는 증명 가능하게 전역 최적이다. Lu-Milios 이후 20년 만에 백엔드가 해의 전역 최적성을 인증할 수 있게 됐다. 간극이 남았다는 사실만으로 그 해가 비최적이라고 판정하는 것은 아니다.
 
 > 📜 **예언 vs 실제.** Rosen은 IJRR 2019 논문 §8.2에서 "우리가 보인 algebraic simplification은 anisotropic noise·outlier·다양한 센서 모달리티로 확장될 수 있을 것"이라 적었다. 그 예언은 부분적으로 적중했다. 2023년 Holmes-Barfoot의 landmark-SLAM 확장, 2024년 Papalia의 CORA 범위 측정 확장, Yang-Carlone의 TEASER 계열이 실제 뒤따랐다. 그러나 "visual SLAM의 perspective projection까지 SE-Sync가 덮는다"는 가장 야심찬 확장은 2026년에도 오지 않았다. Projection이 rational function이라 polynomial optimization으로 편입되기 어렵다는 구조적 장벽이 드러났다.
 
@@ -48,13 +48,13 @@ sphere·torus·garage 벤치마크에서 SE-Sync는 g2o·GTSAM 수준 속도로 
 
 ## 6b.4 Graph Laplacian과 Fisher Information의 뜻밖의 등가
 
-전역 최솟값이라고 해서 그 추정이 참값과 얼마나 가까운가. Cramér-Rao Lower Bound와 Fisher Information Matrix가 이 질문을 다룬다. 회전을 고정한 단순 PGO 모델에서 Rosen-Khosoussi-Barfoot의 결과에 따르면 FIM은 그래프의 weighted reduced Laplacian의 Kronecker product로 정확히 떨어진다.
+전역 최적해를 찾았더라도, 그 추정이 참값과 얼마나 가까운지는 별개의 질문이다. Cramér-Rao Lower Bound와 Fisher Information Matrix가 이 질문을 다룬다. 회전을 고정한 단순 PGO 모델에서 Rosen-Khosoussi-Barfoot의 결과에 따르면 FIM은 그래프의 weighted reduced Laplacian의 Kronecker product로 정확히 떨어진다.
 
 $$\mathcal{I} = \boldsymbol{J}^\top \boldsymbol{\Sigma}^{-1} \boldsymbol{J} = \boldsymbol{L}_w \otimes \boldsymbol{I}_3.$$
 
-그래프 구조만 알면 실제 측정 없이도 추정 정확도의 근사를 얻는다. Kirchhoff의 Matrix-Tree Theorem에 따라 reduced Laplacian의 determinant는 가중 spanning tree 수와 같고, 이것이 D-optimality(정보 행렬 행렬식)에 대응한다. 알제브라 연결성(Fiedler value)은 E-optimality(최악 분산)에 대응한다. 1847년 Kirchhoff가 전기 회로망을 위해 증명한 정리는 180년 뒤 측정 선택·active SLAM의 이론 기반이 되었다. active SLAM에서 "FIM 최대화"는 Laplacian 스펙트럼 조작으로 환산된다.
+그래프 구조만 알면 실제 측정 없이도 추정 정확도의 근사를 얻는다. Kirchhoff의 Matrix-Tree Theorem에 따라 reduced Laplacian의 determinant는 가중 spanning tree 수와 같고, 이것이 D-optimality(정보 행렬의 행렬식)에 대응한다. 알제브라 연결성(Fiedler value)은 E-optimality(최악 분산)에 대응한다. 1847년 Kirchhoff가 전기 회로망을 위해 증명한 정리는 180년 뒤 측정 선택·active SLAM의 이론 기반이 되었다. active SLAM에서 "FIM 최대화"는 Laplacian 스펙트럼 조작으로 환산된다.
 
-[Kasra Khosoussi와 Timothy Barfoot의 2014년 이후 작업](https://arxiv.org/abs/1709.08601)이 이 연결을 정립했다. Khosoussi는 Sydney에서 Dissanayake·Huang 지도로 박사과정을 밟았고, 이후 MIT와 Toronto를 거쳤다. 3D PGO로 일반화된 형태에서는 Laplacian과 SE(3) adjoint representation의 Kronecker 결합이 등장해 위상·기하 정보를 분리해 다루게 한다. "측정 선택 기준"을 FIM 전체 대신 6배 작은 Laplacian으로 근사 가능하다는 것이 Ch.6이 자리만 두고 지나간 "루프 클로저 선택"의 수학적 근거가 된다.
+[Kasra Khosoussi와 Timothy Barfoot의 2014년 이후 작업](https://arxiv.org/abs/1709.08601)이 이 연결을 정립했다. Khosoussi는 Sydney에서 Dissanayake·Huang 지도로 박사과정을 밟았고, 이후 MIT와 Toronto를 거쳤다. 3D PGO로 일반화된 형태에서는 Laplacian과 SE(3) adjoint representation의 Kronecker 결합이 등장해 위상·기하 정보를 분리해 다루게 한다. "측정 선택 기준"을 FIM 전체 대신 6배 작은 Laplacian으로 근사 가능하다는 것이 Ch.6에서 간단히 언급한 "루프 클로저 선택"의 수학적 근거가 된다.
 
 Ch.4 §4.8이 짚은 EKF-SLAM의 consistency 문제도 같은 질문으로 이어진다. Julier-Uhlmann이 2001년 지적한 EKF의 over-confidence는 CRLB로 재해석하면 근사 선형화가 Fisher information을 과대 추정한다. Handbook §6.2는 FIM을 convex relaxation과 나란히 다룬다. 전역 최솟값과 그 정확도는 쌍으로 다뤄야 한다.
 
@@ -64,17 +64,17 @@ Ch.4 §4.8이 짚은 EKF-SLAM의 consistency 문제도 같은 질문으로 이�
 
 ## 6b.5 확장과 한계 — TEASER, CORA, 그리고 Lasserre의 벽
 
-SE-Sync가 나온 뒤 전선은 아웃라이어에 강건한 certifiable estimator와 range·landmark·anisotropic noise 같은 확장된 측정 모델로 넓어졌다.
+SE-Sync가 나온 뒤 연구 범위는 아웃라이어에 강건한 certifiable estimator와 range·landmark·anisotropic noise 같은 확장된 측정 모델로 넓어졌다.
 
 아웃라이어 쪽이 먼저였다. Ch.6 §6.7이 짚었듯 루프 클로저 검증이 완벽하지 않으면 오매칭이 섞이고, Huber·Cauchy 커널로도 일정 비율 이상의 아웃라이어 앞에서는 최적화가 무너진다. 2017년 무렵 certifiable 계보가 이에 답해야 했다.
 
 대표는 [Yang, Shi, Carlone의 TEASER (TRO 2020)](https://arxiv.org/abs/2001.07715)다. 3D 점군 등록에서 99% 아웃라이어에서도 전역 최적 해를 찾는다. truncated least squares 비용을 GNC 래퍼에서 풀되 회전 부분 문제에 SDP relaxation을 붙여 certificate를 함께 낸다. 비결은 스케일·translation·rotation을 각각 certifiable subproblem으로 쪼개 단계마다 전역 최적 보장과 함께 넘기는 데 있었다. 이어진 [Yang & Carlone (2022)](https://arxiv.org/abs/2109.03349)는 이를 Lasserre moment relaxation으로 일반화해 "certifiably robust estimation"이라 명명했다.
 
-Range-aided SLAM은 [Papalia et al. CORA (2024)](https://arxiv.org/abs/2403.09295)의 자리다. 범위 측정 $(\|\boldsymbol{t}_j - \boldsymbol{t}_i\| - \tilde r_{ij})^2$는 그대로면 quartic이라 QCQP에서 벗어나는데, Papalia는 보조 단위벡터 $\boldsymbol{b}_{ij} \in S^{d-1}$로 bearing lifting해 QCQP에 다시 집어넣었다. CORA는 단일 로봇에서는 tight한 relaxation이 멀티로봇에서는 일반적으로 exact하지 않음을 보여 "언제 Shor가 통하는가"의 범위를 좁혔다.
+Range-aided SLAM은 [Papalia et al. CORA (2024)](https://arxiv.org/abs/2302.11614)의 자리다. 범위 측정 $(\|\boldsymbol{t}_j - \boldsymbol{t}_i\| - \tilde r_{ij})^2$는 노름의 제곱근을 포함해 그대로는 이차식이 아닌데, Papalia는 보조 단위벡터 $\boldsymbol{b}_{ij} \in S^{d-1}$로 bearing lifting해 QCQP에 다시 집어넣었다. CORA는 단일 로봇에서는 tight한 relaxation이 멀티로봇에서는 일반적으로 exact하지 않음을 보여 "언제 Shor가 통하는가"의 범위를 좁혔다.
 
-Landmark 쪽에서는 [Holmes & Barfoot (2023)](https://arxiv.org/abs/2308.05631)이 Schur complement로 landmark를 미리 소거해 SE-Sync가 그대로 받아먹는 형태로 만들었다. Holmes·Khosoussi·Rosen은 Handbook Ch.6을 공저했다. 이 계보가 2025년 한 테이블에 모였다.
+Landmark 쪽에서는 [Holmes & Barfoot (2023)](https://arxiv.org/abs/2308.05631)이 Schur complement로 landmark를 미리 소거해 SE-Sync에 바로 넣을 수 있는 형태로 만들었다. Holmes·Khosoussi·Rosen은 Handbook Ch.6을 공저했다. 이 계보가 2025년 한 테이블에 모였다.
 
-그러나 벽도 드러났다. anisotropic noise와 truncated-quadratic outlier를 POP(Polynomial Optimization Problem)로 일반화하면 Lasserre moment relaxation이 필요한데, 유도된 SDP가 **degenerate**해 constraint qualification이 실패하고 Riemannian Staircase의 수렴 조건이 깨진다. Yang의 2022년 sparse monomial basis 같은 우회가 있지만 전용 solver는 일반 local solver보다 느리다. 속도와 증명 가능성을 동시에 쥐는 알고리즘은 아직 없다. Visual SLAM·VIO에는 perspective projection과 IMU preintegration의 구조적 비호환이라는 더 깊은 장벽이 있다.
+그러나 벽도 드러났다. anisotropic noise와 truncated-quadratic outlier를 POP(Polynomial Optimization Problem)로 일반화하면 Lasserre moment relaxation이 필요한데, 유도된 SDP가 **degenerate**해 constraint qualification이 실패하고 Riemannian Staircase의 수렴 조건이 깨진다. Yang의 2022년 sparse monomial basis 같은 우회가 있지만 전용 solver는 일반 local solver보다 느리다. 속도와 증명 가능성을 동시에 확보하는 알고리즘은 아직 없다. Visual SLAM·VIO에는 perspective projection과 IMU preintegration의 구조적 비호환이라는 더 깊은 장벽이 있다.
 
 > 📜 **예언 vs 실제.** Carlone이 2015년 ICRA에서 "Lagrangian dual이 tight한 인스턴스가 왜 대부분인지 이론적 해명이 필요하다"고 적었다. 10년이 지났고, 답은 부분적으로만 나왔다. Rosen-Carlone-Bandeira-Leonard의 exact recovery 정리가 "노이즈가 $\beta$ 이하"라는 충분조건을 주었지만, 실제 SLAM 인스턴스에서 $\beta$를 사전에 계산하는 방법은 없다. tightness가 언제 깨지는지에 대한 **사전**(a priori) 조건은 2026년 기준 여전히 per-instance certificate로 대체되어 있다.
 
@@ -88,10 +88,10 @@ Landmark 쪽에서는 [Holmes & Barfoot (2023)](https://arxiv.org/abs/2308.05631
 
 **Online certification과 스케일.** SE-Sync는 배치다. 새 측정마다 SDP를 다시 풀어 certificate를 갱신하는 증분 certifiable SLAM은 아직 성숙하지 않았다. iSAM2가 배치 SAM에 풀어낸 증분화를 certifiable 쪽에서 반복해야 하는 셈이다. warm-start, rank 증분, 부분 certificate 합성 모두 열린 연구고, 도시 규모 그래프에서 moment relaxation solver의 속도도 여전히 문제다.
 
-**Outlier-majority.** 현재의 certifiable robust estimator는 "소수 아웃라이어" 가정 위에 선다. 다수가 오염된 상황에서는 list-decodable regression 같은 다중 가설 certification이 필요하나 통계학 쪽에서도 시작 단계다. 2024년 Cheng·Shi·Carlone의 후속 작업이 있었지만 TEASER 같은 표준 도구는 없다.
+**Outlier-majority.** TEASER처럼 다수 아웃라이어가 섞인 정합에서 성과를 보인 추정기도 있다. 다만 그 결과가 임의의 SLAM 문제와 오염 조건에서 식별 가능성이나 인증을 보장하는 것은 아니다. 식별 가능한 해가 여러 개인 경우에는 list-decodable regression 같은 다중 가설 접근도 검토한다. 2024년 Cheng·Shi·Carlone의 후속 작업이 있었지만 TEASER 같은 표준 도구는 없다.
 
 ---
 
-민속적 관찰은 10년의 이론 프로그램으로 대체됐다. Carlone-Khosoussi-Rosen-Holmes-Barfoot-Dissanayake가 공저한 *The SLAM Handbook* Ch.6은 이 주제를 34페이지로 다룬다. 같은 10년 동안 Ch.12·Ch.13·Ch.16의 학습 기반 SLAM은 다른 경로로 나아갔다. 한쪽은 해의 전역성을 증명하는 쪽, 다른 쪽은 신경망이 해를 직접 예측하는 쪽이다. 두 계보가 만날지, 분야를 둘로 나누어 지낼지는 2026년에도 답이 없다.
+경험칙은 10년의 이론 프로그램으로 대체됐다. Carlone-Khosoussi-Rosen-Holmes-Barfoot-Dissanayake가 공저한 *The SLAM Handbook* Ch.6은 이 주제를 34페이지로 다룬다. 같은 10년 동안 Ch.12·Ch.13·Ch.16의 학습 기반 SLAM은 다른 경로로 나아갔다. 한쪽은 해의 전역성을 증명하는 쪽, 다른 쪽은 신경망이 해를 직접 예측하는 쪽이다. 두 계보가 만날지, 분야를 둘로 나누어 지낼지는 2026년에도 답이 없다.
 
 Ch.19는 이 장의 열린 항목들을 "백엔드 이론의 공백" 아래 다시 묶는다. 본류는 Ch.7로 돌아가, 백엔드를 주어진 것으로 놓고 그 위에서 작동할 프론트엔드를 묻는다.

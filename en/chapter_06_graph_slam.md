@@ -14,7 +14,7 @@ $$F = \sum_{(i,j) \in \mathcal{E}} e_{ij}^T \Omega_{ij} e_{ij}, \quad e_{ij} = z
 
 where $h(x_i, x_j)$ computes the expected relative transform from the two poses, $z_{ij}$ is the actual measured relative transform, and $\Omega_{ij} = \Sigma_{ij}^{-1}$ is the information matrix, the inverse of the measurement uncertainty.
 
-Loop closures fit this formulation naturally. When the robot revisits a place and obtains a new relative measurement, one edge adds the constraint to the graph, and full optimization adjusts every pose accordingly. An EKF updated the covariance at $O(N^2)$ cost to close a loop; a pose graph needs only the additional edge.
+Loop closures fit this formulation naturally. When the robot revisits a place and obtains a new relative measurement, one edge adds the constraint to the graph, and full optimization adjusts every pose accordingly. An EKF updated the covariance at $O(N^2)$ cost to close a loop; a pose graph expresses the constraint with an additional edge, but still requires reoptimization to update its estimates.
 
 > 🔗 **Borrowed.** The Lu-Milios formulation of pose graph optimization rests on the nonlinear least-squares algorithms of [Levenberg (1944)](https://www.ams.org/qam/1944-02-02/S0033-569X-1944-10666-0/) and [Marquardt (1963)](https://www.stat.cmu.edu/technometrics/70-79/VOL-14-03/v1403757.pdf). A numerical optimization technique developed decades earlier for nonlinear parameter estimation arrived at the backend of indoor laser mapping.
 
@@ -58,7 +58,7 @@ This formulation is numerically more stable than the EKF covariance update. The 
 
 ## 6.4 iSAM and iSAM2: Online Incremental Inference
 
-Square Root SAM was a batch method. Recomputing the full decomposition of $J^T J$ whenever a new observation arrived cost $O(n^3)$, which was impractical in an online robot system.
+Square Root SAM was a batch method. Recomputing the full decomposition of $J^T J$ whenever a new observation arrived added substantial work. Dense factorization costs $O(n^3)$; sparse costs depend on connectivity and elimination order.
 
 In 2008, [Kaess, Ranganathan, and Dellaert published **iSAM** (incremental Smoothing and Mapping)](https://www.cs.cmu.edu/~kaess/pub/Kaess08tro.pdf), which updated the factorization with Givens rotations. When a new variable and factor were added, iSAM appended only the new rows and updated $R$ rather than recomputing the QR decomposition.
 
@@ -84,17 +84,17 @@ As ROS (Robot Operating System) spread through mobile-robot research in the earl
 
 ## 6.6 Why the Field Converged Here
 
-Chatila-Laumond (1985), Lu-Milios (1997), Gutmann-Konolige (1999), Folkesson-Christensen (2004), Thrun's group, Dellaert (2006), and Kaess (2012) used different tools at different times but converged on one conclusion: the EKF backend alone was not enough.
+Chatila-Laumond (1985), Lu-Milios (1997), Gutmann-Konolige (1999), Folkesson-Christensen (2004), Thrun's group, Dellaert (2006), and Kaess (2012) started from different problems and developed tools for maintaining and solving graph constraints.
 
 The shift changed the model of the problem, not only the algorithm. EKF-SLAM maintains the best estimate of the current state and its uncertainty while marginalizing away the past. Past poses disappear, and accumulated error remains inside the current estimate. Closing a loop then requires a costly update to the current covariance.
 
 Graph SLAM retains the past. Poses, landmarks, and observations remain in the graph, and a loop closure becomes a new edge. Reoptimization adjusts the full trajectory consistently (for methods that use a time-continuous trajectory rather than discrete keyframes, see Ch.7c Continuous-Time SLAM). Keeping past poses revisable is the essential difference from filters.
 
-Costs differ as well. EKF's update cost is $O(N^2)$ (in the number of landmarks $N$), and information storage is $O(N^2)$. Graph methods can reduce that complexity substantially with sparse Cholesky (or QR) decomposition. In a realistic bounded region, where the graph remains sparsely connected, updates at the level of $O(N \log N)$ are generally possible. In large-scale long-term SLAM, this gap is hard to close.
+Costs differ as well. EKF's update cost is $O(N^2)$ (in the number of landmarks $N$), and information storage is $O(N^2)$. Graph methods can reduce that complexity substantially with sparse Cholesky (or QR) decomposition. Update cost depends on graph connectivity, fill-in during factorization, elimination order, and the region that must be recomputed. Motion within a bounded physical region alone does not guarantee $O(N \log N)$ updates.
 
-> 📜 **Prediction vs. outcome.** The limits of Dellaert's batch Square Root SAM (2006) led the same group toward incremental methods. iSAM handled the problem in 2008 with Givens-rotation updates, and iSAM2 improved loop-closure efficiency in 2012 with the Bayes tree. GTSAM, Ceres, and g2o all compete over the same structure. The three papers resolved one problem in stages, largely along the predicted path.
+> 📜 **Prediction vs. outcome.** The limits of Dellaert's batch Square Root SAM (2006) led the same group toward incremental methods. iSAM handled the problem in 2008 with Givens-rotation updates, and iSAM2 improved loop-closure efficiency in 2012 with the Bayes tree. GTSAM, Ceres, and g2o all handle nonlinear least squares, but differ in their solvers and incremental data structures. The three papers resolved one problem in stages, largely along the predicted path.
 
-The flexibility of marginalization played a part as well. When an old pose in the graph is marginalized, its information is preserved as a linking factor among the remaining variables. The filter threw information away; the graph can compress while retaining it. Engineering trade-offs like sliding-window optimization and keyframe selection come in here.
+The flexibility of marginalization played a part as well. When an old pose in the graph is marginalized, its information is preserved as a linking factor among the remaining variables. Filters also remove past states while transferring their information to the current estimate. Both approaches must account for approximation and relinearization constraints introduced by this compression. Engineering trade-offs like sliding-window optimization and keyframe selection come in here.
 
 ---
 
@@ -108,7 +108,7 @@ Standard least squares is fragile to outliers, as practice quickly revealed. Rob
 
 The third problem is marginalization approximation. iSAM2's Bayes tree provides exact incremental inference, but the tree grows with the variable count. Real systems marginalize old poses to keep it manageable, and the resulting fill-in can make the information matrix dense. Implementation quality depends on how this fill-in is truncated and approximated with a prior factor.
 
-> 📜 **Prediction vs. outcome.** g2o's claim that it could "handle any graph optimization problem as a plug-in" has partly carried into systems with complex geometric constraints such as lines and planes (OpenVINS, the VINS-Fusion family, and others). Ch.7b describes preintegration, the standard way to place IMU factors in the graph. As of 2026, however, g2o itself prioritizes interface stability and compatibility with existing users over broad expansion of its built-in factors. Users commonly add new factor types through inheritance, forks, or wrappers.
+> 📜 **Prediction vs. outcome.** g2o's generality lies in allowing users to define states as vertices and observation constraints as edges. New line, plane, inertial, or object constraints can be implemented through that interface; examples must be checked against the estimator and edge implementation actually used by each system. Ch.7b describes preintegration, the standard way to place IMU factors in the graph. As of 2026, however, g2o itself prioritizes interface stability and compatibility with existing users over broad expansion of its built-in factors. Users commonly add new factor types through inheritance, forks, or wrappers.
 
 ---
 

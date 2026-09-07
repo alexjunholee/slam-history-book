@@ -20,13 +20,13 @@ ORB-SLAM's long-term map reuse has the same limitation. Atlas made multi-map mai
 
 ---
 
-## 19.2 Dynamic-world assumption: the oldest simplification hits its limits
+## 19.2 Static-world assumption: the oldest simplification hits its limits
 
 The static-world assumption is one of SLAM's oldest simplifications and recurs across more lineages than any other.
 
 In the SfM lineage dynamic objects are a shared weak point of every current system, COLMAP included, and as of 2026 no Dynamic SfM implementation has COLMAP-level generality (see Ch.3 §3.7). Everything in Ch.9 from KinectFusion through BundleFusion assumed a static scene, and while DynaSLAM, MaskFusion, and others coupled real-time segmentation into dense SLAM, neither cost nor robustness reached practical deployment (see Ch.9 §🧭).
 
-In monocular depth, self-supervised methods mask moving objects, avoiding rather than solving the problem (see Ch.11 §🧭). 3DGS SLAM still assumed a static world in 2025. [4DGS](https://arxiv.org/abs/2310.08528) and [Deformable 3DGS](https://arxiv.org/abs/2309.13101) add a time dimension, but no integrated SLAM system both represents and tracks dynamic objects (see Ch.15 §🧭). LiDAR SLAM is not exempt: the dynamic-object problem Zhang anticipated in 2014 remains, while production autonomous-driving stacks are largely proprietary and difficult to compare directly with public research systems (see Ch.17 §🧭). Five chapters reach the same unresolved problem through different representations.
+In monocular depth, self-supervised methods mask moving objects, avoiding rather than solving the problem (see Ch.11 §🧭). 3DGS SLAM still assumed a static world in 2025. [4DGS](https://arxiv.org/abs/2310.08528) and [Deformable 3DGS](https://arxiv.org/abs/2309.13101) add a time dimension, but no integrated SLAM system both represents and tracks dynamic objects (see Ch.15 §🧭). LiDAR SLAM is not exempt: dynamic-object handling remains a challenge distinct from LOAM's stated future work, while production autonomous-driving stacks are largely proprietary and difficult to compare directly with public research systems (see Ch.17 §🧭). Five chapters reach the same unresolved problem through different representations.
 
 The long-term dynamic and deformable problems in [Ch.15b](chapter_15b_dynamic.md) are related. **Absence vs evidence of absence**, whether an object vanished or was occluded, received a partial answer through the active submaps of [Schmid's Panoptic Multi-TSDF](https://doi.org/10.1109/LRA.2022.3148854) (2022). The Handbook treats occlusion above 70% as an extreme-environment case that remains difficult, but does not report it as a universal error threshold for Panoptic Multi-TSDF. **Floating Map Ambiguity**, separating rigid camera motion from rigid object motion, is constrained only through isometric and visco-elastic priors; identification without a prior remains unresolved. No system performs Khronos-level change-aware integration online from monocular RGB, and medical MIS systems lose robustness when moving from phantom and ex vivo data to surgical conditions. All four items from Ch.15b remain open.
 
@@ -82,7 +82,7 @@ Several hardware examples appeared by the mid-2020s. [Apple Vision Pro R1](https
 
 Davison's later work on **Gaussian Belief Propagation** addresses this hardware structure. [Ortiz et al.](https://arxiv.org/abs/2203.11618) (2022) accelerated bundle adjustment on the IPU with GBP by 30× over a CPU, and [Murai et al. Robot Web](https://arxiv.org/abs/2306.04620) (2024) demonstrated multi-robot SLAM in which robots shared factor-graph fragments over Wi-Fi and converged through asynchronous message passing. The motivation was that *"we must get away from the idea that a 'god's eye view' of the whole structure of the graph will ever be available"* (Handbook Ch.18, p.541). The factor graph becomes the main representation, and local messages replace full-posterior computation. Whether this approach will combine with transformer-based systems such as MASt3R-SLAM remains unanswered.
 
-Among Davison's twelve metrics, number 11 is "power usage" and number 12 is "on-device data movement." Both extend evaluation beyond accuracy to the power and physical distance involved in computation. TUM, KITTI, and EuRoC do not yet include these measures, and no consensus exists on how to add them to mainstream benchmarks.
+Among Davison's twelve metrics, number 11 is "power usage" and number 12 is "on-device data movement." Both extend evaluation beyond accuracy to power consumption and the bit volume and physical distance of data movement within the device. TUM, KITTI, and EuRoC do not yet include these measures, and no consensus exists on how to add them to mainstream benchmarks.
 
 ---
 
@@ -92,9 +92,9 @@ Semantic objects did recede from SLAM's landmark representation, as [Ch.18 §18.
 
 [Kimera](https://doi.org/10.1109/ICRA40945.2020.9196885) (2020) combined a metric-semantic mesh with a 3D scene graph, and [Hydra](https://doi.org/10.15607/RSS.2022.XVIII.050) (2022) extended it into the *"first online system to produce fully hierarchical scene graphs that included objects, places, and rooms"* (Handbook Ch.16, §16.4.2). Foundation features were then added to this layer. [ConceptFusion](https://arxiv.org/abs/2302.07241) and [VLMaps](https://arxiv.org/abs/2210.05714) (2023) placed CLIP features in dense maps; [ConceptGraphs](https://doi.org/10.1109/ICRA57147.2024.10610243) (2024) used open-vocabulary object nodes; [Clio](https://doi.org/10.1109/LRA.2024.3451395) (2024) built task-driven hierarchies; and [LERF](https://arxiv.org/abs/2303.09553) and [LangSplat](https://arxiv.org/abs/2312.16084) attached language to radiance fields and Gaussian splatting. Semantic representation persisted above the geometric map rather than as its landmarks.
 
-This work introduced unresolved questions of its own. Hughes and Carlone identify one directly: *"performing uncertainty quantification in hierarchical representations mixing discrete and continuous variables is still a largely unexplored problem"* (p.488). No principled method propagates uncertainty when discrete variables such as object category and room ID share a graph with continuous variables such as pose and surface. Scene graphs also remain difficult to extend into outdoor and unstructured environments, while Clio's task-driven hierarchy (Handbook Ch.16 Eq. 17.8) has not generalized broadly.
+This work introduced unresolved questions of its own. Hughes and Carlone identify one directly: *"performing uncertainty quantification in hierarchical representations mixing discrete and continuous variables is still a largely unexplored problem"* (p.488). Uncertainty propagation remains insufficiently explored when discrete variables such as object category and room ID share a graph with continuous variables such as pose and surface. Scene graphs also remain difficult to extend into outdoor and unstructured environments, while Clio's task-driven hierarchy (Handbook Ch.17 Eq. 17.8) has not generalized broadly.
 
-A broader question is whether a system still needs an explicit map. Paull and the editors address it in Ch.17 §17.4.2, "Revisiting the Question of the Need for Maps." A long-context VLM might plan from past frames without an explicit scene graph. [OpenEQA](https://open-eqa.github.io/) and [Mobility VLA](https://arxiv.org/abs/2407.07775) (2024) show that map-free methods work on short, simple tasks but degrade as spatial and temporal horizons lengthen. *"the need for an explicit map representation ... largely depend[s] on the spatial and temporal horizons of the considered tasks and remains an active area of research"* (p.515). The evidence supports neither universal map use nor universal map-free operation.
+A broader question is whether a system still needs an explicit map. Paull and the editors address it in Handbook Ch.17 §17.4.2, "Revisiting the Question of the Need for Maps." A long-context VLM might plan from past frames without an explicit scene graph. [OpenEQA](https://open-eqa.github.io/) and [Mobility VLA](https://arxiv.org/abs/2407.07775) (2024) show that map-free methods work on short, simple tasks but degrade as spatial and temporal horizons lengthen. *"the need for an explicit map representation ... largely depend[s] on the spatial and temporal horizons of the considered tasks and remains an active area of research"* (p.515). The evidence supports neither universal map use nor universal map-free operation.
 
 The relation between SLAM and generative robot policies raises the same question. VLA models such as [RT-2](https://robotics-transformer2.github.io/) (2023), [OpenVLA](https://arxiv.org/abs/2406.09246) (2024), and [π₀](https://www.physicalintelligence.company/blog/pi0) (2024) might replace SLAM or operate above it. The Handbook's final sentence argues that *"true generalization and scalability to compositional tasks ... could be achieved through some form of explicit structure that is learned through a process such as SLAM. ... these two paradigms ... are entirely complementary"* (Paull/Carlone, Handbook Ch.17, p.520). The architecture implied by "complementary" remains open.
 
@@ -104,9 +104,9 @@ The relation between SLAM and generative robot policies raises the same question
 
 The open problems differ in both age and kind.
 
-The monocular scale ambiguity of Ch.5 is a geometric fact established in SfM theory and retains the same formulation in 2026. The dynamic-world assumption, by contrast, has returned in changing forms over twenty years: SfM in Ch.3, dense SLAM in Ch.9, Gaussian maps in Ch.15, and LiDAR in Ch.17. Loop closure for foundation 3D and calibration of learned uncertainty are newer formulations that emerged only in the preceding few years.
+The monocular scale ambiguity of Ch.5 is a geometric fact established in SfM theory and retains the same formulation in 2026. The limits of the static-world assumption, by contrast, have returned in changing forms over twenty years: SfM in Ch.3, dense SLAM in Ch.9, Gaussian maps in Ch.15, and LiDAR in Ch.17. Loop closure for foundation 3D and calibration of learned uncertainty are newer formulations that emerged only in the preceding few years.
 
-Ch.0 described a period in which SLAM is often treated as solved. The five editors of the 2026 SLAM Handbook offer the internal counterpoint in their epilogue: *"If someone tells you 'SLAM is solved,' don't listen to them."* New methods repeatedly relax one assumption and expose another problem. Particle filters addressed limits in the EKF's linearization, while dense methods retained image information discarded by sparse features. Neither transition invalidated the earlier method; each changed the assumptions under which the system operated.
+Ch.0 described a period in which SLAM is often treated as solved. The five editors of the 2026 SLAM Handbook offer the internal counterpoint in their epilogue: *"If someone tells you 'SLAM is solved,' don't listen to them."* New methods repeatedly relax one assumption and expose another problem. Particle filters addressed limits in the EKF's local linearization and single-Gaussian approximation, while dense methods retained image information discarded by sparse features. Neither transition invalidated the earlier method; each changed the assumptions under which the system operated.
 
 Methods regarded as solved in 2026 remain conditional in the same way. Their next open problem will appear when one of those conditions no longer holds.
 
@@ -137,7 +137,7 @@ graph TD
   iSAM2[iSAM2 2012]
   g2o[g2o 2011]
 
-  Forster[Preintegration<br/>Forster 2016]
+  Forster[Preintegration<br/>Forster 2015]
   VINS[VINS-Mono 2018]
 
   Kinect[KinectFusion 2011]
@@ -154,8 +154,8 @@ graph TD
   NICE[NICE-SLAM 2021]
 
   GS3D[3DGS 2023]
-  Spla[SplaTAM 2024]
-  MonoGS[MonoGS 2024]
+  Spla[SplaTAM 2023]
+  MonoGS[MonoGS 2023]
 
   DROID[DROID-SLAM 2021]
   DPV[DPV-SLAM 2024]
@@ -163,7 +163,7 @@ graph TD
   DUSt3R[DUSt3R 2023]
   MASt[MASt3R 2024]
   VGGT[VGGT 2025]
-  MASlam[MASt3R-SLAM 2025]
+  MASlam[MASt3R-SLAM 2024]
 
   Hydra[Hydra 2022]
   Clio[Clio 2024]

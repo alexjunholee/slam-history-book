@@ -1,6 +1,6 @@
 # Ch.15 — The Gaussian Splatting Era: From 3DGS to GS-SLAM
 
-iMAP and NICE-SLAM represented space with an MLP, but the representation was opaque. No individual neuron corresponded to an identifiable region, and each new observation affected the entire network. NICE-SLAM also ran below 1 fps on an RTX 3090, far from real-time SLAM. Its scene representation remained difficult to inspect within the network parameters.
+iMAP and NICE-SLAM represented space with an MLP, but their representations were difficult to edit directly. Updating the global MLP in iMAP could affect other regions; NICE-SLAM reduced that problem with local feature grids. NICE-SLAM also ran below 1 fps on an RTX 3090, far from real-time SLAM. Its scene representation remained difficult to inspect within the network parameters.
 
 At SIGGRAPH in August 2023, Bernhard Kerbl of INRIA, Georgios Kopanas, Thomas Leimkuhler, and George Drettakis presented [their paper](https://arxiv.org/abs/2308.04079). Kerbl retained the differentiable scene optimization that NeRF had developed over the preceding three years but changed the representation's form. Instead of encoding scenes in MLPs or voxel feature grids, as iMAP, NICE-SLAM, and Co-SLAM did, 3DGS represented them with millions of explicit ellipsoidal Gaussian primitives. The SLAM community adopted the representation within six months. Its rasterization drew on Matthias Zwicker's twenty-year-old EWA splatting technique (2001), while its optimization retained the differentiable-rendering framework associated with NeRF.
 
@@ -16,7 +16,7 @@ Rendering alpha-blends the projected 2D Gaussians in depth order. Each Gaussian'
 
 $$C = \sum_{i \in N} c_i \alpha_i \prod_{j<i}(1 - \alpha_j), \quad \alpha_i = \sigma_i \cdot G_i(\mathbf{x})$$
 
-Unlike NeRF, which numerically approximates a volume-rendering integral, 3DGS runs directly through a GPU rasterization pipeline. Its tile-based rasterizer implements both forward and backward passes as custom CUDA kernels. On a single RTX 3090, it renders at more than 30 fps, dozens of times faster than NICE-SLAM's rate of less than 1 fps on the same GPU.
+Unlike NeRF, which numerically approximates a volume-rendering integral, 3DGS runs directly through a GPU rasterization pipeline. Its tile-based rasterizer implements both forward and backward passes as custom CUDA kernels. On a single RTX 3090, it renders at more than 30 fps after training. This novel-view rendering rate cannot be compared directly as a speed ratio with NICE-SLAM's full tracking-and-mapping throughput.
 
 Initialization uses a sparse point cloud from SfM. Training then iterates a **densification** procedure that splits, clones, and prunes Gaussians. When the view-space position gradient crosses a threshold, Gaussians with large scale split into two children, and Gaussians with small scale clone at the same position. Gaussians with low opacity are pruned periodically.
 
@@ -54,7 +54,7 @@ On the Replica dataset, GS-SLAM matched NICE-SLAM's PSNR at higher throughput. I
 
 The **silhouette mask** identifies regions in the current view that the existing Gaussians do not explain. SplaTAM adds new Gaussians to these empty areas of the rendered mask, using absence of coverage as a direct densification criterion.
 
-Tracking optimizes the pose, while mapping optimizes the Gaussian parameters. This strict separation improves stability by avoiding the interference between alternating tracking and mapping in GS-SLAM.
+Tracking optimizes the pose, while mapping optimizes the Gaussian parameters. Tracking holds the map fixed, and mapping updates the Gaussians. GS-SLAM also separates pose and map variables, so separation alone does not distinguish SplaTAM.
 
 > 🔗 **Borrowed.** SplaTAM applies PTAM's keyframe-based map-management principle (Klein & Murray, 2007) to a new representation. Selective keyframe insertion, which PTAM used to maintain its map, becomes the trigger for Gaussian densification in SplaTAM.
 
@@ -110,8 +110,8 @@ The shift reflected both representation design and compatibility with available 
 
 Memory scaling. The number of Gaussians grows linearly with scene size. A few hundred thousand primitives may suffice for the indoor Replica dataset, but an outdoor city block can require tens of millions. Researchers are studying Gaussian pruning and level-of-detail hierarchies, but no consensus exists on managing the trade-off between memory and rendering quality at large scale. The Compact 3DGS line (Lee et al. 2024, Niedermayr et al. 2024) explores compression.
 
-Semantic integration. Methods such as [LangSplat](https://arxiv.org/abs/2312.16084) and [LERF](https://arxiv.org/abs/2303.09553) began attaching semantic labels to Gaussians in 2023–2024, and later work coupled semantic Gaussians to SLAM. A common protocol that compares real-time updates, tracking quality, and semantic accuracy across scenes and hardware has not settled. Interference between jointly optimized semantic and geometric variables remains a central evaluation target.
+Semantic integration. In 2023, [LERF](https://arxiv.org/abs/2303.09553) combined language features with NeRF, while [LangSplat](https://arxiv.org/abs/2312.16084) combined them with a Gaussian representation, and later work coupled semantic Gaussians to SLAM. A common protocol that compares real-time updates, tracking quality, and semantic accuracy across scenes and hardware has not settled. Interference between jointly optimized semantic and geometric variables remains a central evaluation target.
 
 Dynamic scenes. 4DGS and Deformable 3DGS added a time dimension to Gaussians. In SLAM, dynamic objects move independently of the background and require separate treatment. GS-SLAM (Yan et al. 2023), SplaTAM (Keetha et al. 2024), and MonoGS (Matsuki et al. 2024) all retain a static-world assumption. Ch.15b separately traces SLAM's treatment of moving objects, from mask-based outlier rejection and multi-object factor graphs to deformable reconstruction.
 
-3DGS also left its initialization unresolved. Gaussians could originate from an SfM point cloud or a depth sensor, but placing them required a known pose, while estimating a pose required an existing map. This dependency kept GS-SLAM systems reliant on external initialization. DUSt3R and its successors, covered in Ch.16, instead learned geometry directly rather than initializing it from an existing representation.
+3DGS also left its initialization unresolved. Gaussians could originate from an SfM point cloud or a depth sensor, but placing them required a known pose, while estimating a pose required an existing map. Systems handled this dependency differently: RGB-D methods used measured depth, while MonoGS formed initial depth hypotheses internally without an external depth predictor. DUSt3R and its successors, covered in Ch.16, instead learned geometry directly rather than initializing it from an existing representation.

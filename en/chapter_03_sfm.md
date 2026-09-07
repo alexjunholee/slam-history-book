@@ -20,7 +20,7 @@ Once scale ambiguity is removed, the essential matrix has five degrees of freedo
 
 Numerical stability was the problem. When image coordinates run into the hundreds or thousands of pixels, the entries of the coefficient matrix span sharply different scales, and the SVD becomes unstable.
 
-> 🔗 **Borrowed.** Hartley's 1997 normalized 8-point algorithm ([In Defense of the Eight-Point Algorithm](https://www.cse.unr.edu/~bebis/CS485/Handouts/hartley.pdf)) applied a linear transform to image coordinates so that their mean was zero and their average distance was $\sqrt{2}$, and then estimated the essential matrix. The geometry of Longuet-Higgins was left untouched; only the numerical conditioning was fixed. The normalization was widely adopted in later multiple-view-geometry texts and implementations.
+> 🔗 **Borrowed.** Hartley's 1997 normalized 8-point algorithm ([In Defense of the Eight-Point Algorithm](https://www.cse.unr.edu/~bebis/CS485/Handouts/hartley.pdf)) applied a linear transform to image coordinates so that their mean was zero and their average distance was $\sqrt{2}$, and then estimated the fundamental matrix before transforming it back to the original coordinates. This serves a different purpose from normalizing coordinates with camera intrinsics. The geometry of Longuet-Higgins was left untouched; only the numerical conditioning was fixed. The normalization was widely adopted in later multiple-view-geometry texts and implementations.
 
 The fundamental matrix $\mathbf{F}$ generalizes the essential matrix. Even without knowing the camera intrinsics $\mathbf{K}$, the relation $\mathbf{x}_2^\top \mathbf{F} \mathbf{x}_1 = 0$ holds. With intrinsics $\mathbf{K}_1$, $\mathbf{K}_2$ for the two cameras, the relationship is $\mathbf{F} = \mathbf{K}_2^{-\top} \mathbf{E} \mathbf{K}_1^{-1}$. For images from the same camera ($\mathbf{K}_1 = \mathbf{K}_2 = \mathbf{K}$) it simplifies to $\mathbf{F} = \mathbf{K}^{-\top} \mathbf{E} \mathbf{K}^{-1}$. In an SfM pipeline, when $\mathbf{K}$ is unknown $\mathbf{F}$ is estimated first; when $\mathbf{K}$ is known, $\mathbf{E}$ is solved directly.
 
@@ -52,7 +52,7 @@ In 2000, Richard Hartley and Andrew Zisserman's 680-page textbook *[Multiple Vie
 
 Hartley & Zisserman did more than compile earlier results. They brought the essential matrix, fundamental matrix, homography, camera calibration, and bundle adjustment into one projective-geometry framework. Their treatment showed within one text that concepts developed separately shared the same foundation.
 
-Bundle adjustment received particular attention. Hartley & Zisserman placed the reprojection-error minimization problem that Triggs et al. (1999) had formally introduced in Ch.1 inside the projective-geometry framework and included an explicit *robust cost function* $\rho$. Huber or Cauchy losses downweighted outliers that would otherwise break optimization on real data. The solver was Levenberg-Marquardt, and the sparsity of the Jacobian reduced computation.
+Bundle adjustment received particular attention. Hartley & Zisserman placed the reprojection-error minimization problem reviewed in Ch.1 through the synthesis by Triggs et al. (1999) inside the projective-geometry framework and included an explicit *robust cost function* $\rho$. Huber or Cauchy losses downweighted outliers that would otherwise break optimization on real data. The solver was Levenberg-Marquardt, and the sparsity of the Jacobian reduced computation.
 
 Most SLAM and visual odometry (VO) papers in the early 2000s cited this textbook as their standard reference. With the definitions unified in one source, large-scale applications such as Photo Tourism could focus on implementation rather than redefining the basics.
 
@@ -76,7 +76,7 @@ Bundler implemented this pipeline. Snavely released it as open source, and it be
 
 ## 3.5 COLMAP — engineering maturity
 
-> 📜 **Prediction vs. outcome.** The "Discussion and future work" section of Snavely et al. 2006 states, "Ultimately, we wish to scale up our reconstruction algorithm to handle millions of photographs," and lists better image-registration ordering, lens-distortion modeling, repeated-structure handling, and disconnected-structure reconstruction as remaining problems. COLMAP (Schönberger 2016) and OpenSfM pursued scale, reaching tens to hundreds of thousands of images. The SLAM lineage addressed real-time and online processing separately through fixed-lag smoothers and loop closure, not through incremental refinement. Of Snavely's items, scale-up was the clearest fulfillment.
+> 📜 **Prediction vs. outcome.** The "Discussion and future work" section of Snavely et al. 2006 states, "Ultimately, we wish to scale up our reconstruction algorithm to handle millions of photographs," and lists better image-registration ordering, lens-distortion modeling, repeated-structure handling, and disconnected-structure reconstruction as remaining problems. COLMAP (Schönberger 2016) and OpenSfM pursued scale, reaching tens to hundreds of thousands of images. The SLAM lineage addressed real-time and online processing separately through fixed-lag smoothers and loop closure, not through incremental refinement. This was progress toward scale, although the sizes cited here do not establish that the goal of millions of photographs was met.
 
 In 2016, Johannes Schönberger and Jan-Michael Frahm published the CVPR paper "[Structure-from-Motion Revisited](https://openaccess.thecvf.com/content_cvpr_2016/papers/Schonberger_Structure-From-Motion_Revisited_CVPR_2016_paper.pdf)." Despite the modest title, the paper systematically redesigned the pipeline around ten years of improvements since Bundler.
 
@@ -102,7 +102,7 @@ SfM is *offline*. All images are gathered before processing, so there is no time
 
 SLAM is *online*. Sensor data streams in real time, and the robot's current position must be available immediately. The system cannot retain and revisit past data indefinitely, computation grows with the map, and accumulated drift must be corrected when the robot returns to a previously visited place.
 
-Loop closure marks the clearest difference between the fields. In SfM, global bundle adjustment cleans up every inconsistency. SLAM must detect the moment a loop closes and correct the accumulated drift locally. The techniques involved (visual place recognition, pose graph optimization, covisibility-based local optimization) are specific to SLAM, with no counterpart in SfM.
+The fields differ in the constraints of online processing. SLAM must detect revisits during motion and correct accumulated drift, potentially across many poses connected by the loop. SfM and SLAM share tools such as bundle adjustment and image retrieval, but differ in when and which states must be updated.
 
 Uncertainty propagation differed as well. SLAM tracks the uncertainty of the current pose in real time and updates it with each new observation. A probabilistic representation in the form of EKF or factor graph is needed. In SfM, covariance can be computed after optimization finishes, and real-time tracking is not required.
 
@@ -112,7 +112,7 @@ Davison's [MonoSLAM (2003)](https://www.doc.ic.ac.uk/~ajd/Publications/davison_i
 
 ## 3.7 🧭 Still open
 
-**SfM with dynamic objects.** Mainstream general-purpose SfM pipelines, including COLMAP, assume a static world. Bundle adjustment is solved on the premise that scene points are stationary, so contaminated matches distort optimization around cars or pedestrians. RANSAC filters some of them, while Dynamic SfM research models segmentation or per-object motion. Among the public implementations reviewed in this chapter, none has settled into a general-purpose tool with COLMAP's scope.
+**SfM with dynamic objects.** Mainstream general-purpose SfM pipelines, including COLMAP, assume a static world. Bundle adjustment is solved on the premise that scene points are stationary, so contaminated matches distort optimization around cars or pedestrians. RANSAC filters some of them, while Dynamic SfM research models segmentation or per-object motion. Among these public implementations, none has settled into a general-purpose tool with COLMAP's scope.
 
 **The blurring boundary between SfM and SLAM.** In 2023, [DUSt3R](https://arxiv.org/abs/2312.14132) (Wang et al.) took two images into a single pretrained network and produced a dense point map and camera poses at once. It needed no feature matching, RANSAC, or bundle-adjustment initialization. Extended as [MASt3R](https://arxiv.org/abs/2406.09756) (2024), it handled tens of images. Modules of the traditional SfM pipeline are now being replaced one at a time. COLMAP became the front end for NeRF and 3DGS; the DUSt3R line is trying to replace that front end. Whether it will displace COLMAP or prevail only in specific domains remains unknown.
 

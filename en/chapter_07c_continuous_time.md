@@ -14,7 +14,7 @@ Ch.7b's preintegration handles one mismatch: the IMU runs faster than the camera
 
 First, rolling shutter. A consumer CMOS camera reads one frame from top to bottom over tens of milliseconds. In a fast-moving camera, the first and last rows are captured from different poses. This distortion falls outside the photometric-consistency model assumed by Ch.8's DSO and LSD-SLAM. The Cremers group therefore added a B-spline trajectory to [Basalt](https://arxiv.org/abs/1904.06504) in 2019.
 
-Second, spinning LiDAR motion distortion. As Ch.17 notes, the Velodyne HDL-64E completes one rotation at 10 Hz. If a vehicle moves at 10 m/s during those 100 ms, points within one scan are captured from poses 1 m apart. LOAM corrected the distortion indirectly inside the odometry loop; a continuous trajectory instead provides the pose at the instant each point was captured.
+Second, spinning LiDAR motion distortion. As Ch.17 notes, the Velodyne HDL-64E completes one rotation at 10 Hz. If a vehicle moves at 10 m/s during those 100 ms, the vehicle travels a total of 1 m during one scan, and each point is captured from a different pose along that interval. LOAM corrected the distortion indirectly inside the odometry loop; a continuous trajectory instead provides the pose at the instant each point was captured.
 
 Third, event cameras. The DVS described in Ch.18 produces asynchronous events at μs granularity per pixel. Events have no frame, so [Mueggler et al. 2015](https://arxiv.org/abs/1502.00796) formulated event SLAM on an SE(3) B-spline trajectory.
 
@@ -34,7 +34,7 @@ The trade-offs were clear. Closely spaced coefficients overfit, while wide spaci
 
 In 2013, Oxford's [Steven Lovegrove et al.](https://www.roboticsproceedings.org/rss09/p11.html) proposed the cumulative B-spline. Rearranging the basis as a cumulative product rather than a sum, $T(t) = \prod_k \exp\bigl(\tilde\Psi_k(t) \log(T_k T_{k-1}^{-1})\bigr) \cdot T_0$, keeps each factor on the Lie group. This became a standard representation in later rolling-shutter, event-camera, and VIO papers. Basalt, [Mueggler's event SLAM](https://arxiv.org/abs/1502.00796), and [Kerl et al. 2015 dense rolling shutter VO](https://doi.org/10.1109/ICCV.2015.172) all used the cumulative B-spline.
 
-The parametric spline remains common in real-time VIO and event systems because computation is light and the code is simple. It lacks a natural way to place a motion prior over the trajectory. Where observations are sparse, the spline remains smooth without a physically grounded reason. A GP-based branch adds such a prior.
+The parametric spline remains common in real-time VIO and event systems because computation is light and the code is simple. Without a separate motion prior, smoothness in sparsely observed intervals depends on the basis and control points. Priors can be added to coefficients or derivatives; the GP-based branch instead starts by specifying a prior distribution over trajectories.
 
 ---
 
@@ -44,11 +44,11 @@ In 2014, the Barfoot group in Toronto opened a second branch with ["Batch Contin
 
 A dense GP has one problem: with $N$ observations, inverting the kernel matrix $K$ costs $O(N^3)$. Barfoot, Tong, and Särkkä identified a family of kernels that avoids this cost. When the trajectory is the solution of a linear time-invariant stochastic differential equation $\dot{\mathbf{x}}(t) = A\mathbf{x}(t) + L\mathbf{w}(t)$, the inverse $K^{-1}$ of its kernel has a block-tridiagonal structure. In factor-graph terms, binary factors connect only consecutive state nodes, not distant ones.
 
-> 🔗 **Borrowed.** Reinterpreting the GP posterior as a factor-graph prior follows the SDE-GP connection in [Särkkä's 2013 *Bayesian Filtering and Smoothing*](https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf), which the Barfoot group brought into SLAM. The Rasmussen-Williams GP textbook writes the kernel in closed form, but real-time SLAM needs a sparse inverse. Särkkä's SDE representation supplied the bridge.
+> 🔗 **Borrowed.** Expressing an SDE-derived GP motion prior as a factor graph follows the SDE-GP connection in [Särkkä's 2013 *Bayesian Filtering and Smoothing*](https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf), which the Barfoot group brought into SLAM. The Rasmussen-Williams GP textbook writes the kernel in closed form, but real-time SLAM needs a sparse inverse. Särkkä's SDE representation supplied the bridge.
 
 The result was **STEAM** (Simultaneous Trajectory Estimation and Mapping). At RSS 2015, [Sean Anderson and Barfoot 2015, "Full STEAM Ahead"](https://www.roboticsproceedings.org/rss11/p45.pdf) formalized STEAM with a constant-velocity prior. It augments the state with pose $\mathbf{p}(t)$ and velocity $\mathbf{v}(t)$, with pose following from the white-noise integral of velocity. Anderson tightened the sparsity proof that same year, and it became the foundation of the Barfoot group's later continuous-time papers.
 
-STEAM's second advantage was GP interpolation. With only a small number of control poses, the estimator can query any intermediate pose as the posterior mean. Even when a spinning LiDAR captures 10,000 points at 10,000 instants within one scan, the model uses only one control point per scan. Computation scales with the number of control points rather than observations.
+STEAM's second advantage was GP interpolation. With only a small number of control poses, the estimator can query any intermediate pose as the posterior mean. Even when a spinning LiDAR captures 10,000 points at 10,000 instants within one scan, the model uses only one control point per scan. The number of estimated states can remain much smaller than the number of observations. Evaluating and accumulating the observation residuals still requires computation.
 
 In 2019, Tang and Barfoot's [open-source STEAM release](https://github.com/utiasASRL/steam) gave academia and industry a directly usable library. The same year, the Dellaert group's GTSAM received a GP continuous-time factor in contrib. The two paths had converged.
 
@@ -64,13 +64,13 @@ On the GP side, Anderson and Barfoot proposed a "local variable" construction. N
 
 > 🔗 **Borrowed.** [Anderson-Barfoot 2015 ICRA](https://doi.org/10.1109/ICRA.2015.7138984) systematically developed the use of a GP in a Lie-group local variable. Several later continuous-time LiDAR and VIO papers used the same construction: run a GP between two consecutive control points and apply the adjoint when crossing between them.
 
-The practical difference between a spline and GP is the motion prior. A spline estimates coefficients directly without one. A GP carries an SDE-derived prior, such as constant velocity or white jerk. Where observations are sparse, the prior supports the GP, while the spline relies on neighboring observations. Attempts to combine them (Johnson et al. 2020) have appeared, but the choice remains application-dependent.
+One difference between the spline and GP implementations compared here is how they specify the motion prior. Spline coefficients can be estimated directly or given priors, as can their derivatives. A GP carries an SDE-derived prior, such as constant velocity or white jerk. Where observations are sparse, the prior supports the GP, while the spline relies on neighboring observations. Attempts to combine them (Johnson et al. 2020) have appeared, but the choice remains application-dependent.
 
 ---
 
 ## 7c.5 The line descends to applications: LiDAR and VIO
 
-It took ten years for the theory to reach deployed applications. Around 2022, continuous-time became a common solution in three areas.
+The range of applications expanded beyond early calibration work. Around 2022, continuous-time became a common solution in three areas.
 
 First, LiDAR motion distortion. Paris's [Pierre Dellenbach et al. 2022, "CT-ICP"](https://arxiv.org/abs/2109.12979) parameterized each scan with two poses (a "start pose" and an "end pose") and interpolated linearly between them. Despite its simple model, CT-ICP beat prior LOAM and FAST-LIO accuracy on the KITTI, NCLT, and Newer College benchmarks. The same year, Toronto's [Keenan Burnett et al. 2022, "Are We Ready for Radar to Replace Lidar?"](https://arxiv.org/abs/2206.05432) and [STEAM-ICP](https://github.com/utiasASRL/steam_icp) applied GP-based continuous time to the Aeva FMCW LiDAR. The sensor reports Doppler velocity with each point, which maps directly to STEAM's velocity state. Without a continuous-time representation, that information could not enter the estimator directly.
 
@@ -78,7 +78,7 @@ Second, rolling-shutter VIO. Basalt, the [Cremers group rolling-shutter VO](http
 
 Third, event cameras. After the 2010s difficulties described in Ch.18, several lines of event SLAM in the 2020s used continuous-time trajectories. Each event's μs timestamp is queried against a B-spline or GP to obtain the pose at that instant, and event-image consistency supplies the residual. Continuous-time trajectories fit event cameras because neither assumes frames.
 
-> 🔗 **Borrowed.** CT-ICP is a combination that lays intra-scan continuous-time linear interpolation on top of the point-to-plane objective of [Besl and McKay 1992 ICP](https://graphics.stanford.edu/courses/cs164-09-spring/Handouts/paper_icp.pdf). Classic registration and Furgale's continuous-time spirit met inside one system, thirty years apart.
+> 🔗 **Borrowed.** CT-ICP is a combination that lays intra-scan continuous-time linear interpolation on top of a point-to-plane objective from the ICP family descended from [Besl and McKay 1992 ICP](https://graphics.stanford.edu/courses/cs164-09-spring/Handouts/paper_icp.pdf). Classic registration and Furgale's continuous-time spirit met inside one system, thirty years apart.
 
 ---
 

@@ -1,6 +1,6 @@
 # Ch.9 — Dense/RGB-D: KinectFusion부터 BundleFusion까지
 
-2011년 11월, Richard Newcombe(Imperial College London)가 ISMAR에서 KinectFusion을 발표했을 때 청중의 반응은 논문보다 데모 영상에 집중됐다. 손에 들린 Kinect 센서 하나가 실시간으로 방 전체를 3D 메시로 채워가는 장면이었다. 그 장면은 Newcombe 자신이 같은 해 발표한 DTAM이 단안 카메라로 꿈꾸던 것을 RGB-D 센서로 실제로 해낸 것이었다. 계보는 선명하다: 1996년 Curless와 Levoy가 그래픽스 커뮤니티를 위해 고안한 TSDF 표현, 1992년 Besl과 McKay가 로봇공학에 제공한 ICP 추적, 그리고 2010년 Microsoft가 $150에 출시한 Kinect 센서. 이 세 줄기가 교차한 지점에서 dense SLAM의 짧고 강렬한 시대가 열렸다. Davison의 MonoSLAM(Ch.5)이 단안 카메라로 sparse landmark를 추적하던 바로 그 프레임워크(실시간 추적, GPU 없이 CPU만 사용)가 Kinect의 깊이 스트림 앞에서 다른 결론에 도달했다. Newcombe의 DTAM(Ch.8)이 직접 광도 최적화로 dense 재구성을 시도하면서 GPU의 가능성을 열었고, KinectFusion은 그 가능성을 RGB-D 센서로 닫았다.
+2011년 11월, Richard Newcombe(Imperial College London)는 ISMAR에서 KinectFusion을 발표했다. 함께 공개된 데모 영상에는 손에 든 Kinect 센서 하나가 실시간으로 방 전체를 3D 메시로 채워가는 장면이 담겼다. 그 장면은 Newcombe 자신이 같은 해 발표한 DTAM이 단안 카메라로 꿈꾸던 것을 RGB-D 센서로 실제로 해낸 것이었다. 계보는 선명하다: 1996년 Curless와 Levoy가 그래픽스 커뮤니티를 위해 고안한 TSDF 표현, 1992년 Besl과 McKay가 로봇공학에 제공한 ICP 추적, 그리고 2010년 Microsoft가 $150에 출시한 Kinect 센서. 이 세 줄기가 교차한 지점에서 dense SLAM의 짧고 강렬한 시대가 열렸다. Davison의 MonoSLAM(Ch.5)이 단안 카메라로 sparse landmark를 추적하던 실시간 추적이라는 목표는 이어졌지만, KinectFusion은 깊이 스트림과 GPU 병렬 계산으로 다른 구조를 택했다. Newcombe의 DTAM(Ch.8)이 직접 광도 최적화로 dense 재구성을 시도하면서 GPU의 가능성을 열었고, KinectFusion은 그 가능성을 RGB-D 센서로 닫았다.
 
 ---
 
@@ -8,7 +8,7 @@
 
 2011년 이전에도 dense 3D 재구성은 가능했다. *실시간*만 빠져 있었다.
 
-오프라인 파이프라인들은 스테레오 혹은 structured light 스캐너로 취득한 포인트 클라우드를 시간을 들여 병합했다. 실내 스캔 장비는 수십만 달러였다. 연구실 바깥에서 이 기술을 쓰는 사람은 없었다. SLAM 커뮤니티는 이미 sparse landmark로 충분히 실용적인 결과를 얻고 있었고, dense 재구성은 그래픽스 쪽 문제로 분류해 두고 있었다.
+오프라인 파이프라인들은 스테레오 혹은 structured light 스캐너로 취득한 포인트 클라우드를 시간을 들여 병합했다. 실내 스캔 장비는 수십만 달러였다. 연구실 바깥에서 이 기술을 쓰기는 어려웠다. SLAM 커뮤니티는 이미 sparse landmark로 충분히 실용적인 결과를 얻고 있었고, dense 재구성은 그래픽스 쪽 문제로 분류해 두고 있었다.
 
 [Curless와 Levoy의 1996년 SIGGRAPH 논문 "A Volumetric Method for Building Complex Models from Range Images"](https://graphics.stanford.edu/papers/volrange/volrange.pdf)는 이 시기의 그래픽스 쪽 접근을 대표한다. 이 방법은 **TSDF(Truncated Signed Distance Function)**를 사용한다. 3D 공간을 균일한 복셀 그리드로 나누고, 각 복셀에 가장 가까운 표면까지의 부호 있는 거리를 누적한다. 부호 관행은 센서에서 표면 방향으로 진행할 때 표면 앞(free space)이 양수, 표면 뒤(solid 내부)가 음수다. Truncated란 이 값을 절댓값 기준 일정 한계 $t$ 이내로 잘라낸다는 뜻으로, $\text{TSDF}(x) = \text{clip}(d(x), -t, +t)$ 형태가 된다. 새 깊이 프레임이 들어올 때마다 이 값을 가중 평균으로 갱신하면, 노이즈가 점진적으로 평균화되면서 표면이 점점 선명해진다. 표면 추출은 TSDF의 zero-crossing에 marching cubes를 적용하면 된다.
 
@@ -20,9 +20,9 @@
 
 ## 9.2 KinectFusion과 TSDF
 
-Microsoft는 2010년 Xbox 360용 Kinect를 약 $150에 출시했다. 구조광(structured light) 방식으로 깊이를 측정하는 이 센서는 VGA 해상도의 깊이 맵을 30Hz로 스트리밍했다. 정밀도는 연구용 ToF 카메라보다 낮았지만 가격도 훨씬 낮았다. 해커들이 먼저 반응했다. 출시 몇 주 만에 오픈소스 드라이버가 공개됐고, 연구자들이 그 뒤를 따랐다.
+Microsoft는 2010년 Xbox 360용 Kinect를 약 $150에 출시했다. 구조광(structured light) 방식으로 깊이를 측정하는 이 센서는 VGA 해상도의 깊이 맵을 30Hz로 스트리밍했다. 정밀도는 연구용 ToF 카메라보다 낮았지만 가격도 훨씬 낮았다. 출시 몇 주 만에 오픈소스 드라이버가 공개됐고, 연구 활용이 뒤따랐다.
 
-Newcombe는 그 무렵 Microsoft Research Cambridge로 자리를 옮겼고, Shahram Izadi 팀과 함께 GPU 기반 dense SLAM을 준비하고 있었다. Kinect가 출시됐을 때 그들에게는 이미 파이프라인의 윤곽이 있었다. Kinect가 공급한 깊이 스트림이 나머지를 채웠다. 결과가 2011년 ISMAR에서 발표된 [Newcombe et al. 2011. KinectFusion](https://doi.org/10.1109/ISMAR.2011.6092378)이다.
+Newcombe는 그 무렵 Microsoft Research Cambridge로 자리를 옮겼고, Shahram Izadi 팀과 함께 GPU 기반 dense SLAM을 준비하고 있었다. Kinect가 공급한 깊이 스트림이 이 파이프라인과 결합됐다. 결과가 2011년 ISMAR에서 발표된 [Newcombe et al. 2011. KinectFusion](https://doi.org/10.1109/ISMAR.2011.6092378)이다.
 
 > 🔗 **차용.** KinectFusion의 핵심 표현인 TSDF는 Curless & Levoy(1996)가 오프라인 3D 스캐닝을 위해 고안한 것이다. Newcombe 팀은 이를 GPU의 병렬 복셀 갱신으로 실시간화했다.
 
@@ -30,23 +30,23 @@ Newcombe는 그 무렵 Microsoft Research Cambridge로 자리를 옮겼고, Shah
 
 깊이 전처리 단계에서는 원시 깊이 맵에서 bilateral filter로 노이즈를 줄이고 표면 법선을 계산한다.
 
-ICP 추적 단계에서는 현재 프레임의 포인트 클라우드를 이전 TSDF에서 ray-cast한 가상 표면에 정렬한다. [Besl & McKay(1992)](https://graphics.stanford.edu/courses/cs164-09-spring/Handouts/paper_icp.pdf)의 **ICP(Iterative Closest Point)**를 point-to-plane 변형으로 GPU에서 수천 번 반복한다. 결과는 카메라의 6-DoF 포즈다.
+ICP 추적 단계에서는 현재 프레임의 포인트 클라우드를 이전 TSDF에서 ray-cast한 가상 표면에 정렬한다. [Besl & McKay(1992)](https://graphics.stanford.edu/courses/cs164-09-spring/Handouts/paper_icp.pdf)의 **ICP(Iterative Closest Point)**를 point-to-plane 형태로 바꾸고, 3단계 영상 피라미드에서 coarse-to-fine으로 각각 최대 4·5·10회 반복한다. 각 반복에서는 수많은 vertex-normal 대응의 정규방정식 항을 GPU가 병렬로 누적한다. 결과는 카메라의 6-DoF 포즈다.
 
 point-to-plane ICP의 목적함수는 다음과 같다. 현재 프레임의 포인트 $\mathbf{p}_i$를 변환 $T = (R, \mathbf{t})$로 움직인 뒤 대응 점 $\hat{\mathbf{p}}_i$(ray-cast 표면)과 법선 $\hat{\mathbf{n}}_i$에 대해
 
 $$E(R, \mathbf{t}) = \sum_i \bigl(\hat{\mathbf{n}}_i^\top (R\,\mathbf{p}_i + \mathbf{t} - \hat{\mathbf{p}}_i)\bigr)^2$$
 
-을 최소화한다. 원래 Besl-McKay의 point-to-point($\|R\mathbf{p}_i + \mathbf{t} - \hat{\mathbf{p}}_i\|^2$)와 달리 법선 방향 오차만 측정하므로, 표면에 접하는 방향의 미끄러짐에 덜 민감하다. 소회전 근사 $R \approx I + [\boldsymbol{\omega}]_\times$ 를 적용하면 $E$는 6-DoF 벡터 $(\boldsymbol{\omega}, \mathbf{t})$에 대한 선형 최소제곱 문제로 바뀌어 GPU에서 병렬 감소(parallel reduction)로 한 번에 풀린다.
+을 최소화한다. 원래 Besl-McKay의 point-to-point($\|R\mathbf{p}_i + \mathbf{t} - \hat{\mathbf{p}}_i\|^2$)와 달리 법선 방향 오차만 측정하므로, 표면에 접하는 방향의 미끄러짐에 덜 민감하다. 소회전 근사 $R \approx I + [\boldsymbol{\omega}]_\times$를 적용하면 $E$는 6-DoF 벡터 $(\boldsymbol{\omega}, \mathbf{t})$에 대한 선형 최소제곱 문제로 바뀌어 GPU에서 병렬 감소(parallel reduction)로 한 번에 풀린다.
 
 > 🔗 **차용.** KinectFusion의 추적 단계는 Besl & McKay(1992) ICP를 직접 계승한다. 고전 로봇공학 문헌의 기법을 GPU 밀도로 다시 꺼낸 것이다.
 
 TSDF 통합 단계에서는 추정된 포즈로 깊이 맵을 복셀 그리드에 투영해 TSDF 값을 갱신한다. 논문의 대표 실험 설정은 512³ 복셀로 약 3m 한 변 크기의 방 규모 볼륨을 덮는다(§4.2, Fig. 13).
 
-표면 렌더링 단계에서는 TSDF의 zero-crossing을 ray marching으로 찾아 실시간 메시를 렌더링한다. 이 결과가 다음 ICP 추적의 참조 표면이 된다.
+표면 렌더링 단계에서는 TSDF의 zero-crossing을 ray marching으로 찾아 표면의 vertex map과 normal map을 만든다. 이 결과가 다음 ICP 추적의 참조 표면이 된다.
 
 Newcombe는 같은 해 DTAM을 단안 카메라 dense SLAM으로 발표했다. KinectFusion은 그 자매 연구다. DTAM이 GPU를 써서 단안의 광도 일관성을 최적화했다면, KinectFusion은 같은 GPU를 깊이 통합에 투입했다. 두 논문의 저자 목록이 겹치는 이유다.
 
-> 🔗 **차용.** KinectFusion과 DTAM은 같은 해 같은 연구자가 발표한 두 dense 시스템이다. DTAM의 GPU dense 파이프라인 철학이 KinectFusion으로 자연스럽게 이식됐고, 센서만 달랐다.
+> 🔗 **차용.** KinectFusion과 DTAM은 같은 해 같은 연구자가 발표한 두 dense 시스템이다. 두 시스템은 GPU를 이용한 dense 처리라는 방향을 공유하지만, DTAM의 광도 최적화와 KinectFusion의 깊이 정합·TSDF 통합은 지도 표현과 목적함수도 다르다.
 
 512³ TSDF가 30Hz로 갱신됐고, 실내 방 한 칸을 몇 분 안에 dense mesh로 복원했다. 고정된 방 규모 볼륨에서는 dense model-to-frame ICP가 많은 표면 측정을 함께 사용해 낮은 추적 drift를 보였다. 다만 그 모델도 과거의 추정 포즈로 쌓이므로 절대 기준이 되는 표면은 아니었다.
 
@@ -56,11 +56,11 @@ Newcombe는 같은 해 DTAM을 단안 카메라 dense SLAM으로 발표했다. K
 
 ## 9.3 Kintinuous — rolling volume
 
-KinectFusion이 발표된 직후 Whelan은 Imperial College에서 이 한계에 달려들었다. 고정 크기 TSDF 볼륨이 문제라면, 카메라를 따라 이동하면 된다.
+KinectFusion이 발표된 직후 Whelan은 Imperial College에서 이 한계를 다뤘다. 고정 크기 TSDF 볼륨이 문제라면, 카메라를 따라 이동하면 된다.
 
 2012년 7월 RSS 워크숍(RGB-D: Advanced Reasoning with Depth Cameras, Sydney)에서 [Whelan 등이 발표한 Kintinuous](https://www.cs.cmu.edu/~kaess/pub/Whelan12rssw.pdf)는 "rolling TSDF volume"을 도입했다. 카메라가 볼륨 경계에 가까워지면 반대쪽 슬라이스를 메시로 출력하고 해제한 뒤, 새 슬라이스를 앞에 붙인다. 메모리는 일정하게 유지되면서 카메라는 무한히 이동할 수 있다.
 
-실내 복도 전체를 걷는 데모는 KinectFusion이 보여주지 못한 것이었다. 그러나 loop closure는 여전히 없었다. 긴 복도를 걸어서 원점으로 돌아왔을 때 두 끝이 맞지 않는 문제는 해결되지 않았다. 재구성 품질도 sparse SLAM이 쌓아온 submap 정합 방법에 비해 열위였다.
+실내 복도 전체를 걷는 데모는 KinectFusion이 보여주지 못한 것이었다. 그러나 loop closure는 여전히 없었다. 긴 복도를 걸어서 원점으로 돌아왔을 때 두 끝이 맞지 않는 문제는 해결되지 않았다. 이 오정합은 표면의 세밀함과 별도로 전역 지도의 일관성을 제한했다.
 
 ---
 
@@ -74,7 +74,7 @@ Whelan은 Kintinuous 이후 방향을 바꿨다. TSDF 복셀 대신 surfel을 �
 
 [Whelan et al. 2016. ElasticFusion](https://doi.org/10.1177/0278364916669237)의 핵심 기여는 두 가지다. 첫째, surfel 기반 dense map을 채용했다. 둘째, *non-rigid deformation*을 이용한 loop closure를 구현했다.
 
-기존 dense SLAM의 loop closure는 어려웠다. 전역 메시나 복셀 그리드를 loop closure 정보에 맞춰 수정하려면 비용이 컸다. ElasticFusion은 surfel 집합을 변형 그래프(deformation graph)와 연결하고, loop closure가 감지되면 그래프를 변형해 전체 맵에 오차를 분산시켰다. 메시 수준에서의 비강체 변형이었다.
+기존 dense SLAM의 loop closure는 어려웠다. 전역 메시나 복셀 그리드를 loop closure 정보에 맞춰 수정하려면 비용이 컸다. ElasticFusion은 surfel 집합을 변형 그래프(deformation graph)와 연결하고, loop closure가 감지되면 그래프를 변형해 전체 맵에 오차를 분산시켰다. surfel 맵 수준에서의 비강체 변형이었다.
 
 구체적으로, deformation graph의 각 노드 $g_k$는 위치 $\mathbf{v}_k$와 회전 $R_k$, 이동 $\mathbf{t}_k$를 가진다. surfel $s$는 가장 가까운 $K$개 노드의 영향권 안에 놓이고, surfel의 변형 후 위치는
 
@@ -90,7 +90,7 @@ ElasticFusion 논문은 ICL-NUIM 합성 데이터셋에서 당시의 강한 실�
 
 2017년 Dai, Nießner, Zollhöfer, Izadi, Theobalt가 ACM Transactions on Graphics에 발표한 [Dai et al. 2017. BundleFusion](https://doi.org/10.1145/3072959.3054739)은 다른 방향에서 문제에 접근했다. KinectFusion 계열이 실시간성을 타협하지 않으면서 품질을 높이려 했다면, Dai 팀은 GPU 연산을 최대한 투입해 온라인 시스템에서도 SfM 수준의 번들 조정을 실행하는 것을 목표로 삼았다.
 
-BundleFusion은 최적화를 세 층으로 나눴다. 가장 빠른 층에서는 현재 프레임과 이전 프레임 사이의 dense depth alignment로 초기 포즈를 잡는다. 그 위 층에서는 SIFT feature를 이용한 sparse frame-to-frame alignment로 보정하고, 세 번째 층에서 sliding-window global bundle adjustment가 누적된 프레임들의 포즈를 재최적화한다. Bundle adjustment는 프레임이 누적될수록 과거 포즈도 재추정한다. "retroactive pose correction"이라고 불린 이 방식은 오프라인 SfM 파이프라인이 모든 데이터를 가진 뒤 정합하는 것과 유사한 효과를 온라인으로 달성하려 했다. 갱신된 포즈 시퀀스를 TSDF에 역투영해 재통합하므로, 추적 오류가 맵에 그대로 쌓이지 않는다.
+BundleFusion은 최적화를 세 층으로 나눴다. 가장 빠른 층에서는 현재 프레임과 이전 프레임 사이의 dense depth alignment로 초기 포즈를 잡는다. 그 위 층에서는 SIFT feature를 이용한 sparse frame-to-frame alignment로 보정하고, 세 번째 층에서 계층적 global bundle adjustment가 누적된 프레임들의 포즈를 재최적화한다. Bundle adjustment는 프레임이 누적될수록 과거 포즈도 재추정한다. "retroactive pose correction"이라고 불린 이 방식은 오프라인 SfM 파이프라인이 모든 데이터를 가진 뒤 정합하는 것과 유사한 효과를 온라인으로 달성하려 했다. 갱신된 포즈 시퀀스를 TSDF에 역투영해 재통합하므로, 추적 오류가 맵에 그대로 쌓이지 않는다.
 
 Dai 팀이 TUM RGB-D 벤치마크에서 보고한 수치는 ElasticFusion을 능가했다. 시각적 재구성 품질도 당시 기준으로 오프라인 COLMAP 파이프라인에 근접했다.
 
@@ -104,11 +104,11 @@ KinectFusion에서 BundleFusion까지의 6년은 하드웨어와 알고리즘이
 
 Kinect 1세대는 구조광 방식이었다. 깊이 정밀도는 미터 범위에서 수 밀리미터였지만 햇빛 아래에서는 IR 패턴이 잡히지 않았다. 2013년 출시된 Kinect 2는 ToF(Time-of-Flight) 방식으로 바꿨다. 정밀도가 올라갔고 동적 범위도 나아졌다. Intel의 RealSense 시리즈가 뒤를 이었다. 센서 선택지가 늘어날수록 알고리즘이 가정할 수 있는 깊이 품질이 달라졌고, 연구자들은 더 작은 노이즈를 활용하거나 더 큰 노이즈를 견디는 방식을 실험했다.
 
-GPU 쪽에서는 CUDA 생태계가 성숙했다. KinectFusion이 나온 2011년의 Tesla 아키텍처와 BundleFusion이 나온 2017년의 Pascal 아키텍처 사이에 부동소수점 성능은 10배 이상 증가했다. Whelan이 ElasticFusion에서, Dai가 BundleFusion에서 점점 더 무거운 최적화를 실시간으로 실행할 수 있었던 것은 알고리즘만의 성과가 아니었다.
+GPU 쪽에서는 CUDA 생태계가 성숙했다. KinectFusion이 나온 2011년부터 BundleFusion이 나온 2017년 사이에는 GPU의 처리량과 메모리 성능도 발전했다. 배율을 비교할 때에는 GPU 모델과 연산 정밀도를 함께 지정해야 한다. Whelan이 ElasticFusion에서, Dai가 BundleFusion에서 점점 더 무거운 최적화를 실시간으로 실행할 수 있었던 것은 알고리즘만의 성과가 아니었다.
 
-Kinect가 $150이 아니라 연구 장비 가격대였다면, 이 흐름의 확산은 훨씬 느렸을 것이다. 소비자 시장용 센서가 연구의 속도를 끌었다.
+Kinect의 $150 가격과 소비자 시장 보급은 연구실의 접근 문턱을 낮췄다.
 
-> 📜 **예언 vs 실제.** KinectFusion이 2011년에 보여준 512³ 고정 볼륨의 한계(공간 범위, 드리프트, 실외 부적합)는 이후 연구의 로드맵이 됐다. 볼륨 확장은 Kintinuous, ElasticFusion, BundleFusion이 차례로 공략했다. 반면 실외는 다른 결론에 도달했다. IR 구조광은 햇빛 아래에서 패턴이 잡히지 않는다. RGB-D 기반 dense SLAM은 그렇게 실내에 묶였고, outdoor는 LiDAR가 맡았다.
+> 📜 **예언 vs 실제.** KinectFusion이 2011년에 보여준 512³ 고정 볼륨의 한계(공간 범위, 드리프트, 실외 부적합)는 이후 연구의 로드맵이 됐다. 볼륨 확장은 Kintinuous, ElasticFusion, BundleFusion이 차례로 공략했다. 반면 실외는 다른 결론에 도달했다. IR 구조광은 햇빛 아래에서 패턴이 잡히지 않는다. 초기 Kinect 기반 dense SLAM은 주로 실내에 머물렀고, LiDAR는 실외 dense mapping의 주요 센서가 되었다. 이 제한을 다른 방식의 RGB-D 센서 전체에 적용할 수는 없다.
 
 ---
 
@@ -116,11 +116,11 @@ Kinect가 $150이 아니라 연구 장비 가격대였다면, 이 흐름의 확�
 
 2011년부터 2017년 사이 dense RGB-D SLAM은 Visual SLAM의 주된 방향이 될 것처럼 보였다. 실제 전개는 그렇지 않았다.
 
-sparse backend는 계속 지배했다. [ORB-SLAM2](https://arxiv.org/abs/1610.06475)와 [VINS-Mono](https://arxiv.org/abs/1708.03852)로 대표되는 2015년 이후의 실용 SLAM 시스템들은 dense 맵을 기본으로 삼지 않았다. 이유는 복합적이었다. 512³ TSDF는 512MB 이상이 필요해 모바일 플랫폼이나 임베디드 시스템에서는 감당하기 어려웠다. Octree나 해시맵 기반 변형([Voxblox](https://arxiv.org/abs/1611.03631), [OctoMap](https://www.hrl.uni-bonn.de/papers/wurm10octomap.pdf))이 이를 완화하려 했지만 sparse 방식의 효율성과는 격차가 있었다. 실시간 dense 처리는 GPU를 전제했는데, 자율주행 차량의 임베디드 프로세서나 드론의 경량 플랫폼에서는 KinectFusion 수준의 파이프라인을 돌리기 어려웠다. Kinect의 IR depth가 실외에서 작동하지 않는다는 점도 발목을 잡았다. 자율주행과 드론처럼 상용화 요구가 큰 분야 대부분이 실외 환경이었다.
+sparse backend는 계속 지배했다. [ORB-SLAM2](https://arxiv.org/abs/1610.06475)와 [VINS-Mono](https://arxiv.org/abs/1708.03852)로 대표되는 2015년 이후의 실용 SLAM 시스템들은 dense 맵을 기본으로 삼지 않았다. 이유는 복합적이었다. 512³ TSDF는 512MB 이상이 필요해 모바일 플랫폼이나 임베디드 시스템에서는 감당하기 어려웠다. 해시 블록에 TSDF를 저장하는 [Voxblox](https://arxiv.org/abs/1611.03631)와 octree에 점유 확률을 저장하는 [OctoMap](https://www.hrl.uni-bonn.de/papers/wurm10octomap.pdf)은 서로 다른 지도 표현으로 메모리 부담을 줄였지만 sparse 방식의 효율성과는 격차가 있었다. 실시간 dense 처리는 GPU를 전제했는데, 자율주행 차량의 임베디드 프로세서나 드론의 경량 플랫폼에서는 KinectFusion 수준의 파이프라인을 돌리기 어려웠다. Kinect의 IR depth가 실외에서 작동하지 않는다는 점도 발목을 잡았다. 자율주행과 드론처럼 상용화 요구가 큰 분야 대부분이 실외 환경이었다.
 
-그 사이 dense map data structure 자체의 계보는 KinectFusion의 512³ 고정 볼륨을 다양한 방향으로 흩어 놓았다. [Museth(2013)의 VDB](https://doi.org/10.1145/2487228.2487235)는 block-hashing과 내부 트리를 결합해 sparse 영역은 비워 두고 표면 근방만 계층적으로 정제하는 구조를 제안했고, OpenVDB로 공개되어 대규모 sparse volumetric data를 다루는 대표적 기반이 됐다(Ch.17 LiDAR의 nvblox 계보와 비교할 수 있다). [Reijgwart et al.(2023)의 wavemap](https://arxiv.org/abs/2306.08125)은 wavelet 변환으로 occupancy를 압축해 해상도-메모리 트레이드오프를 재조정했다. Ramos와 Ott가 이끈 다른 계보는 아예 표현을 연속 함수로 넘겼다. [O'Callaghan과 Ramos(2012)의 GPOM(Gaussian Process Occupancy Map)](https://doi.org/10.1177/0278364911435991)은 깊이 측정을 Gaussian Process 회귀로 연결해 측정되지 않은 복셀까지 확률적으로 채웠고, [Ramos와 Ott(2016)의 Hilbert Map](https://doi.org/10.1177/0278364916684382)은 Hilbert space 특징을 logistic regression으로 학습시켜 스트리밍 가능한 확률적 occupancy를 제공했다. [Behley와 Stachniss(2018)의 SuMa](https://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/behley2018rss.pdf)는 ElasticFusion이 실내 RGB-D에서 쓴 surfel 표현을 outdoor LiDAR로 옮겨 KITTI에서 작동하는 surfel-based SLAM을 만들었다(→ Ch.17). KinectFusion이 방 한 칸에서 멈췄던 자리에서, 이 계보들이 outdoor·도시 규모·확률적 불확실성 쪽으로 각자의 방향을 열었다.
+그 사이 dense map data structure의 계보는 KinectFusion의 512³ 고정 볼륨에서 여러 방향으로 갈라졌다. [Museth(2013)의 VDB](https://doi.org/10.1145/2487228.2487235)는 동적으로 커지는 sparse root와 얕고 넓은 B+ tree를 결합해, 활성 영역에만 노드를 할당하면서 빠른 임의 접근을 지원했다. OpenVDB로 공개된 이 구조는 대규모 sparse volumetric data를 다루는 대표적 기반이 됐다(Ch.17 LiDAR의 nvblox 계보와 비교할 수 있다). [Reijgwart et al.(2023)의 wavemap](https://arxiv.org/abs/2306.08125)은 wavelet 변환으로 occupancy를 압축해 해상도-메모리 트레이드오프를 재조정했다. Ramos와 Ott가 이끈 다른 계보는 아예 표현을 연속 함수로 넘겼다. [O'Callaghan과 Ramos(2012)의 GPOM(Gaussian Process Occupancy Map)](https://doi.org/10.1177/0278364911435991)은 깊이 측정을 Gaussian Process 회귀로 연결해 측정되지 않은 복셀까지 확률적으로 채웠고, [Ramos와 Ott(2016)의 Hilbert Map](https://doi.org/10.1177/0278364916684382)은 Hilbert space 특징을 logistic regression으로 학습시켜 스트리밍 가능한 확률적 occupancy를 제공했다. [Behley와 Stachniss(2018)의 SuMa](https://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/behley2018rss.pdf)는 ElasticFusion이 실내 RGB-D에서 쓴 surfel 표현을 outdoor LiDAR로 옮겨 KITTI에서 작동하는 surfel-based SLAM을 만들었다(→ Ch.17). KinectFusion이 방 한 칸에서 멈췄던 자리에서, 이 계보들이 outdoor·도시 규모·확률적 불확실성 쪽으로 각자의 방향을 열었다.
 
-2020년을 전후해 NeRF가 등장하면서 고품질 dense 재구성을 원하는 수요는 NeRF와 3D Gaussian Splatting으로 이동했다. RGB-D SLAM은 localization과 mapping을 분리하는 구조 속에서 depth를 추적 보조로 쓰는 수준으로 좁아졌다.
+2020년을 전후해 NeRF가 등장하면서 고품질 dense 재구성을 원하는 수요는 NeRF와 3D Gaussian Splatting으로 이동했다. 지도 표현은 달라졌지만 RGB-D의 측정 깊이는 추적과 지도 geometry 학습 양쪽의 제약으로 계속 쓰였다.
 
 dense 시대는 짧았지만 흔적은 남았다. TSDF 표현은 자율주행용 occupancy map으로 이어졌고, ICP는 LiDAR SLAM의 표준 추적 수단이 됐다. 접근 방식은 퇴각했지만 부품들은 다른 시스템 안으로 흩어졌다.
 
@@ -130,8 +130,8 @@ dense 시대는 짧았지만 흔적은 남았다. TSDF 표현은 자율주행용
 
 **대규모 실외 dense 재구성.** IR 구조광의 햇빛 취약성은 active depth 센서 전반의 문제다. LiDAR는 더 먼 거리를 다루지만 색상과 세밀한 표면 정보가 빈약하다. RGB-D 방식으로 실외 대규모 환경을 dense하게 처리하는 방법은 2026년 기준으로 아직 없다. Stereo depth estimation이 학습 기반으로 빠르게 발전하고 있어 일부 연구들이 대안을 탐색 중이지만, 어두운 영역·반사면·원거리에서의 한계가 해결되지 않았다.
 
-**동적 장면의 dense 재구성.** KinectFusion부터 BundleFusion까지 모든 시스템이 정적 장면을 전제로 설계됐다. 사람이 걸어 다니는 공간을 dense하게 재구성하려면 동적 물체를 분리해야 하는데, 이는 실시간 semantic segmentation과 dense SLAM의 결합을 요구한다. [DynaSLAM](https://arxiv.org/abs/1806.05620), [MaskFusion](https://arxiv.org/abs/1804.09194) 등이 시도했지만 계산 비용과 robustness 모두에서 실용 배포 수준에 미치지 못한다.
+**동적 장면의 dense 재구성.** KinectFusion부터 BundleFusion까지 모든 시스템이 정적 장면을 전제로 설계됐다. 사람이 걸어 다니는 공간을 dense하게 재구성하려면 동적 물체를 분리해야 하는데, 여기에는 semantic segmentation이나 geometry 잔차를 이용한 분리 등을 쓸 수 있다. [DynaSLAM](https://arxiv.org/abs/1806.05620), [MaskFusion](https://arxiv.org/abs/1804.09194) 등이 시도했지만 계산 비용과 robustness 모두에서 실용 배포 수준에 미치지 못한다.
 
-**TSDF 계열의 메모리 효율.** 복셀 그리드의 메모리 비용은 Voxblox의 해시 구조, OctoMap의 octree 압축으로 줄어들었다. 그러나 건물 층 단위, 도시 블록 단위의 dense 표현은 여전히 수십 기가바이트 수준이다. 어떤 해상도를 어느 영역에서 유지할지를 자동으로 결정하는 adaptive resolution dense map은 아직 범용 해법이 없다. [Instant-NGP](https://arxiv.org/abs/2201.05989)와 같은 implicit neural representation이 이 문제에 접근하고 있지만, 실시간 갱신과 쿼리 속도는 트레이드오프가 남아 있다.
+**복셀 지도의 메모리 효율.** Voxblox는 해시 구조에 TSDF를, OctoMap은 octree에 점유 확률을 저장해 서로 다른 지도 표현의 메모리 비용을 줄였다. 그러나 건물 층 단위, 도시 블록 단위의 dense 표현은 여전히 수십 기가바이트 수준이다. 어떤 해상도를 어느 영역에서 유지할지를 자동으로 결정하는 adaptive resolution dense map은 아직 범용 해법이 없다. [Instant-NGP](https://arxiv.org/abs/2201.05989)와 같은 implicit neural representation이 이 문제에 접근하고 있지만, 실시간 갱신과 쿼리 속도는 트레이드오프가 남아 있다.
 
 dense SLAM이 실내 방 한 칸을 메시로 채우는 동안, 그 방으로 돌아오는 문제는 별도의 계보가 맡고 있었다. KinectFusion에는 loop closure가 없었고, 장소를 기억하는 문제는 옥스퍼드의 별도 계보가 맡았다.

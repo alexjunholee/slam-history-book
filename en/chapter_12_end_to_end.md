@@ -32,7 +32,7 @@ The LSTM was intended to use temporal context to suppress drift. DeepVO showed l
 
 > 🔗 **Borrowed.** SfMLearner's photometric loss is mathematically identical to the intensity residual in classical direct SLAM. It placed the photometric principle of [DSO (Engel et al. 2018)](https://arxiv.org/abs/1607.02565) in a differentiable learning framework, and its self-supervision later appeared in MonoDepth2 and DROID-SLAM.
 
-On the official KITTI leaderboard, however, VO based solely on SfMLearner achieved less than half of ORB-SLAM's performance.
+SfMLearner's evaluation on short VO snippets must be distinguished from ORB-SLAM's system performance over longer trajectories with loop closure.
 
 ---
 
@@ -52,11 +52,11 @@ Between 2019 and 2020, researchers increasingly examined the limitations of this
 
 After completing his PhD in 2019, Kendall moved to Wayve and shifted toward imitation learning and world-model research for autonomous driving. He continued to study learning-based localization but rejected absolute pose regression from a single image as the appropriate problem formulation.
 
-Around the same time, Federico Tombari's group at TU Munich, later Google, developed [CNN-SLAM (Tateno et al. 2017)](https://arxiv.org/abs/1704.03489). It fused dense depth predicted by a CNN with the depth estimate from direct monocular SLAM. Because learning was confined to dense depth, the method was not fully end to end, but it tested whether a CNN could address scale ambiguity and low-texture regions in monocular SLAM. Results varied across scenes, and the method did not consistently improve accuracy.
+Earlier, in 2017, Federico Tombari's group at TU Munich, later Google, developed [CNN-SLAM (Tateno et al. 2017)](https://arxiv.org/abs/1704.03489). It fused dense depth predicted by a CNN with the depth estimate from direct monocular SLAM. Because learning was confined to dense depth, the method was not fully end to end, but it tested whether a CNN could address scale ambiguity and low-texture regions in monocular SLAM. Results varied across scenes, and the method did not consistently improve accuracy.
 
 > 📜 **Prediction vs. outcome.** In the PoseNet paper (2015), Kendall identified uncertainty estimation, temporal integration, and extension to larger scenes as the next tasks. Bayesian PoseNet (2016), LSTM PoseNet (2016), and multiple outdoor experiments pursued all three directions. Each encountered further limitations, and researchers ultimately abandoned the broader absolute-pose-regression approach. The proposed extensions could not overcome the weakness of the underlying formulation.
 
-Some components remained useful in other settings. MonoDepth2 (Godard 2019) and, later, DROID-SLAM (Teed & Deng 2021) adopted SfMLearner's photometric self-supervision. DeepVO's LSTM-based temporal modeling also reappeared in modified form in visual-inertial learning research. The methods changed even as their individual ideas persisted.
+Some components remained useful in other settings. SfMLearner's photometric self-supervision continued in monocular-depth methods such as MonoDepth2 (Godard 2019). DROID-SLAM (Teed & Deng 2021) also uses differentiable geometry, but trains with pose and optical-flow supervision. DeepVO's LSTM-based temporal modeling also reappeared in modified form in visual-inertial learning research. The methods changed even as their individual ideas persisted.
 
 > 📜 **Prediction vs. outcome.** In the SfMLearner paper (2017), Zhou identified dynamic-object handling and robustness to photometric noise as remaining tasks. Later self-supervised work, including [GeoNet (Yin & Shi 2018)](https://arxiv.org/abs/1803.02276), made partial progress. Self-supervised VO did not replace SLAM in the mainstream, but photometric self-supervision persisted after the field rejected end-to-end VO as the larger objective.
 
@@ -66,7 +66,7 @@ Some components remained useful in other settings. MonoDepth2 (Godard 2019) and,
 
 Around 2020, a common design rule was to keep geometry explicit and use learning for features and priors.
 
-> 🔗 **Borrowed.** CodeSLAM (Bloesch 2018) and DROID-SLAM (Teed & Deng 2021) implement this principle. Both retain the geometric structure of a factor graph or bundle adjustment and restrict learning to feature extraction or depth-prior formation, retaining constraints that PoseNet had removed.
+> 🔗 **Borrowed.** CodeSLAM (Bloesch 2018) and DROID-SLAM (Teed & Deng 2021) implement this principle. Both retain the geometric structure of a factor graph or bundle adjustment and use learning for depth representation in CodeSLAM and for dense correspondence and recurrent updates in DROID-SLAM, retaining constraints that PoseNet had removed.
 
 The classical pipeline was not uniformly superior to learning-based alternatives. ORB-SLAM also failed in textureless environments, at night, and in rain. The distinction was that errors from end-to-end models were less interpretable and predictable than failures in classical SLAM.
 

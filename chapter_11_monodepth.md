@@ -1,6 +1,6 @@
 # Ch.11 — 깊이 추정의 부활: Eigen에서 Depth Anything까지
 
-Feature-based, direct, RGB-D, place recognition 계통은 각자의 방식으로 성숙 단계에 올랐다. ORB-SLAM은 epipolar 기하로 세계를 재구성했고, DSO는 photometric consistency로, KinectFusion은 ICP로 표면을 쌓아올렸다. 그 경계를 흔든 논문은 SLAM 연구자가 아니라 NYU의 컴퓨터 비전 대학원생에게서 나왔다.
+Feature-based, direct, RGB-D, place recognition 계통은 각자의 방식으로 성숙 단계에 올랐다. ORB-SLAM은 epipolar 기하로 세계를 재구성했고, DSO는 photometric consistency로, KinectFusion은 ICP로 표면을 쌓아 올렸다. 그 경계를 흔든 논문은 SLAM 연구자가 아니라 NYU의 컴퓨터 비전 대학원생에게서 나왔다.
 
 Monocular depth 추정은 컴퓨터 비전에서 가장 오래된 ill-posed 문제 중 하나였다. 한 장의 이미지에서 깊이를 복원한다는 것은 원론적으로 불가능하다. 카메라는 3D 세계를 2D로 투영하면서 깊이 정보를 버리기 때문이다. 그러나 인간은 원근감, 폐색, 텍스처 기울기, 표면의 음영으로 단안 깊이를 판단한다. 이것들을 통계적으로 학습할 수 있는가. 2014년 NYU의 David Eigen은 이 질문에 CNN을 적용했고, 그 실험은 10년 뒤 SLAM 파이프라인을 다시 쓰게 될 계보의 출발점이 되었다.
 
@@ -10,7 +10,7 @@ Monocular depth 추정은 컴퓨터 비전에서 가장 오래된 ill-posed 문�
 
 2014년 이전에도 monocular depth 추정 연구는 있었다. Ashutosh Saxena(Make3D, Stanford)가 [2005년 SVM과 Markov Random Field를 결합해 단일 이미지에서 depth map을 예측하는 시스템](https://papers.nips.cc/paper/2921-learning-depth-from-single-monocular-images)을 발표했다. Make3D는 주로 실외 장면을 대상으로 평면 조각 단위의 거친 3D 구조를 예측했으며, CNN 이전 학습 기반 단안 깊이의 대표 사례였다.
 
-Eigen, Puhrsch, Fergus의 [Eigen et al. 2014](https://arxiv.org/abs/1406.2283)는 접근 자체를 바꿨다. coarse network가 전역 구조를 예측하고, fine network가 지역 세부를 보정하는 두 단계 CNN을 썼다. NYU Depth v2의 464개 실내 장면에서 얻은 약 120,000개 프레임을 학습에 사용했다. 수치는 당시 기준 Make3D보다 개선되었고, 깊이를 학습할 수 있음을 보였다.
+Eigen, Puhrsch, Fergus의 [Eigen et al. 2014](https://arxiv.org/abs/1406.2283)는 접근 자체를 바꿨다. coarse network가 전역 구조를 예측하고, fine network가 지역 세부를 보정하는 두 단계 CNN을 썼다. NYU Depth v2의 464개 실내 장면에서 얻은 약 120,000개 프레임을 학습에 사용했다. 성능은 당시 기준으로 Make3D보다 개선됐고, 깊이를 학습할 수 있음을 보였다.
 
 그러나 결정적 약점이 하나 남았다. **scale ambiguity**다. 네트워크의 절대 스케일은 학습 데이터의 분포와 카메라 설정에 묶였다. NYU 실내에서 학습한 모델을 야외에 적용하면 스케일이 틀릴 수 있다. 이 문제는 2024년에도 단안 metric depth의 중심 과제로 남았다.
 
@@ -20,17 +20,17 @@ Eigen, Puhrsch, Fergus의 [Eigen et al. 2014](https://arxiv.org/abs/1406.2283)�
 
 ## 2. Garg → Godard — self-supervised depth
 
-supervised depth 학습의 병목은 데이터였다. Kinect는 실내에서 잘 작동하지만 야외 환경, 특히 일조 하에서는 적외선 패턴이 날아간다. 대규모 실외 RGB-D 데이터셋 구축은 비용이 크다.
+supervised depth 학습의 병목은 데이터였다. Kinect는 실내에서 잘 작동하지만 야외 환경, 특히 햇빛 아래에서는 적외선 패턴이 날아간다. 대규모 실외 RGB-D 데이터셋 구축은 비용이 크다.
 
-2016년, [Ravi Garg(UCL)는 다른 길을 열었다](https://arxiv.org/abs/1603.04992). stereo 이미지 쌍을 학습 신호로 쓰는 것이다. left 이미지를 보고 depth를 예측한 뒤, 그 depth와 카메라 baseline을 이용해 right 이미지를 reconstruction한다. right 이미지는 이미 존재하므로 photometric loss로 supervision이 가능하다. 라벨이 필요 없다.
+2016년, [Ravi Garg(UCL)는 다른 길을 열었다](https://arxiv.org/abs/1603.04992). stereo 이미지 쌍을 학습 신호로 쓰는 것이다. left 이미지를 보고 depth를 예측한 뒤, 그 depth와 카메라 baseline을 이용해 right 이미지를 재구성한다. right 이미지는 이미 존재하므로 photometric loss로 supervision이 가능하다. 라벨이 필요 없다.
 
-Clément Godard(UCL)는 2017년 이 아이디어를 [Godard et al. 2017](https://doi.org/10.1109/CVPR.2017.699)에서 **MonoDepth**로 체계화했다. left로 예측한 depth와 right로 예측한 depth가 서로 일치해야 한다는 양방향 제약이 left-right consistency다. 구조적 유사도(SSIM)를 photometric loss에 포함해 텍스처 없는 영역에서의 안정성을 높였다. 학습 시에만 stereo 쌍이 필요하고 추론에는 단일 이미지만 쓴다. 원 논문은 KITTI의 당시 비교 protocol에서 표에 실린 기존 self-supervised 방법보다 낮은 오차를 보고했다.
+Clément Godard(UCL)는 2017년 이 아이디어를 [Godard et al. 2017](https://doi.org/10.1109/CVPR.2017.699)에서 **MonoDepth**로 체계화했다. left 이미지에서 예측한 depth와 right 이미지에서 예측한 depth가 서로 일치해야 한다는 양방향 제약이 left-right consistency다. 구조적 유사도(SSIM)를 photometric loss에 포함해 텍스처 없는 영역에서의 안정성을 높였다. 학습 시에만 stereo 쌍이 필요하고 추론에는 단일 이미지만 쓴다. 원 논문은 KITTI의 당시 비교 protocol에서 표에 실린 기존 self-supervised 방법보다 낮은 오차를 보고했다.
 
 > 🔗 **차용.** Garg와 Godard의 photometric loss는 stereo matching 문헌에서 온다. [Scharstein과 Szeliski가 정리한(2002)](https://vision.middlebury.edu/stereo/taxonomy-IJCV.pdf) disparity estimation의 intensity consistency 제약을 depth network의 학습 신호로 전용한 것이다.
 
-2019년 Godard의 *MonoDepth2* ([Godard et al. 2019, ICCV](https://arxiv.org/abs/1806.01260))는 stereo 쌍 대신 monocular video를 쓰는 self-supervised로 나아갔다. depth network와 pose network를 동시에 학습한다. 연속 프레임 사이의 카메라 운동을 pose network가 예측하면, depth network의 출력으로 이전 프레임을 현재로 warping한다. warping 오차가 줄어드는 방향으로 두 네트워크가 함께 최적화된다. 두 가지 핵심 장치가 추가됐다. 첫째, **minimum reprojection loss**: 여러 소스 프레임 중 photometric error가 가장 낮은 것을 선택해 occluded 영역 오류를 줄인다. 둘째, **auto-masking**: 카메라와 같은 속도로 움직이는 픽셀(정지 카메라 + 정지 물체 포함)을 자동으로 제외한다.
+2019년 Godard의 *MonoDepth2* ([Godard et al. 2019, ICCV](https://arxiv.org/abs/1806.01260))는 stereo 쌍 대신 monocular video를 쓰는 self-supervised 학습으로 나아갔다. depth network와 pose network를 동시에 학습한다. 연속 프레임 사이의 카메라 운동을 pose network가 예측하면, depth network의 출력으로 이전 프레임을 현재로 warping한다. warping 오차가 줄어드는 방향으로 두 네트워크가 함께 최적화된다. 두 가지 핵심 장치가 추가됐다. 첫째, **minimum reprojection loss**: 여러 소스 프레임 중 photometric error가 가장 낮은 것을 선택해 occluded 영역 오류를 줄인다. 둘째, **auto-masking**: 예측한 depth·pose로 warping한 오차가 source frame을 움직이지 않고 비교한 identity reprojection error보다 작지 않은 픽셀을 학습에서 제외한다. 이 조건은 카메라가 멈춘 프레임이나 카메라와 비슷한 속도로 움직여 인접 프레임에서 겉보기 위치가 거의 변하지 않는 물체를 거르는 효과가 있다.
 
-깔끔한 구조였다. 그러나 여전히 문제가 있었다. 움직이는 물체와 반사 표면이 걸렸고, 하늘처럼 텍스처가 없는 영역에서는 더 심했다. 이 영역에서 photometric consistency 가정이 무너진다. 그리고 스케일은 여전히 모호하다. video supervision은 스케일을 프레임 간 상대적으로만 풀어준다.
+깔끔한 구조였다. 그러나 여전히 문제가 있었다. 움직이는 물체와 반사 표면이 걸림돌이 됐고, 하늘처럼 텍스처가 없는 영역에서는 더 심했다. 이 영역에서 photometric consistency 가정이 무너진다. 그리고 스케일은 여전히 모호하다. video supervision은 스케일을 프레임 간 상대적으로만 풀어준다.
 
 ---
 
@@ -40,13 +40,13 @@ Intel의 René Ranftl이 이끈 팀이 2020년 발표한 [Ranftl et al. 2020](ht
 
 문제는 데이터셋마다 depth의 단위와 스케일이 다르다는 것이다. NYU는 미터 단위 실내, KITTI는 LiDAR 포인트 실외, ReDWeb은 stereo 영화, MegaDepth는 SfM 재구성. 이것들을 그대로 섞으면 네트워크가 혼란스러워진다.
 
-Ranftl은 **affine-invariant loss**를 사용했다. 각 이미지의 depth prediction을 학습 전에 affine transformation(스케일 + 시프트)으로 정규화한다. 구체적으로, 예측과 정답 각각에서 중앙값을 빼 shift를 제거하고, 중앙값 절대편차(MAD)로 나눠 scale을 제거한 뒤 비교한다. 이 scale-and-shift invariant 정규화 덕분에 데이터셋 간 단위 불일치가 사라진다. 이렇게 하면 네트워크는 "상대적으로 어느 것이 더 멀리"를 배운다. 절대 거리는 아니다.
+Ranftl은 **affine-invariant loss**를 사용했다. 학습 중 loss를 계산할 때 각 이미지의 depth prediction과 정답을 affine transformation(스케일 + 시프트)으로 정규화한다. 구체적으로, 예측과 정답 각각에서 중앙값을 빼 shift를 제거하고, 중앙값으로부터의 절대편차를 평균한 값으로 나눠 scale을 제거한 뒤 비교한다. 이 scale-and-shift invariant 정규화 덕분에 데이터셋 간 단위 불일치가 사라진다. 이렇게 하면 네트워크는 "상대적으로 어느 것이 더 멀리"를 배운다. 절대 거리는 아니다.
 
 초기 MiDaS는 서로 다른 여러 데이터셋을 함께 학습해, 학습에 쓰지 않은 데이터셋으로도 이전되는 zero-shot cross-dataset 성능을 보였다. 이후 공개된 MiDaS 계열은 학습 혼합을 최대 12개 데이터셋으로 넓혔다. 야외와 실내처럼 분포가 다른 영상에서도 relative depth를 추정했지만 절대 스케일을 복원하는 모델은 아니었다.
 
 이후 Ranftl 팀은 2021년 [**DPT**(Dense Prediction Transformer)](https://arxiv.org/abs/2103.13413)를 별도 발표해 MiDaS backbone을 ViT 기반으로 교체했다. MiDaS v3부터 DPT가 기본 backbone이 됐고, v3.1(2022)은 그 개선판이었다. 성능이 크게 올랐다.
 
-> 🔗 **차용.** MiDaS v3와 이후 Depth Anything은 CLIP·DINOv2·ViT 계열 backbone을 그대로 전용했다. backbone 교체만으로 성능이 점프하는 현상은 foundation model 시대의 일반적 패턴이지만, depth estimation에서 그 효과가 처음 대규모로 확인된 것은 DPT(Ranftl 2021)에서였다.
+> 🔗 **차용.** MiDaS v3의 DPT는 ViT 기반 encoder를, 이후 Depth Anything은 DINOv2로 사전학습한 encoder를 깊이 추정에 활용했다. backbone 교체만으로 성능이 크게 오르는 현상은 foundation model 시대의 일반적 패턴이지만, DPT(Ranftl 2021)는 depth estimation에서 그 효과를 보인 초기 사례였다.
 
 ---
 
@@ -56,7 +56,7 @@ Ranftl은 **affine-invariant loss**를 사용했다. 각 이미지의 depth pred
 
 Depth Anything은 MiDaS를 포함한 이전 방법들을 KITTI, NYU, ScanNet, DIODE 등 모든 주요 벤치마크에서 앞질렀다. 모델 크기는 ViT-L 기반 335M 파라미터였고, 추론 속도는 실시간과 거리가 있었다.
 
-같은 해 나온 [**Depth Anything v2**](https://arxiv.org/abs/2406.09414)는 합성 데이터(Unreal Engine 기반 Virtual KITTI, Hypersim 등)를 대거 추가했다. 합성 데이터는 반사·투명 표면처럼 실제 데이터에서 annotation이 어려운 영역을 커버한다. v2는 v1보다 edge 세부와 얇은 구조 표현에서 눈에 띄게 개선되었다.
+같은 해 나온 [**Depth Anything v2**](https://arxiv.org/abs/2406.09414)는 Virtual KITTI, Hypersim 등의 합성 데이터로 teacher를 학습하고, 이 teacher가 실제 영상에 붙인 pseudo-label로 student 모델을 학습했다. 합성 데이터는 반사·투명 표면처럼 실제 데이터에서 annotation이 어려운 영역을 커버한다. v2는 v1보다 edge 세부와 얇은 구조 표현에서 눈에 띄게 개선되었다.
 
 그러나 Depth Anything도 여전히 relative depth로, scale은 없다.
 
@@ -66,7 +66,7 @@ Depth Anything은 MiDaS를 포함한 이전 방법들을 KITTI, NYU, ScanNet, DI
 
 ## 5. SLAM으로의 역수입
 
-2021년쯤부터 SLAM 연구자들이 monocular depth 모델을 파이프라인 안으로 끌어들이기 시작했다. 먼저 초기화에 적용했다. Monocular SLAM은 구조상 초기화가 까다롭다. 두 프레임에서 triangulation을 하려면 baseline이 충분해야 하고, scale은 첫 단계부터 모호하다.
+2017년 CNN-SLAM부터 monocular depth 모델을 SLAM 안에 결합하는 시도가 있었다. 이후에는 초기화에도 학습한 깊이를 활용했다. Monocular SLAM은 구조상 초기화가 까다롭다. 두 프레임에서 triangulation을 하려면 baseline이 충분해야 하고, scale은 첫 단계부터 모호하다.
 
 depth prior를 첫 프레임에 주입하면 초기화가 빨라지고 장면 구조의 초기값을 제공할 수 있다. metric depth 모델이거나 알려진 기준으로 scale을 보정한 prior라면 metric scale의 초기값도 줄 수 있다. [Teed와 Deng이 2021년 발표한 DROID-SLAM](https://arxiv.org/abs/2108.10869)은 recurrent optical flow와 BA를 묶은 구조인데, 이 계통에서 나온 후속 연구들이 monocular depth prior를 geometric initialization에 붙이는 방식을 실험했다.
 

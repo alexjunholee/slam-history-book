@@ -40,7 +40,7 @@ Brown supplied the objective function; the tool that solved it came from somewhe
 
 Reprojection error minimization is a nonlinear least-squares problem. There is no analytical solution, so iterative numerical optimization is needed.
 
-In 1944, [Kenneth Levenberg](https://cs.uwaterloo.ca/~y328yu/classics/levenberg.pdf) published a method that interpolated between Gauss-Newton and steepest descent with a damping parameter $\lambda$. Larger $\lambda$ moves toward steepest descent for safe convergence; smaller $\lambda$ uses the fast convergence of Gauss-Newton. The strategy is expressed by adding $\lambda \mathbf{I}$ to the objective function, improving numerical stability. It was twenty years ahead of computer vision. In 1963, [Donald Marquardt](https://epubs.siam.org/doi/10.1137/0111030) independently rediscovered the same idea and formulated it more explicitly. The name settled as the **Levenberg-Marquardt (LM) algorithm**.
+In 1944, [Kenneth Levenberg](https://cs.uwaterloo.ca/~y328yu/classics/levenberg.pdf) published a method that interpolated between Gauss-Newton and steepest descent with a damping parameter $\lambda$. Larger $\lambda$ moves toward steepest descent for safe convergence; smaller $\lambda$ uses the fast convergence of Gauss-Newton. In its basic form, the strategy adds $\lambda \mathbf{I}$ to the matrix $\mathbf{J}^{\top}\mathbf{J}$ of the linearized normal equations, improving numerical stability. It was twenty years ahead of computer vision. In 1963, [Donald Marquardt](https://epubs.siam.org/doi/10.1137/0111030) independently rediscovered the same idea and formulated it more explicitly. The name settled as the **Levenberg-Marquardt (LM) algorithm**.
 
 Another thirty-five years passed before the LM algorithm became the standard BA solver in computer vision. The delay came from the walls between fields, not from missing technology.
 
@@ -48,7 +48,7 @@ Another thirty-five years passed before the LM algorithm became the standard BA 
 
 ## 4. 1999, Triggs et al. — a hundred years of inheritance integrated
 
-Thirty-five years after Levenberg-Marquardt made the numerical tool available, computer vision finally adopted it.
+Triggs and colleagues brought this numerical tool and the computational structure of BA together in a systematic synthesis for computer vision readers.
 
 At the 1999 Vision Algorithms Workshop, Bill Triggs, Philip McLauchlan, Richard Hartley, and Andrew Fitzgibbon presented ["Bundle Adjustment — A Modern Synthesis"](https://link.springer.com/chapter/10.1007/3-540-44480-7_21).
 
@@ -68,7 +68,7 @@ Early twentieth-century aerial triangulators measured error as "distance differe
 
 Brown moved the comparison to the image plane in his 1958 report. He matched the projected location of a 3D point to the actual image observation in pixel units. Calibration error, lens distortion, and extrinsic-parameter error then surface together in one residual. The formulation is also cleaner statistically. Camera image noise can be modeled as an isotropic Gaussian in pixel units, and under that model reprojection-error minimization becomes maximum-likelihood estimation.
 
-Triggs et al. (1999) standardized that formulation in the language of computer vision textbooks. As of 2026, reprojection-error minimization remains the core measurement function of factor graph-based SLAM backends.
+Triggs et al. (1999) standardized that formulation in the language of computer vision textbooks. As of 2026, reprojection-error minimization remains a core optimization problem for visual observations in factor graph-based SLAM backends.
 
 > 🔗 **Borrowed.** The observation model for a visual landmark in SLAM, $z = \pi(K, T, p) + \epsilon$, directly inherits Brown's (1958) reprojection formula. A SLAM backend that minimizes this with Gauss-Newton has the same mathematical structure as a 1958 aerial triangulation solver.
 
@@ -78,21 +78,21 @@ Triggs et al. (1999) standardized that formulation in the language of computer v
 
 The acronym "SLAM" came into broad use through 1990s literature that included [Durrant-Whyte and Leonard's 1995 survey](https://ieeexplore.ieee.org/document/476131), but the backend mathematics inherits Brown's 1958 reprojection formulation almost unchanged. Modern systems still show that inheritance. ORB-SLAM3 jointly optimizes SE(3) poses and 3D landmark locations through g2o. LIO-SAM runs the LM algorithm on top of GTSAM's factor graph. DROID-SLAM gets its update direction from GRU-based optical flow, but its final bundle adjustment layer still uses the Schur complement trick.
 
-Lie groups and factor graphs replaced the matrix notation of 1999, and neural networks took over descriptor computation, but the substance of the computation is unchanged. The reprojection error of points observed from multiple viewpoints is minimized to estimate camera poses and the map together. Pulfrich's glass plate has become a pixel array, and hand calculation has moved to the GPU. The underlying estimation problem remains the same.
+Lie groups and factor graphs replaced the matrix notation of 1999, and neural networks took over descriptor computation, but the common structure of minimizing observation residuals persists. Visual BA uses reprojection errors from multiple viewpoints to estimate camera poses and the map, while LiDAR systems use sensor-specific constraints such as distance or point-to-plane residuals. Pulfrich's glass plate has become a pixel array, and hand calculation has moved to the GPU. The underlying estimation problem remains the same.
 
 This continuity is both a strength and a weakness. The field inherits a hundred years of convergence proofs and practical validation. When BA's assumptions (static world, point features, Gaussian noise) fail in real environments, however, there is no ready alternative.
 
 ---
 
-> 📜 **Prediction vs. outcome.** Triggs et al. (1999) named scaling BA to large problems (thousands of cameras, millions of points) as the main challenge. Over the next twenty years, systems reached that scale. In 2006, Snavely's Photo Tourism reconstructed landmarks from hundreds of Internet photographs; in 2016, COLMAP standardized the robust incremental SfM implementation of that line. It was not, however, the "direct scaling" Triggs imagined. The result depended on an engineering layer: incremental BA and visibility graph pruning, with vocabulary-tree loop closure on top.
+> 📜 **Prediction vs. outcome.** Triggs et al. (1999) named scaling BA to large problems (thousands of cameras, millions of points) as the main challenge. Over the next twenty years, systems reached that scale. In 2006, Snavely's Photo Tourism reconstructed landmarks from hundreds of Internet photographs; in 2016, COLMAP standardized the robust incremental SfM implementation of that line. Later scaling required more than simply enlarging the optimization problem. The result depended on an engineering layer: incremental BA and visibility graph pruning, with vocabulary-tree loop closure on top.
 
 ---
 
 ## 🧭 Still open
 
-**Global optimum guarantees for nonlinear BA.** The LM algorithm converges to a local minimum. With poor initialization, it converges to the wrong structure. Initialization methods such as the 5-point algorithm, PnP, and epipolar-geometry estimation appeared in turn, but they too depend internally on RANSAC and iterative optimization. Convex-relaxation approaches that guarantee a global optimum in large-scale environments remain under study, but they are not yet practical at the speed and scale of real-time SLAM.
+**Global optimum guarantees for nonlinear BA.** The LM algorithm converges to a local minimum. With poor initialization, it converges to the wrong structure. Initialization methods such as the 5-point algorithm, PnP, and epipolar-geometry estimation appeared in turn, but the geometric solvers should be distinguished from the robust estimation procedures around them. RANSAC is used as an outer procedure to reject outliers, and iterative refinement can be applied to the resulting estimates. Convex-relaxation approaches that guarantee a global optimum in large-scale environments remain under study, but they are not yet practical at the speed and scale of real-time SLAM.
 
-**The gap between photogrammetric accuracy and Visual SLAM.** Aerial photogrammetry routinely demands subpixel (below 0.1 pixel) accuracy. It uses calibrated cameras and high-quality GCPs (ground control points), and the optimization runs offline. Real-time Visual SLAM uses the same formulation under the constraints of GPS-denied environments, low-resolution cameras, and online estimation. Only limited settings allow Visual SLAM to meet the surveying field's accuracy standard systematically (RMSE < 5 cm at 500 m range), and efforts to unify the two fields' accuracy standards in one framework are ongoing.
+**The gap between photogrammetric accuracy and Visual SLAM.** Accuracy in aerial photogrammetry is assessed against the imaging conditions and the requirements of the delivered product. It uses calibrated cameras and high-quality GCPs (ground control points), and the optimization runs offline. Real-time Visual SLAM uses the same formulation under the constraints of GPS-denied environments, low-resolution cameras, and online estimation. Comparing the two fields requires distinguishing image-coordinate errors from ground-coordinate errors and stating the range, resolution, control-point conditions, and components being evaluated.
 
 ---
 

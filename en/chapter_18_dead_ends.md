@@ -66,7 +66,7 @@ After SLAM++, [SemanticFusion](https://arxiv.org/abs/1609.05130) (McCormac et al
 
 Through 2019, traditional geometric pipelines such as ORB-SLAM2, VINS-Mono, and LIO-SAM produced the main gains on autonomous-driving benchmarks. Systems with deep semantic features remained competitive only in specific indoor environments and with fixed object classes. On new categories or unseen environments, semantic priors sometimes increased drift.
 
-> 📜 **Prediction vs. outcome.** In the Conclusion of the SLAM++ paper, Salas-Moreno described his method as "a first step toward a more generic SLAM method," hoping it would extend to objects with low-dimensional shape variation, and ultimately to systems that segment and define object classes on their own. The paper's introduction added that an object-unit representation would bring "large map compression" and "gains in efficiency and robustness." The actual development partially hit the mark. Object-level maps found a place in AR and certain manipulation applications, and the compression and efficiency advantages were confirmed again in indoor environments with repeated objects. But mainstream geometric SLAM still retains sparse points and keyframe-based graphs as of 2026, and the stage where objects are segmented and defined autonomously has not been reached. Semantic representations found wider use in downstream tasks such as semantic mapping and task planning than in SLAM itself.
+> 📜 **Prediction vs. outcome.** In the Conclusion of the SLAM++ paper, Salas-Moreno described his method as "a first step toward a more generic SLAM method," hoping it would extend to objects with low-dimensional shape variation, and ultimately to systems that segment and define object classes on their own. The paper's introduction added that an object-unit representation would bring "large map compression" and "gains in efficiency and robustness." The actual development partially hit the mark. Object-level maps found a place in AR and certain manipulation applications, and the compression and efficiency advantages were confirmed again in indoor environments with repeated objects. But mainstream geometric SLAM still retains sparse points and keyframe-based graphs as of 2026, and the stage where objects are segmented and defined autonomously has not been reached. Object-as-landmark adoption remained limited, while semantics found other roles in dynamic-region separation within SLAM and in downstream semantic mapping and task planning.
 
 Semantic-first SLAM depended on accurate segmentation; a segmentation error could corrupt the map, whereas robust estimation let a geometric pipeline survive some incorrect matches. Generalization posed a second problem. Semantic priors trained on particular object classes did not transfer beyond those classes, while SLAM systems had to operate in a much wider range of environments.
 
@@ -74,7 +74,7 @@ The object-as-landmark path contracted, but semantic information continued at a 
 
 ---
 
-## 18.5 The Manhattan-world assumption — scope of application and extinction
+## 18.5 The Manhattan-world assumption — scope and continued use as an auxiliary constraint
 
 Another line of research used the Manhattan-world assumption and later receded.
 
@@ -100,6 +100,6 @@ A promising idea can still wait years for suitable hardware and algorithms. Adop
 
 **Event-camera SLAM adoption.** Commercial high-resolution event cameras widened the research base after 2022, but event processing had not settled on a stable common framework by 2026. Integration with frame-based pipelines, event representations, real-world benchmarks, and evaluation standards were all still developing. Broad adoption remained uncertain.
 
-**The direction of the semantic-map concept.** As interest in semantic SLAM cooled after 2017, semantic representation moved largely into downstream tasks. In 2024–2025, LERF and Gaussian-splatting systems combined language features with dense scene representations. It remained unclear whether semantics would become part of SLAM itself or stay downstream, and whether these representations could relax the usual requirement that geometry be reliable first.
+**The direction of the semantic-map concept.** As interest in semantic SLAM cooled after 2017, semantic representation developed other roles in dynamic-region separation and downstream tasks. From 2023, LERF and language-based Gaussian-splatting systems combined language features with dense scene representations. It remained unclear whether semantics would become part of SLAM itself or stay downstream, and whether these representations could relax the usual requirement that geometry be reliable first.
 
 Full visual-LiDAR fusion, solid-state sensor algorithms, dynamic-object handling, event-camera maturity, and the return of semantic maps all connect with unresolved problems from earlier chapters; Ch.19 brings those threads together.

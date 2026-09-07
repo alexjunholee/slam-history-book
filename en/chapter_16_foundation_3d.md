@@ -14,7 +14,7 @@ DUSt3R's transformer uses the encoder-decoder structure inherited from CroCo. Ea
 
 > 🔗 **Borrowed.** DUSt3R's backbone comes from ViT ([Dosovitskiy et al. 2020](https://arxiv.org/abs/2010.11929)), and its direct precursor is CroCo ([Weinzaepfel et al. 2022](https://arxiv.org/abs/2210.10716), also from Naver Labs Europe). CroCo proposed cross-view self-supervised pretraining in which information from one image reconstructs masked regions in the other. DUSt3R retained CroCo's encoder-decoder structure and changed the task to pointmap prediction.
 
-Once a pair of pointmaps is obtained from two images, camera pose is recovered by rigid alignment between them, a generalization of Procrustes alignment. Pose estimation becomes a result of the pointmap rather than a separate stage.
+Both pointmaps already use the first camera's coordinate frame. Relative camera pose can be recovered with PnP-RANSAC from predicted 3D points and their pixel correspondences in the second image. For multiple image pairs, a separate global alignment adjusts the pointmaps and cameras. Pose estimation is derived from the pointmaps.
 
 When extending to three or ten images, DUSt3R solves a global alignment. It is an optimization problem that registers the pointmaps of all image pairs into one common coordinate frame. Only at this stage does something resembling bundle adjustment appear, but it proceeds without feature matching or camera models.
 
@@ -64,9 +64,9 @@ In quantitative comparisons with DUSt3R, VGGT showed consistently better camera-
 
 ## 16.5 Pose estimation and reconstruction converge
 
-Traditional computer vision distinguished the two problems. Camera pose estimation finds the current position in an already-known map, and 3D reconstruction recovers the geometry of an unknown environment. SLAM was hard because it solved both at the same time.
+Traditional computer vision distinguished the two problems. Map-based localization finds the current position in an already-known map, and 3D reconstruction recovers the geometry of an unknown environment. SLAM was hard because it solved both at the same time.
 
-The systems from DUSt3R to VGGT do not preserve this distinction. Predicting a pointmap also yields a pose, and the pose and reconstruction emerge together. A single forward pass replaces the earlier choice between estimating the camera first or reconstructing the point cloud first.
+Systems from DUSt3R to VGGT use shared learned representations for geometry and camera estimation. DUSt3R recovers pose from pointmaps through separate operations and joins multiple views with global alignment. VGGT outputs cameras and geometry in one forward pass. Their common direction does not imply identical postprocessing requirements.
 
 DUSt3R, MASt3R, and VGGT have not discarded multi-view geometry. Their transformer weights encode principles implemented explicitly by the epipolar constraint, triangulation, and bundle adjustment. The change lies in how those principles are implemented: implicitly in model weights rather than as separate algorithms.
 
@@ -84,11 +84,11 @@ DUSt3R, MASt3R, and VGGT form the geometric branch of foundation 3D: they deal w
 
 The semantic branch began in Luca Carlone's group at MIT. [Nathan Hughes et al. 2022. Hydra: A Real-time Spatial Perception System for 3D Scene Graph Construction and Optimization](https://arxiv.org/abs/2201.13360) placed an online hierarchy of objects → places → rooms → buildings on top of Kimera's (Rosinol 2020) metric-semantic mesh. Its closed-set classifier remained limited to a predefined dictionary of roughly 100–1000 labels, but it showed that a hierarchical map could run in real time.
 
-Foundation models removed the fixed-dictionary constraint. [Songyou Peng et al. 2023. OpenScene: 3D Scene Understanding with Open Vocabularies (CVPR)](https://arxiv.org/abs/2211.15654) came from the ETH/Pollefeys group, followed by [Qiao Gu et al. 2024. ConceptGraphs: Open-Vocabulary 3D Scene Graphs for Perception and Planning (ICRA)](https://arxiv.org/abs/2309.16650) from a Montréal-MIT collaboration. OpenScene distilled CLIP features onto 3D point clouds, allowing natural-language queries such as "how close is this point to a chair." In ConceptGraphs, a VLM generated language descriptions as node attributes and an LLM described relations between objects. Combining open-vocabulary features with Hydra's hierarchy let scene graphs represent concepts outside a predefined dictionary.
+Foundation models removed the fixed-dictionary constraint. [Songyou Peng et al. 2023. OpenScene: 3D Scene Understanding with Open Vocabularies (CVPR)](https://arxiv.org/abs/2211.15654) came from the ETH/Pollefeys group, followed by [Qiao Gu et al. 2024. ConceptGraphs: Open-Vocabulary 3D Scene Graphs for Perception and Planning (ICRA)](https://arxiv.org/abs/2309.16650) from a Montréal-MIT collaboration. OpenScene distilled CLIP features onto 3D point clouds, allowing natural-language queries such as "how close is this point to a chair." In ConceptGraphs, a VLM generated language descriptions as node attributes and an LLM described relations between objects. These methods connected concepts outside a predefined class dictionary to 3D representations. ConceptGraphs is distinct from methods that directly extend Hydra's hierarchy.
 
 [Dominic Maggio et al. 2024. Clio: Real-time Task-Driven Open-Set 3D Scene Graphs](https://arxiv.org/abs/2404.13696) turned this lineage toward tasks. Clio treats a natural-language task as an information bottleneck and retains only the level of abstraction that task needs in the scene graph. For an instruction such as "clean near the coffee machine," it preserves the coffee machine and surrounding objects while grouping unrelated details. The exposed layer of the hierarchy varies by task.
 
-> 🔗 **Borrowed.** ConceptGraphs and Clio inherit the Carlone-group scene graph (Armeni → Rosinol-Kimera → Hughes-Hydra → Maggio-Clio) accumulated over eight years, swapping node features for CLIP, VLM, and LLM outputs while the objects-places-rooms hierarchy survives.
+> 🔗 **Borrowed.** Clio is a direct successor to Hydra in the Carlone group, adding task-driven abstraction. ConceptGraphs is a separate open-vocabulary object-graph approach and should not be described as inheriting Hydra's objects-places-rooms hierarchy.
 
 Ch.18 §18.4 traces the contraction of the object-as-landmark lineage in 2017–2019. Semantic SLAM later returned in hierarchical scene graphs, but that semantic branch and the geometric DUSt3R branch had not yet converged as of 2026. No reported end-to-end system attached CLIP features to VGGT's pointmap or combined Clio's scene graph with DUSt3R's calibration-free geometry. Their possible point of contact remains an open problem.
 
@@ -112,7 +112,7 @@ Foundation 3D followed this pattern as well. In 2025, Dominic Maggio, Hyungtae L
 
 **Metric-scale generalization.** DUSt3R's pointmaps have relative scale. The depth ratio between two images is recovered, but absolute scale is unknown. As with Metric3D or Depth Anything v2, metric scale remains a problem for foundation 3D. The physical constraint of determining absolute scale without GPS or an IMU remains regardless of data scale.
 
-**SLAM lineage or separate branch?** MASt3R-SLAM and VGGT-SLAM brought foundation 3D into SLAM systems in 2024–2025. Real-time operation on large sequences and integration with the semantic branch in §16.6 (Hydra → ConceptGraphs → Clio) remain unclear. No common architecture yet combines geometric and semantic foundation models in one system.
+**SLAM lineage or separate branch?** MASt3R-SLAM and VGGT-SLAM brought foundation 3D into SLAM systems in 2024–2025. Real-time operation on large sequences and integration with the semantic branch in §16.6 (Hydra → Clio and the separate ConceptGraphs branch) remain unclear. No common architecture yet combines geometric and semantic foundation models in one system.
 
 ---
 

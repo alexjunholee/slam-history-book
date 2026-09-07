@@ -2,7 +2,7 @@
 
 Bundle adjustment requires "corresponding points," the same physical location found independently in two or more images. The surveyor planted targets in the field by hand; computer vision had to hand that role to an algorithm. Feature detection and description began with that handoff.
 
-In the late 1970s, Hans Moravec tried to locate salient points in the environment with a camera on the Stanford Cart project. The work was written up in his 1980 Stanford doctoral thesis, ["Obstacle Avoidance and Navigation in the Real World by a Seeing Robot Rover"](https://frc.ri.cmu.edu/~hpm/project.archive/robot.papers/1975.cart/1980.html.thesis/index.html). The intuition that texture-rich corners are good to track was there, but no mathematical definition. Eleven years later, Chris Harris and Mike Stephens formalized that intuition in terms of the eigenvalues of the autocorrelation matrix. Lucas and Kanade had laid down the framework for pixel tracking seven years earlier. Lowe absorbed both ideas and built a descriptor invariant to scale and rotation. Rublee produced a faster, patent-free alternative. The SLAM front end runs on this lineage.
+In the late 1970s, Hans Moravec tried to locate salient points in the environment with a camera on the Stanford Cart project. The work was written up in his 1980 Stanford doctoral thesis, ["Obstacle Avoidance and Navigation in the Real World by a Seeing Robot Rover"](https://frc.ri.cmu.edu/~hpm/project.archive/robot.papers/1975.cart/1980.html.thesis/index.html). Moravec supplied a quantitative criterion for selecting trackable points from intensity changes in neighboring patches. In 1988, Chris Harris and Mike Stephens formalized that intuition in terms of the eigenvalues of the autocorrelation matrix. Lucas and Kanade had laid down the framework for pixel tracking seven years earlier. Lowe absorbed both ideas and built a descriptor invariant to scale and rotation. Rublee produced a faster, patent-free alternative. The SLAM front end runs on this lineage.
 
 ---
 
@@ -42,7 +42,7 @@ The matrix on the left is the same structure matrix $M$ as Harris's. Corner dete
 
 Tomasi and Kanade, in the 1991 tech report ["Detection and Tracking of Point Features"](https://cecas.clemson.edu/~stb/klt/tomasi-kanade-techreport-1991.pdf), gave a concrete implementation that selects tracking-window quality by the eigenvalue criterion and refines displacement through Newton-Raphson iteration. Bouguet (Intel, 2000) later added an image-pyramid-based coarse-to-fine strategy so the tracker would converge under large motion, and this combination became the KLT (Kanade-Lucas-Tomasi) tracker. Real-time VIO systems such as [VINS-Mono](https://arxiv.org/abs/1708.03852) (2018) still run a front end descended from this work. A least-squares tracker from 1981 runs inside the VIO of a smartphone-class drone more than forty years later.
 
-> 🔗 **Borrowed.** Lucas-Kanade (1981) → KLT tracker → Qin et al.'s VINS-Mono (2018): a 38-year-old optical flow survives unchanged as the feature-tracking backbone of real-time VIO.
+> 🔗 **Borrowed.** Lucas-Kanade (1981) → KLT tracker → Qin et al.'s VINS-Mono (2018): optical flow proposed 37 years earlier survives unchanged as the feature-tracking backbone of real-time VIO.
 
 ---
 
@@ -60,7 +60,7 @@ Here $k$ is the ratio between adjacent scales (typically $2^{1/s}$, where $s$ is
 
 **Descriptor stage.** A $16\times16$ window around the keypoint is divided into $4\times4$ blocks, and the 8-bin gradient-orientation histogram in each block is concatenated into a 128-dimensional vector. Rotating the patch into the keypoint's dominant gradient direction also provides rotation invariance.
 
-The result was a 128-dimensional descriptor robust to scale, rotation, and partial affine deformation. Before KITTI and standardized SLAM benchmarks, that robustness made SIFT difficult to avoid.
+The result was a 128-dimensional descriptor robust to scale, rotation, and partial affine deformation. Before KITTI and standardized SLAM benchmarks, that robustness made SIFT useful for matching images across changes in scale and viewpoint.
 
 Lowe filed a patent on SIFT in March 2000, and it was granted in March 2004 (US6711293B1, with priority from March 1999). The patent imposed licensing fees for commercial use, and until it expired in March 2020 it was one of the motivations for efforts to replace SIFT.
 
@@ -74,7 +74,7 @@ SIFT's 128-dimensional descriptor was accurate but slow, taking hundreds of mill
 
 SURF detects keypoints with the *determinant of the Hessian matrix* instead of DoG. It approximates the second Gaussian derivatives with box filters on an integral image to speed up computation. The descriptor is 64-dimensional, half of SIFT's. The neighborhood of the keypoint is split into $4\times4$ subregions, and in each subregion four values from Haar wavelet responses $d_x, d_y$, $(\sum d_x,\, \sum d_y,\, \sum|d_x|,\, \sum|d_y|)$, are concatenated into a $4\times4\times4=64$-dimensional vector. A 128-dimensional extension (SURF-128) exists, but the default is 64-dimensional.
 
-SURF was 3–7 times faster than SIFT. But the accuracy gap between 128 and 64 dimensions remained, and Bay could not avoid a patent either (ETH Zürich patent). SIFT lost ground on speed; SURF lost ground on both accuracy and patent restrictions. ORB addressed both problems at once.
+SURF was 3–7 times faster than SIFT. But accuracy comparisons depended on the detectors, descriptor designs, and evaluation conditions as well as dimensionality, and Bay could not avoid a patent either (ETH Zürich patent). SIFT lost ground on speed; SURF lost ground on both accuracy and patent restrictions. ORB addressed both problems at once.
 
 > 🔗 **Borrowed.** Lowe's (1999/2004) DoG scale-space → Bay's (2006) Hessian integral image: two answers for achieving scale invariance. DoG is theoretically elegant; the Hessian approximation is engineered to be fast.
 
@@ -88,7 +88,7 @@ ORB combines and improves two existing techniques.
 
 **Detection.** [FAST](https://www.edwardrosten.com/work/rosten_2006_machine.pdf) (Features from Accelerated Segment Test, Rosten & Drummond 2006) tests a 16-pixel circle around a candidate and declares it a corner if a contiguous arc is sufficiently brighter or darker. It is more than 10 times faster than SIFT's DoG. ORB adds a Harris score on top of FAST and keeps only the strong responses.
 
-**Descriptor.** [BRIEF](https://www.cs.ubc.ca/~lowe/525/papers/calonder_eccv10.pdf) (Binary Robust Independent Elementary Features, Calonder et al. 2010) compares the intensities of randomly chosen point pairs in the patch around a keypoint to produce a 256-bit string by default. Matching uses Hamming distance instead of Euclidean distance, so comparison is a single XOR.
+**Descriptor.** [BRIEF](https://www.cs.ubc.ca/~lowe/525/papers/calonder_eccv10.pdf) (Binary Robust Independent Elementary Features, Calonder et al. 2010) compares the intensities of randomly chosen point pairs in the patch around a keypoint to produce a 256-bit string by default. Matching uses Hamming distance instead of Euclidean distance, so the distance is computed by XOR followed by a population count of the differing bits.
 
 BRIEF's weak point was the lack of rotation invariance. Rublee built **rBRIEF (rotated BRIEF)** by rotating the patch to align with the FAST corner's intensity centroid. This supplied the missing orientation invariance.
 
@@ -114,7 +114,7 @@ Even so, traditional descriptors have not disappeared as of 2026. ORB is faster 
 
 **Generalization limits of learned descriptors.** SuperPoint, R2D2, DISK, and others outperform classical methods inside the training domain, but behave inconsistently in new environments (underwater, thermal, low-light). There is no consensus on which family is more reliable. The question remains open in 2026.
 
-**Failure modes of wide-baseline matching.** Harris- or ORB-based matching degrades sharply once the camera viewpoint change exceeds 45 degrees. Affine-covariant detectors (ASIFT, MSER) patched part of the gap, but there is no complete solution. [DUSt3R](https://arxiv.org/abs/2312.14132) (Wang et al. 2023) opened a path by bypassing matching itself, though it is still too early to judge whether this is the end of the descriptor problem or a detour around it.
+**Failure modes of wide-baseline matching.** Harris- or ORB-based matching can degrade under large viewpoint changes; the extent depends on the scene, rotation axis, and matching conditions. Affine-covariant detectors (ASIFT, MSER) patched part of the gap, but there is no complete solution. [DUSt3R](https://arxiv.org/abs/2312.14132) (Wang et al. 2023) opened a path by bypassing matching itself, though it is still too early to judge whether this is the end of the descriptor problem or a detour around it.
 
 ---
 

@@ -8,9 +8,9 @@ Randall Smith와 Peter Cheeseman은 1986년 로봇이 공간 속에서 무언가
 
 ## 4.1 불확실 공간관계의 수학 — Smith, Self, Cheeseman (1988)
 
-1986년 SRI International의 Randall Smith와 Peter Cheeseman은 로봇이 여러 장소를 거쳐 측정값을 누적할 때 오차가 어떻게 전파되는지를 수식으로 잡으려 했다. 그 작업 노트가 1988년 논문 ["Estimating Uncertain Spatial Relationships in Robotics"](https://arxiv.org/abs/1304.3111)으로 나왔다. 질문 자체는 명료했다. 로봇이 A에서 B를 측정하고 B에서 C를 측정했을 때, A에서 C까지의 불확실성은 어떻게 계산되는가?
+1986년 SRI International의 Randall Smith, Matthew Self, Peter Cheeseman은 로봇이 여러 장소를 거쳐 측정값을 누적할 때 오차가 어떻게 전파되는지를 수식으로 잡으려 했다. 그 작업은 UAI 1986에서 발표되고 1988년 논문 ["Estimating Uncertain Spatial Relationships in Robotics"](https://arxiv.org/abs/1304.3111)으로 나왔다. 질문 자체는 명료했다. 로봇이 A에서 B를 측정하고 B에서 C를 측정했을 때, A에서 C까지의 불확실성은 어떻게 계산되는가?
 
-[Kalman 필터](https://www.cs.unc.edu/~welch/kalman/kalmanPaper.html)는 이미 있었다. 레이더 추적, 탄도 계산, 위성 궤도 보정에 1960년부터 쓰였다. Smith와 Cheeseman이 한 일은 Kalman의 공분산 전파 방정식을 공간 변환의 합성(composition)에 맞게 재공식화한 것이다. 로봇 pose $\mathbf{x}_r$과 landmark 위치 $\mathbf{m}_i$를 하나의 state vector에 담고, 그 전체의 joint covariance $\mathbf{P}$를 유지한다.
+[Kalman 필터](https://www.cs.unc.edu/~welch/kalman/kalmanPaper.html)는 이미 있었다. 레이더 추적, 탄도 계산, 위성 궤도 보정에 1960년부터 쓰였다. Smith, Self, Cheeseman이 한 일은 Kalman의 공분산 전파 방정식을 공간 변환의 합성(composition)에 맞게 재공식화한 것이다. 로봇 pose $\mathbf{x}_r$과 landmark 위치 $\mathbf{m}_i$를 하나의 state vector에 담고, 그 전체의 joint covariance $\mathbf{P}$를 유지한다.
 
 $$\mathbf{x} = [\mathbf{x}_r^\top,\ \mathbf{m}_1^\top,\ \ldots,\ \mathbf{m}_N^\top]^\top$$
 
@@ -18,19 +18,19 @@ $$\mathbf{P} = \begin{bmatrix} \mathbf{P}_{rr} & \mathbf{P}_{rm} \\ \mathbf{P}_{
 
 off-diagonal 블록 $\mathbf{P}_{rm}$은 로봇 위치 불확실성과 landmark 위치 불확실성의 상관관계를 담는다. 이 상관관계를 추적해야 일관된 추정이 가능하다. 논문은 이를 명시적으로 증명했고, SLAM 분야 전체가 이 출발점에 섰다.
 
-> 🔗 **차용.** Smith-Cheeseman(1988)의 공간관계 수학은 Kalman(1960)의 공분산 전파를 직접 계승한다. 단일 이동 물체를 추적하던 기법이 로봇과 지도 요소 전체를 동시에 추적하는 틀로 바뀌었다.
+> 🔗 **차용.** Smith-Self-Cheeseman(1988)의 공간관계 수학은 Kalman(1960)의 공분산 전파를 직접 계승한다. 단일 이동 물체를 추적하던 기법이 로봇과 지도 요소 전체를 동시에 추적하는 틀로 바뀌었다.
 
 ---
 
 ## 4.2 "SLAM"이라는 이름의 정착
 
-Smith-Cheeseman의 1988년 논문에는 "SLAM"이라는 단어가 없다. Oxford에서 Sydney로 옮긴 Hugh Durrant-Whyte와 MIT의 John Leonard가 1990년대 초 각자의 연구실에서 같은 문제를 다른 이름으로 부르고 있었다. 두 그룹이 서로를 인용하기 시작하면서 공통 용어가 필요해졌고, "SLAM"은 그렇게 수렴해 굳었다. 정확히 어느 문서에서 처음 쓰였는지는 연구자마다 기억이 다르다. 공식 선점 논문은 없다.
+Smith-Self-Cheeseman의 1988년 논문에는 "SLAM"이라는 단어가 없다. Oxford에서 Sydney로 옮긴 Hugh Durrant-Whyte와 MIT의 John Leonard가 1990년대 초 각자의 연구실에서 같은 문제를 다른 이름으로 부르고 있었다. 두 그룹이 서로를 인용하기 시작하면서 공통 용어가 필요해졌고, "SLAM"은 그렇게 수렴해 굳었다. 정확히 어느 문서에서 처음 쓰였는지는 연구자마다 기억이 다르다. 공식 선점 논문은 없다.
 
 Leonard와 Durrant-Whyte의 1991년 논문 ["Simultaneous Map Building and Localization for an Autonomous Mobile Robot"](https://doi.org/10.1109/IROS.1991.174711)이 이 문제를 로봇공학 메인스트림에서 제목으로 명시한 초기 사례로 자주 인용된다. "Mapping"과 "Localization"이 분리 불가능하게 얽혀 있다는 것, 그것을 동시에(simultaneously) 해야 한다는 것, 이 직관이 약어 이전에 있었다.
 
-"Simultaneous Localization and Mapping", 줄여서 SLAM이다. 이후 10년간 이 이름이 분야 전체를 수렴시키는 구심이 된다.
+"Simultaneous Localization and Mapping", 줄여서 SLAM이다. 이후 10년간 이 이름은 분야 전체를 모으는 구심이 됐다.
 
-> 🔗 **차용.** [Bar-Shalom의 다중 표적 추적](https://archive.org/details/trackingdataasso0000bars)(multi-target tracking, 1988년 단행본으로 정리됨)은 여러 물체의 state를 동시에 추정하는 프레임워크를 제공했다. Leonard와 Durrant-Whyte는 이 프레임워크에서 "표적 위치"를 "landmark 위치"로, "추적기 위치"를 "로봇 pose"로 대응시켰다고 볼 수 있다. 레이더 기술이 로봇 실내 매핑으로 번역된 사례다.
+> 🔗 **병행 계보.** [Bar-Shalom의 다중 표적 추적](https://archive.org/details/trackingdataasso0000bars)(multi-target tracking, 1988년 단행본으로 정리됨)과 초기 SLAM은 여러 미지 상태의 불확실성과 data association을 함께 다룬다는 수학적 접점이 있다. 표적·추적기와 landmark·robot pose의 대응은 두 문제를 이해하기 위한 비유로는 유용하지만, 현재 확인되는 인용만으로 Leonard와 Durrant-Whyte가 이 치환을 직접 차용했다고 단정할 수는 없다.
 
 ---
 
@@ -51,7 +51,7 @@ $$\mathbf{P} = (\mathbf{I} - \mathbf{K}\mathbf{H})\mathbf{P}^-$$
 
 EKF-SLAM은 이 두 단계를 반복한다. 구조는 단순하지만 처음부터 확장성의 천장을 안고 있었다.
 
-문제는 state 차원이다. 6DOF pose에 3D landmark $N$개를 담으면 state vector 차원은 $6 + 3N$이고, 공분산 행렬은 $(6+3N)^2$ 원소의 $O(N^2)$ 구조를 이룬다. update 한 번에 Kalman gain 계산($\mathbf{S} = \mathbf{H}\mathbf{P}^-\mathbf{H}^\top + \mathbf{R}$의 역행렬)과 공분산 갱신 모두 $O(N^2)$ 비용이 든다. landmark 100개면 $306 \times 306 \approx 9.4$만 원소, 1,000개면 $3006 \times 3006 \approx 900$만 원소다. 2000년대 초 일반 PC로 실시간을 유지할 수 있는 landmark 수는 수십에서 백 단위가 한계였다.
+문제는 state 차원이다. 6DOF pose에 3D landmark $N$개를 담으면 state vector 차원은 $6 + 3N$이고, 공분산 행렬은 $(6+3N)^2$ 원소의 $O(N^2)$ 구조를 이룬다. 관측 차원이 고정된 한 번의 update에서도 전체 공분산 갱신에는 $O(N^2)$ 비용이 든다. Kalman gain은 $\mathbf{S} = \mathbf{H}\mathbf{P}^-\mathbf{H}^\top + \mathbf{R}$의 역행렬뿐 아니라 상태–관측 공분산과의 곱으로 계산하며, $\mathbf{S}$의 크기는 관측 차원에 달려 있다. landmark 100개면 $306 \times 306 \approx 9.4$만 원소, 1,000개면 $3006 \times 3006 \approx 900$만 원소다. 2000년대 초 일반 PC로 실시간을 유지할 수 있는 landmark 수는 수십에서 백 단위가 한계였다.
 
 [Andrew Davison의 MonoSLAM(2003)](https://www.doc.ic.ac.uk/~ajd/Publications/davison_iccv2003.pdf)이 실시간 시연에서 landmark 수십 개 수준에 갇힌 것은 우연이 아니었다. EKF-SLAM의 $O(N^2)$ 벽이 그 숫자를 결정했다.
 
@@ -65,7 +65,7 @@ EKF-SLAM은 이 두 단계를 반복한다. 구조는 단순하지만 처음부�
 
 2000년대 중반까지 시도된 해법은 submap이었다. 전체 지도를 겹쳐지는 소영역으로 나누고, 각 submap에서만 EKF를 돌린 뒤 submap 사이를 별도 연결 구조로 잇는다. [Chong과 Kleeman(1999)](http://www.cs.cmu.edu/afs/cs/Web/People/motionplanning/papers/sbp_papers/integrated1/chong_feature_map.pdf)이 초기 형태를 제안했다. 그러나 submap 경계에서의 정보 손실과 루프 클로저의 어려움, 그리고 구현 복잡도가 submap 접근을 실용화하는 데 마찰을 일으켰다.
 
-> 🔗 **차용.** Chong-Kleeman(1999)의 submap 분할 아이디어는 이후 현대 SLAM의 local window 최적화로 계승된다. ORB-SLAM의 local map, VINS-Mono의 sliding window가 conceptually 같은 원리 위에 있다. 단지 구현 도구가 EKF에서 bundle adjustment로 바뀌었을 뿐이다.
+> 🔗 **차용.** Chong-Kleeman(1999)의 submap 분할과 현대 SLAM의 local window 최적화는 계산 범위를 제한한다는 목적을 공유한다. ORB-SLAM의 local map과 VINS-Mono의 sliding window에서도 그 관심사를 볼 수 있다. 다만 지도 분할과 상태 주변화의 방식이 다르므로 같은 원리의 직접 계승으로 단정하지는 않는다.
 
 ---
 
@@ -75,11 +75,11 @@ EKF-SLAM의 더 깊은 결함은 2001년 ICRA에서 터졌다. Simon Julier와 J
 
 2차 문헌들이 이 논문을 인용하며 요약하는 핵심은, EKF-SLAM이 asymptotically *overconfident*하다는 것이다. 즉, 실제 추정 오류는 커지는데 필터가 계산하는 공분산(불확실성)은 실제보다 작게 수렴한다. 이것이 inconsistency다.
 
-원인은 linearization error에 있다. EKF는 비선형 모션 모델과 관측 모델을 일차 Taylor 전개로 근사한다. 이 근사 오류가 매 단계 누적되면 공분산이 실제 오류를 과소 평가하기 시작한다. 로봇이 "나는 여기 있다"고 과도하게 확신하면, 이후 measurements를 필터가 덜 신뢰하게 되어 오류가 교정되지 않고 쌓인다.
+원인은 linearization error에 있다. EKF는 비선형 모션 모델과 관측 모델을 일차 Taylor 전개로 근사한다. 이 근사 오류가 매 단계 누적되면 공분산이 실제 오류를 과소 평가하기 시작한다. 로봇이 "나는 여기 있다"고 과도하게 확신하면, 이후 측정값을 필터가 덜 신뢰하게 되어 오류가 교정되지 않고 쌓인다.
 
 2007년 [Shoudong Huang과 Gamini Dissanayake](https://doi.org/10.1109/TRO.2007.903811)는 이 inconsistency의 원인을 더 정밀하게 해부했다. 논문의 핵심 진단은 두 가지였다. 현재 상태 추정치에서 평가된 Jacobian들 사이의 기본 제약(constraint)이 무너지는 것이 EKF-SLAM 비일관성의 주된 원인이고, 그 결과 로봇 방향각(yaw)의 분산이 실제로는 유지되어야 하는데도 잘못 0으로 수렴할 수 있다는 것이었다. 선형화 시점에 따라 시스템의 관측 가능한 자유도가 달라지고, 관측 불가능한 방향에 필터가 임의의 정보를 주입하게 된다는 이후 observability 기반 계열의 해석은 이 논문에서 출발한다.
 
-> 📜 **예언 vs 실제.** Julier와 Uhlmann의 2001년 반례 이후, consistent estimation을 달성하려는 필터 설계 시도가 이어졌다. Unscented Kalman Filter(UKF), Invariant EKF, robust covariance 등 필터 계열의 변형들이 10년 가까이 제안됐다. 그러나 2026년 시점에서 되돌아보면 이 문제의 실용적 해법은 *필터가 아닌 최적화*였다. [iSAM](https://www.cs.cmu.edu/~kaess/pub/Kaess08tro.pdf)(Kaess et al., 2008), [g2o](http://ais.informatik.uni-freiburg.de/publications/papers/kuemmerle11icra.pdf)(Kümmerle et al., 2011), GTSAM이 filter를 사실상 대체했다. Jacobian linearization을 current estimate에 고정하지 않고 반복 최적화로 갱신하는 방식은 inconsistency를 구조적으로 회피한다. 반례가 요구한 "새 필터"의 자리를 결국 필터가 아닌 구조가 채웠다.
+> 📜 **예언 vs 실제.** Julier와 Uhlmann의 2001년 반례 이후, consistent estimation을 달성하려는 필터 설계 시도가 이어졌다. Unscented Kalman Filter(UKF), Invariant EKF, robust covariance 등 필터 계열의 변형들이 10년 가까이 제안됐다. 그러나 2026년 시점에서 되돌아보면 최적화 기반 추정도 이 문제를 다루는 주요 경로가 되었다. [iSAM](https://www.cs.cmu.edu/~kaess/pub/Kaess08tro.pdf)(Kaess et al., 2008), [g2o](http://ais.informatik.uni-freiburg.de/publications/papers/kuemmerle11icra.pdf)(Kümmerle et al., 2011), GTSAM이 널리 쓰였고, 필터 기반 VIO도 함께 발전했다. 반복 최적화는 보존한 상태를 재선형화할 수 있지만, 그것만으로 consistency가 보장되지는 않는다. 관측 불가능한 방향과 주변화 과정의 선형화도 함께 관리해야 한다.
 
 ---
 
@@ -93,7 +93,7 @@ particle $K$개, landmark $N$개면 per-step 복잡도는 $O(K \log N)$으로, E
 
 FastSLAM은 작동했다. 실내 환경에서 수백 개 landmark까지 실시간을 유지했고, 기술 이전도 빨랐다. 그러나 particle depletion 문제가 쌓였다. 지도가 커지면 대부분의 particle이 불량 경로를 대표하게 되고, effective sample 수가 급감한다. 루프 클로저 상황에서 경로 가중치 재조정이 어렵다. 무엇보다 particle 수를 늘려도 large-scale 환경에서 드리프트가 축적되는 문제는 해결되지 않았다.
 
-[FastSLAM 2.0](https://www.ijcai.org/Proceedings/03/Papers/165.pdf)(Montemerlo et al. 2003)이 proposal distribution을 개선했지만, 방법론이 filter 패러다임 안에 갇혀 있는 한 확장성의 천장이 있었다. 그 천장을 결국 피해 간 방법은 filter 계열이 아니었다.
+[FastSLAM 2.0](https://www.ijcai.org/Proceedings/03/Papers/165.pdf)(Montemerlo et al. 2003)이 proposal distribution을 개선했지만, 방법론이 필터 패러다임 안에 갇혀 있는 한 확장성의 천장이 있었다. 그 천장을 결국 피해 간 방법은 필터 계열이 아니었다.
 
 ---
 
@@ -103,7 +103,7 @@ FastSLAM은 작동했다. 실내 환경에서 수백 개 landmark까지 실시�
 
 루프 클로저에서는 로봇이 출발점으로 돌아왔을 때 지도 오류를 수정한다. EKF는 이 순간 전체 공분산 행렬을 업데이트해야 하며, 비용은 $O(N^2)$다. 그래프 최적화는 pose 그래프에 새 엣지 하나를 추가하고 sparse 행렬을 재분해한다. Sparse 구조를 쓰면 비용이 훨씬 낮다.
 
-2010년경을 기점으로 새로운 SLAM 시스템에서 backend로 EKF를 선택하는 경우는 드물어졌다. 특수 제약(매우 제한된 연산 자원, real-time filter 요구)이 있는 경우에만 잔존했다.
+2010년 무렵부터 새로운 SLAM 시스템에서 backend로 EKF를 선택하는 경우는 드물어졌다. 매우 제한된 연산 자원이나 실시간 필터 요구처럼 특수한 제약이 있는 경우에만 잔존했다.
 
 > 📜 **예언 vs 실제.** Durrant-Whyte와 Bailey의 [2006년 IEEE Robotics & Automation Magazine 튜토리얼](https://people.eecs.berkeley.edu/~pabbeel/cs287-fa09/readings/Durrant-Whyte_Bailey_SLAM-tutorial-I.pdf)은 SLAM의 확장성 문제를 논하며 submap 분해와 information filter가 대규모 환경에서의 해법이 될 것으로 전망했다. Information filter(EKF의 역공분산 형태)는 sparse information matrix를 이용해 landmark가 늘어도 연산이 느려지지 않을 것으로 기대됐다. 실제 전개는 달랐다. Information filter 계열(SEIF 등)은 sparsity를 강제로 유지하는 과정에서 marginalization error가 생겼다. Submap은 일부 시스템에 흡수되었으나 주류 해법이 되지 못했다. 2010년대를 지배한 것은 factor graph + iterative 최적화였다.
 
@@ -113,7 +113,7 @@ FastSLAM은 작동했다. 실내 환경에서 수백 개 landmark까지 실시�
 
 **Filter vs Optimization의 공존.** EKF가 backend 주력에서 물러났다고 해서 사라진 것은 아니다. 2026년 기준으로 자율주행 일부 구현은 여전히 필터 기반을 선호한다. 최적화 기반 SLAM은 반복 수렴이 필요하고, 실시간 보장이 어려운 경우가 있다. 저비용 임베디드 시스템에서 sparse EKF나 UKF가 재등장하는 사례가 있다. "필터는 죽었다"는 선언은 정확하지 않다. 용도와 제약에 따라 공존한다.
 
-**비가우시안 불확실성.** EKF의 가장 근본적인 가정은 불확실성이 가우시안 분포를 따른다는 것이다. 현실의 센서 오류는 다중 모드(멀티모달)이거나 heavy-tail 분포를 갖는 경우가 많다. 특히 대칭성이 없는 perceptual aliasing(서로 다른 장소가 같아 보이는 것) 상황에서 단일 가우시안은 실제 불확실성을 단순화한다. Particle filter는 이론상 비가우시안을 표현하지만 고차원 state에서는 비실용적이다. Stein particle, normalizing flow, 학습 기반 uncertainty estimation이 시도되고 있으나, 2026년 기준으로 이것이 실시간 SLAM에서 검증된 형태는 제한적이다.
+**비가우시안 불확실성.** EKF의 가장 근본적인 가정은 불확실성이 가우시안 분포를 따른다는 것이다. 현실의 센서 오류는 다중 모드(멀티모달)이거나 heavy-tail 분포를 갖는 경우가 많다. 특히 여러 위치 가설이 생기는 perceptual aliasing(서로 다른 장소가 같아 보이는 것) 상황에서 단일 가우시안은 실제 불확실성을 단순화한다. Particle filter는 이론상 비가우시안을 표현하지만 고차원 state에서는 비실용적이다. Stein particle, normalizing flow, 학습 기반 uncertainty estimation이 시도되고 있으나, 2026년 기준으로 이것이 실시간 SLAM에서 검증된 형태는 제한적이다.
 
 ---
 

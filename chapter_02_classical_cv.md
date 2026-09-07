@@ -2,7 +2,7 @@
 
 Ch.1의 번들조정은 카메라 자세와 3D 점을 동시에 최적화하는 backend 문제를 다루었다. 그러나 그 최적화가 작동하려면 먼저 이미지에서 "대응하는 점"을 찾아야 한다. 측량사는 야지에서 직접 타깃을 세웠고, 컴퓨터 비전은 그 역할을 알고리즘에 맡겨야 했다. feature detection·description은 그렇게 시작된 문제다.
 
-1970년대 후반 Hans Moravec은 Stanford Cart 프로젝트에서 카메라로 환경의 두드러진 점을 찾으려 했다. 그 작업은 1980년 Stanford 박사논문 ["Obstacle Avoidance and Navigation in the Real World by a Seeing Robot Rover"](https://frc.ri.cmu.edu/~hpm/project.archive/robot.papers/1975.cart/1980.html.thesis/index.html)로 정리됐다. 텍스처가 풍부한 모서리가 추적하기 좋다는 직관은 있었지만, 수학적 정의는 없었다. 11년 후 Chris Harris와 Mike Stephens가 그 직관을 autocorrelation matrix의 eigenvalue로 공식화했다. Lucas와 Kanade는 그보다 7년 앞서 픽셀 추적의 틀을 세웠다. Lowe는 두 개념을 흡수해 scale과 rotation에 불변인 서술자를 만들었다. Rublee는 특허 없이 더 빠르게 같은 일을 했다. SLAM의 front-end는 이 계보 위에서 돌아간다.
+1970년대 후반 Hans Moravec은 Stanford Cart 프로젝트에서 카메라로 환경의 두드러진 점을 찾으려 했다. 그 작업은 1980년 Stanford 박사논문 ["Obstacle Avoidance and Navigation in the Real World by a Seeing Robot Rover"](https://frc.ri.cmu.edu/~hpm/project.archive/robot.papers/1975.cart/1980.html.thesis/index.html)로 정리됐다. Moravec은 주변 패치의 밝기 변화로 추적할 점을 고르는 정량적 기준을 제시했다. 1988년 Chris Harris와 Mike Stephens가 그 직관을 autocorrelation matrix의 eigenvalue로 공식화했다. Lucas와 Kanade는 그보다 7년 앞서 픽셀 추적의 틀을 세웠다. Lowe는 두 개념을 흡수해 scale과 rotation에 불변인 서술자를 만들었다. Rublee는 특허 없이 더 빠르게 같은 일을 했다. SLAM의 front-end는 이 계보 위에서 돌아간다.
 
 ---
 
@@ -14,7 +14,7 @@ Harris와 Stephens는 1988년 Alvey Vision Conference에서 ["A Combined Corner 
 
 $$M = \sum_{(x,y) \in W} \begin{pmatrix} I_x^2 & I_x I_y \\ I_x I_y & I_y^2 \end{pmatrix}$$
 
-$M$의 두 eigenvalue $\lambda_1, \lambda_2$로 점의 성격을 구분한다. 둘 다 크면 코너, 하나만 크면 엣지, 둘 다 작으면 평탄한 영역. Harris는 행렬식을 직접 계산하지 않고 $R = \det(M) - k \cdot \text{tr}(M)^2$ 점수를 사용해 eigenvalue 분해를 피했다. $k$는 보통 0.04–0.06.
+$M$의 두 eigenvalue $\lambda_1, \lambda_2$로 점의 성격을 구분한다. 둘 다 크면 코너, 하나만 크면 엣지, 둘 다 작으면 평탄한 영역. Harris는 고유값을 직접 구하지 않고 $R = \det(M) - k \cdot \text{tr}(M)^2$ 점수를 사용해 eigenvalue 분해를 피했다. $k$는 보통 0.04–0.06.
 
 > 🔗 **차용.** Harris(1988)의 autocorrelation matrix 아이디어는 Moravec(1977)의 SSD 기반 코너 탐색을 연속 미분으로 정제한 것이다. 개념의 원형은 Stanford Cart 보고서에 있었다.
 
@@ -42,7 +42,7 @@ $$\begin{pmatrix} \sum I_x^2 & \sum I_x I_y \\ \sum I_x I_y & \sum I_y^2 \end{pm
 
 Tomasi와 Kanade는 1991년 tech report ["Detection and Tracking of Point Features"](https://cecas.clemson.edu/~stb/klt/tomasi-kanade-techreport-1991.pdf)에서 추적 창의 품질을 eigenvalue 기준으로 선택하고 Newton-Raphson 반복으로 displacement를 정제하는 구체적 구현을 제시했다. 이후 Bouguet(Intel, 2000)이 이미지 피라미드 기반 coarse-to-fine 전략을 더해 큰 이동에서도 수렴하도록 확장했고, 이 조합이 KLT(Kanade-Lucas-Tomasi) 추적기로 정착했다. [VINS-Mono](https://arxiv.org/abs/1708.03852)(2018) 같은 실시간 VIO가 여전히 이 계보의 front-end를 돌린다. 1981년의 최소자승 추적기가 40여 년 뒤 스마트폰 드론의 VIO에서 돌아가는 셈이다.
 
-> 🔗 **차용.** Lucas-Kanade(1981) → KLT tracker → Qin et al. VINS-Mono(2018): 38년 전 optical flow가 실시간 VIO의 feature tracking backbone으로 그대로 살아있다.
+> 🔗 **차용.** Lucas-Kanade(1981) → KLT tracker → Qin et al. VINS-Mono(2018): 37년 전 제안된 optical flow가 실시간 VIO의 feature tracking backbone으로 그대로 살아있다.
 
 ---
 
@@ -60,7 +60,7 @@ $$D(x, y, \sigma) = L(x, y, k\sigma) - L(x, y, \sigma)$$
 
 **서술자 단계**: keypoint 주변 $16\times16$ 창을 $4\times4$ 블록으로 나누고 각 블록의 gradient 방향 히스토그램(8빈)을 연결해 128차원 벡터를 만든다. keypoint의 dominant gradient 방향을 기준으로 회전시키므로 회전 불변성도 확보한다.
 
-SIFT는 scale, rotation, 부분적인 affine 변형에 강인한 128차원 서술자였다. KITTI 이전 시대, SLAM 벤치마크가 없던 시절에도 연구자들이 SIFT를 쓸 수밖에 없었던 이유다.
+SIFT는 크기와 회전, 일부 affine 변형에 강인한 128차원 서술자였다. KITTI 이전 시대, SLAM 벤치마크가 없던 시절에도 시점과 크기가 다른 영상의 대응점을 찾는 데 SIFT가 유용했던 이유다.
 
 Lowe는 2000년 3월 SIFT를 특허 출원했고, 2004년 3월 등록됐다(US6711293B1, 우선권 1999년 3월). 이 특허는 상업용 사용에 비용을 부과했고, 2020년 3월 만료 전까지 SIFT를 대체하려는 시도의 동기 중 하나가 되었다.
 
@@ -74,7 +74,7 @@ SIFT의 128차원 서술자는 정확했지만, 당시 데스크톱 CPU에서 �
 
 DoG 대신 *Hessian 행렬의 행렬식*으로 keypoint를 탐지한다. integral image를 이용한 box filter로 Gaussian 이차 미분을 근사해 계산 속도를 높인다. 서술자는 64차원으로 SIFT의 절반. keypoint 주변을 $4\times4$ 하위 영역으로 나누고, 각 영역에서 Haar wavelet 응답 $d_x, d_y$의 합 $(\sum d_x,\, \sum d_y,\, \sum|d_x|,\, \sum|d_y|)$ 4값을 연결해 $4\times4\times4=64$차원을 구성한다. 128차원 확장(SURF-128)도 존재하나 기본값은 64차원이다.
 
-SURF는 SIFT보다 3–7배 빨랐다. 그러나 128차원 vs 64차원의 정확도 차이가 남았고, Bay도 특허를 피하지 못했다(ETH Zurich 특허). SIFT는 속도 때문에 밀렸고, SURF는 정확도와 특허 두 가지 때문에 밀렸다. 두 문제를 동시에 푼 것이 ORB였다.
+SURF는 SIFT보다 3–7배 빨랐다. 그러나 정확도 비교는 차원 수뿐 아니라 검출기와 서술 방식, 평가 조건에 따라 달랐고, Bay도 특허를 피하지 못했다(ETH Zurich 특허). SIFT는 속도 때문에 밀렸고, SURF는 정확도와 특허 두 가지 때문에 밀렸다. 두 문제를 동시에 푼 것이 ORB였다.
 
 > 🔗 **차용.** Lowe(1999/2004)의 DoG scale-space → Bay(2006)의 Hessian integral image: scale-invariance를 얻는 두 가지 답. DoG는 이론적으로 우아하고, Hessian 근사는 공학적으로 빠르다.
 
@@ -88,9 +88,9 @@ ORB는 두 기존 기법을 조합하고 개선했다.
 
 **검출**: [FAST](https://www.edwardrosten.com/work/rosten_2006_machine.pdf)(Features from Accelerated Segment Test, Rosten & Drummond 2006). 픽셀 주변 16개 점을 순환하며 충분히 밝거나 어두운 연속 호가 있으면 코너로 판정한다. SIFT의 DoG보다 10배 이상 빠르다. ORB는 FAST에 Harris 점수를 추가해 응답이 강한 것만 남긴다.
 
-**서술자**: [BRIEF](https://www.cs.ubc.ca/~lowe/525/papers/calonder_eccv10.pdf)(Binary Robust Independent Elementary Features, Calonder et al. 2010). keypoint 주변 패치에서 무작위로 선택한 점 쌍의 밝기를 비교해 비트열을 만든다. 256비트가 기본이다. 유클리드 거리 대신 Hamming 거리로 매칭하므로 XOR 연산 하나로 비교 가능하다.
+**서술자**: [BRIEF](https://www.cs.ubc.ca/~lowe/525/papers/calonder_eccv10.pdf)(Binary Robust Independent Elementary Features, Calonder et al. 2010). keypoint 주변 패치에서 무작위로 선택한 점 쌍의 밝기를 비교해 비트열을 만든다. 256비트가 기본이다. 유클리드 거리 대신 Hamming 거리로 매칭하므로 두 비트열에 XOR를 적용한 뒤 1인 비트 수를 세는 popcount로 거리를 구한다.
 
-BRIEF의 약점은 회전 불변성 부재였다. Rublee는 FAST 코너의 intensity centroid 방향으로 패치를 회전 보정해 **rBRIEF(rotated BRIEF)**를 만들었다. 방향 추정이 들어오면서 BRIEF는 비로소 실전에서 쓸 수 있는 서술자가 됐다.
+BRIEF의 약점은 회전 불변성 부재였다. Rublee는 FAST 코너의 intensity centroid 방향으로 패치를 회전 보정해 **rBRIEF(rotated BRIEF)**를 만들었다. 방향 추정이 들어오면서 회전이 있는 영상 쌍에서도 BRIEF를 활용할 수 있게 됐다.
 
 $$\theta = \text{atan2}(m_{01},\, m_{10}), \quad m_{pq} = \sum_{x,y} x^p y^q I(x,y)$$
 
@@ -106,15 +106,15 @@ ORB가 실용적 정점이라면, 그 뒤의 질문은 자연스럽다. 손으�
 
 2018년 DeTone et al.의 [SuperPoint](https://arxiv.org/abs/1712.07629)(CVPRW 2018)는 homographic adaptation이라는 자기지도 학습법으로 keypoint 검출과 256차원 서술자를 동시에 학습했다. 합성 데이터로 사전 학습한 뒤 실제 이미지에 적응했다. 이후 SLAM 연구에서 널리 시험된 learned local feature 가운데 하나가 됐다.
 
-그러나 2026년 기준으로도 전통 descriptor가 사라지지 않았다. ORB는 임베디드 디바이스에서 SuperPoint보다 빠르고, 도메인 밖 이미지에서 일반화가 불안정한 learned descriptor보다 예측 가능한 동작을 보인다. [AnyLoc](https://arxiv.org/abs/2308.00688)(Keetha et al. 2023)처럼 DINOv2 기반 feature가 장소 인식에 도입되었지만, ORB-SLAM3는 2021년 발표 이후 여전히 ORB를 쓴다. 1977년 Moravec의 직관이 2020년대 로봇 위에서 돌아가고 있다.
+그러나 2026년 기준으로도 전통 descriptor가 사라지지 않았다. ORB는 임베디드 장치에서 SuperPoint보다 빠르고, 도메인 밖 이미지에서 일반화가 불안정한 learned descriptor보다 예측 가능한 동작을 보인다. [AnyLoc](https://arxiv.org/abs/2308.00688)(Keetha et al. 2023)처럼 DINOv2 기반 feature가 장소 인식에 도입되었지만, ORB-SLAM3는 2021년 발표 이후 여전히 ORB를 쓴다. 1977년 Moravec의 직관이 2020년대 로봇 위에서 돌아가고 있다.
 
 ---
 
 ## 2.7 🧭 아직 열린 것
 
-**학습 기반 descriptor의 일반화 한계.** SuperPoint, R2D2, DISK 등 learned descriptor는 학습 도메인에서 전통 방법을 능가하지만 새로운 환경(underwater, thermal, low-light)에서는 일관성이 없다. 어느 쪽이 낫다는 합의가 없다. 이 질문은 2026년에도 공개된 채로 남아 있다.
+**학습 기반 descriptor의 일반화 한계.** SuperPoint, R2D2, DISK 등 learned descriptor는 학습 도메인에서 전통 방법을 능가하지만 새로운 환경(underwater, thermal, low-light)에서는 일관성이 없다. 어느 쪽이 낫다는 합의는 2026년에도 없다.
 
-**Wide-baseline 매칭의 실패 모드.** Harris나 ORB 기반 매칭은 카메라 시점 변화가 45도를 넘으면 급격히 성능이 떨어진다. Affine-covariant detector(ASIFT, MSER)가 일부 보완했지만, 완전한 해법은 없다. [DUSt3R](https://arxiv.org/abs/2312.14132)(Wang et al. 2023)는 matching 자체를 회피했지만, 이것이 descriptor 문제의 종말인지 우회인지는 아직 판단하기 이르다.
+**Wide-baseline 매칭의 실패 모드.** Harris나 ORB 기반 매칭은 큰 시점 변화에서 성능이 떨어질 수 있으며, 그 정도는 장면과 회전축·매칭 조건에 따라 다르다. Affine-covariant detector(ASIFT, MSER)가 일부 보완했지만, 완전한 해법은 없다. [DUSt3R](https://arxiv.org/abs/2312.14132)(Wang et al. 2023)는 matching 자체를 회피했지만, 이것이 descriptor 문제의 종말인지 우회인지는 아직 판단하기 이르다.
 
 ---
 

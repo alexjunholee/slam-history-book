@@ -28,9 +28,9 @@ Pulfrich와 Meydenbauer가 광학 기기로 해결한 문제를, Brown은 수식
 
 $$E = \sum_{i,j} \| x_{ij} - \pi(K_i, R_i, t_i, X_j) \|^2$$
 
-"Bundle"이라는 이름은 각 카메라 중심에서 관측된 3D 점들로 뻗어 나가는 광선 다발(bundle of rays)에서 왔다. 그 광선들이 3차원 점에서 교차하도록 카메라 자세와 점 위치를 동시에 조정한다. 군사·첩보 응용에서 출발한 기법이 학계에 흡수되기까지는 40년이 걸렸다.
+"Bundle"이라는 이름은 각 카메라 중심에서 관측된 3D 점들로 뻗어 나가는 광선 다발(bundle of rays)에서 왔다. 그 광선들이 3차원 점에서 교차하도록 카메라 자세와 점 위치를 동시에 조정한다. Brown의 작업은 군사 측량을 배경으로 했지만, bundle adjustment는 이후 사진측량 문헌에서 계속 발전했다.
 
-> 🔗 **차용.** 위성 geolocation 분야의 bundle 기법은 1990년대 이후 컴퓨터 비전 커뮤니티에 유입되었다. 군사 보안 분류(classified)로 묶인 기간 동안 학계는 같은 문제를 독립적으로 재발견했다. Triggs 1999는 그 두 흐름의 합류점이다.
+> 🔗 **번역.** Triggs et al.(1999)은 논문을 "컴퓨터 비전 공동체의 잠재적 구현자"를 위한 사진측량 bundle adjustment 종합으로 규정했다. 두 분야가 같은 최적화 문제를 서로 다른 용어와 관행으로 다루던 상황에서, 이 논문은 사진측량의 축적을 컴퓨터 비전 쪽으로 옮기는 연결점이 됐다. 군사 보안 때문에 컴퓨터 비전이 이를 독립적으로 재발견했다는 직접 근거는 확인되지 않는다.
 
 ---
 
@@ -40,7 +40,7 @@ Brown이 최소화해야 할 목적함수를 손에 쥐었다면, 그것을 실�
 
 Reprojection error 최소화는 비선형 최소제곱 문제다. 해석적 해가 없으므로 반복 수치 최적화가 필요하다.
 
-1944년 [Kenneth Levenberg](https://cs.uwaterloo.ca/~y328yu/classics/levenberg.pdf)는 Gauss-Newton과 steepest descent를 댐핑 파라미터 $\lambda$로 보간하는 방법을 발표했다. $\lambda$가 클수록 steepest descent에 가까워져 안전하게 수렴하고, 작을수록 Gauss-Newton의 빠른 수렴을 활용한다. 이 전략은 목적함수에 $\lambda \mathbf{I}$를 더한 수식으로 표현되어 수치 안정성을 높였다. 컴퓨터 비전보다 20년 앞선 시점이었다. 1963년 [Donald Marquardt](https://epubs.siam.org/doi/10.1137/0111030)는 같은 아이디어를 독립적으로 재발견해 더 명시적으로 공식화했다. **Levenberg-Marquardt(LM) 알고리즘**이라는 이름으로 굳어졌다.
+1944년 [Kenneth Levenberg](https://cs.uwaterloo.ca/~y328yu/classics/levenberg.pdf)는 Gauss-Newton과 steepest descent를 댐핑 파라미터 $\lambda$로 보간하는 방법을 발표했다. $\lambda$가 클수록 steepest descent에 가까워져 안전하게 수렴하고, 작을수록 Gauss-Newton의 빠른 수렴을 활용한다. 기본 형태에서는 선형화한 정규방정식의 행렬 $\mathbf{J}^{\top}\mathbf{J}$에 $\lambda \mathbf{I}$를 더해 수치 안정성을 높인다. 컴퓨터 비전보다 20년 앞선 시점이었다. 1963년 [Donald Marquardt](https://epubs.siam.org/doi/10.1137/0111030)는 같은 아이디어를 독립적으로 재발견해 더 명시적으로 공식화했다. **Levenberg-Marquardt(LM) 알고리즘**이라는 이름으로 굳어졌다.
 
 LM 알고리즘이 컴퓨터 비전에서 BA의 표준 solver가 되기까지 약 35년이 더 걸렸다.
 
@@ -48,7 +48,7 @@ LM 알고리즘이 컴퓨터 비전에서 BA의 표준 solver가 되기까지 �
 
 ## 4. 1999년 Triggs et al. — 100년 유산 통합
 
-Levenberg-Marquardt가 수치 도구를 준비해 둔 지 35년 뒤, 컴퓨터 비전은 그 도구를 BA에 적용했다.
+이 수치 도구와 BA의 계산 구조를 컴퓨터 비전 독자에게 체계적으로 정리한 문헌이 Triggs와 동료들의 종합 논문이었다.
 
 1999년 Vision Algorithms Workshop에서 Bill Triggs, Philip McLauchlan, Richard Hartley, Andrew Fitzgibbon은 ["Bundle Adjustment — A Modern Synthesis"](https://link.springer.com/chapter/10.1007/3-540-44480-7_21)를 발표했다.
 
@@ -64,11 +64,11 @@ Triggs et al.이 최소화할 오차 함수를 정리했다면, 그 함수가 �
 
 이 오차 함수가 지금 형태로 자리 잡기까지 두 번의 전환이 있었다.
 
-20세기 초 항공 삼각측량사들은 오차를 "지상 좌표계에서의 거리 차이"로 쟀다. 3D 공간에서 직접 비교하는 방식이어서, 카메라 렌즈가 틀어졌거나 캘리브레이션이 나빠도 그 오차는 지상 좌표 잔차에 녹아 보이지 않았다.
+20세기 초 항공 삼각측량사들은 오차를 "지상 좌표계에서의 거리 차이"로 쟀다. 3D 공간에서 직접 비교하는 방식이어서, 카메라 렌즈가 틀어졌거나 캘리브레이션이 나빠도 그 오차는 지상 좌표 잔차에 녹아들어 보이지 않았다.
 
 Brown은 1958년 보고서에서 비교 대상을 이미지 면으로 옮겼다. "3D 점을 이미지로 투영한 위치"와 "실제 이미지 관측"을 픽셀 단위로 맞추는 방식이다. 이렇게 하면 캘리브레이션 오차, 렌즈 왜곡, 외부 파라미터 오차가 하나의 잔차에 함께 드러난다. 통계적으로도 더 깔끔하다. 카메라 이미지 노이즈는 픽셀 단위의 등방성 가우시안으로 모델링할 수 있고, 그러면 reprojection error 최소화는 최대우도 추정과 같아진다.
 
-Triggs et al.(1999)은 그 공식을 컴퓨터 비전 교과서 언어로 다듬어 표준화했다. 이 reprojection error minimization이 2026년 기준 factor graph 기반 SLAM backend의 핵심 측정 함수(measurement function)다.
+Triggs et al.(1999)은 그 공식을 컴퓨터 비전 교과서 언어로 다듬어 표준화했다. 이 reprojection error minimization이 2026년 기준 factor graph 기반 SLAM backend의 시각 관측을 다루는 핵심 최적화 문제다.
 
 > 🔗 **차용.** SLAM에서 visual landmark의 관측 모델 $z = \pi(K, T, p) + \epsilon$은 Brown(1958)의 reprojection 공식을 직접 계승한다. Gauss-Newton으로 이를 최소화하는 SLAM backend는 1958년 항공 삼각측량 solver와 수학적으로 동일한 구조를 가진다.
 
@@ -76,24 +76,24 @@ Triggs et al.(1999)은 그 공식을 컴퓨터 비전 교과서 언어로 다듬
 
 ## 6. SLAM Backend의 뼈대 — 2026년까지
 
-"SLAM"이라는 약어는 [Durrant-Whyte·Leonard의 1995년 survey](https://ieeexplore.ieee.org/document/476131)를 포함한 1990년대 문헌을 거치며 널리 쓰이기 시작했지만, 그 backend의 수학은 1958년 Brown의 reprojection 공식을 거의 그대로 물려받는다. 오늘날 ORB-SLAM3는 g2o를 통해 SE(3) 자세와 3D landmark 위치를 동시 최적화한다. LIO-SAM은 GTSAM의 factor graph 위에서 LM 알고리즘을 돌린다. DROID-SLAM은 GRU-based optical flow로 업데이트 방향을 구하지만, 최종 bundle adjustment 레이어는 여전히 Schur complement trick을 쓴다.
+"SLAM"이라는 약어는 1995년 ISSRR 워크숍과 뒤이은 1990년대 문헌을 거치며 널리 쓰이기 시작했지만, 그 backend의 수학은 사진측량의 bundle adjustment와 같은 비선형 최소제곱 구조를 물려받는다. 오늘날 ORB-SLAM3는 g2o를 통해 SE(3) 자세와 3D landmark 위치를 동시 최적화한다. LIO-SAM은 GTSAM의 factor graph 위에서 비선형 최적화를 수행한다. DROID-SLAM은 GRU-based optical flow로 업데이트 방향을 구하지만, differentiable dense bundle adjustment 레이어를 계산 그래프 안에 남겨 둔다.
 
-Lie group과 factor graph가 1999년의 행렬 표기를 대체했고, 신경망이 기술자 계산을 넘겨받았지만, 연산의 본질은 그대로다. 다수의 시점에서 관측된 점들의 reprojection error를 최소화해 카메라 자세와 맵을 동시에 추정한다. Pulfrich의 유리판이 픽셀 배열로 바뀌고, 손 계산이 GPU로 바뀌었을 뿐이다.
+Lie group과 factor graph가 1999년의 행렬 표기를 대체했고, 신경망이 사람이 설계하던 계산 일부를 넘겨받았지만, 관측 잔차를 최소화하는 공통 구조는 이어진다. 시각 BA는 다수 시점의 reprojection error로 카메라 자세와 맵을 추정하고, LiDAR 시스템은 거리나 점–평면 잔차 등 센서에 맞는 제약을 쓴다. Pulfrich의 유리판이 픽셀 배열로 바뀌고, 손 계산이 GPU로 바뀌었을 뿐이다.
 
-이 연속성은 분야의 강점이자 취약점이다. 100년의 수렴성 증명과 실용 검증이 무료로 따라온다. 그러나 BA의 전제(static world, point feature, Gaussian noise)가 현실 환경과 어긋날 때는 대안이 없다.
+이 연속성은 분야의 강점이자 취약점이다. 오랫동안 축적된 최적화 이론과 실용 검증을 그대로 활용할 수 있다. 그러나 BA의 전제(static world, point feature, Gaussian noise)가 현실 환경과 어긋나면 그 검증의 범위도 함께 벗어난다.
 
 ---
 
-> 📜 **예언 vs 실제.** Triggs et al.(1999)은 수천 대 카메라와 수백만 점을 다루는 대규모 BA로의 확장을 주요 도전으로 꼽은 것으로 널리 읽힌다. 그 방향성은 이후 20년에 걸쳐 달성되었다. 2006년 Snavely의 Photo Tourism이 인터넷 사진 수백 장으로 랜드마크를 재구성했고, 2016년 COLMAP은 그 흐름의 robust incremental SfM 구현체를 표준화했다. 다만 Triggs가 상상한 "직접 확장"이 아니었다. incremental BA와 visibility graph pruning 위에 vocabulary tree 루프 클로저가 얹힌, 엔지니어링 층의 결과였다.
+> 📜 **예언 vs 실제.** Triggs et al.(1999)은 수천 대 카메라와 수백만 점을 다루는 대규모 BA로의 확장을 주요 도전으로 꼽은 것으로 널리 읽힌다. 그 방향성은 이후 20년에 걸쳐 달성되었다. 2006년 Snavely의 Photo Tourism이 인터넷 사진 수백 장으로 랜드마크를 재구성했고, 2016년 COLMAP은 그 흐름의 robust incremental SfM 구현체를 표준화했다. 이후의 확장은 최적화 문제를 그대로 키우는 일만으로 이루어지지는 않았다. incremental BA와 visibility graph pruning 위에 vocabulary tree 루프 클로저가 얹힌, 엔지니어링 층의 결과였다.
 
 ---
 
 ## 🧭 아직 열린 것
 
-**비선형 BA의 global optimum 보장.** LM 알고리즘은 국소 최솟값(local minimum)에 수렴한다. 초기값이 나쁘면 틀린 구조에 수렴한다. 초기화를 위한 방법들, 즉 5-point algorithm, PnP, epipolar geometry 추정이 차례로 등장했지만 이것들 역시 내부적으로 RANSAC과 반복 최적화에 의존한다. 대규모 환경에서 전역 최적을 보장하는 convex relaxation 기반 접근들이 연구되고 있으나, 실시간 SLAM 수준의 속도와 규모에서는 아직 실용화되지 않았다.
+**비선형 BA의 global optimum 보장.** LM 알고리즘은 국소 최솟값(local minimum)에 수렴한다. 초기값이 나쁘면 틀린 구조에 수렴한다. 초기화를 위한 방법들, 즉 5-point algorithm, PnP, epipolar geometry 추정이 차례로 등장했지만 기하 solver와 이를 감싸는 강건 추정 절차는 구분해야 한다. RANSAC은 이상치를 가르는 외부 절차로 쓰이며, 얻은 해에 반복 정제를 적용할 수 있다. 대규모 환경에서 전역 최적을 보장하는 convex relaxation 기반 접근들이 연구되고 있으나, 실시간 SLAM 수준의 속도와 규모에서는 아직 실용화되지 않았다.
 
-**사진측량 수준 정밀도와 Visual SLAM의 간극.** 항공 사진측량은 서브픽셀(0.1픽셀 이하) 정확도를 표준으로 요구한다. 교정된 카메라와 고품질 GCP(지상 기준점)가 있고, 최적화는 오프라인에서 수행한다. 실시간 Visual SLAM은 같은 수식 구조를 쓰면서도 GPS 없는 환경과 저해상도 카메라, 그리고 즉각적 추정이라는 제약 아래서 동작한다. 측량 분야의 정확도 기준(RMSE < 5 cm at 500 m 거리)에 Visual SLAM이 체계적으로 도달하는 환경은 제한적이며, 두 분야의 정확도 기준을 단일 프레임워크로 통합하는 시도는 진행 중이다.
+**사진측량 수준 정밀도와 Visual SLAM의 간극.** 항공 사진측량의 정확도는 촬영 조건과 산출물의 요구 규격에 따라 평가한다. 교정된 카메라와 고품질 GCP(지상 기준점)가 있고, 최적화는 오프라인에서 수행한다. 실시간 Visual SLAM은 같은 수식 구조를 쓰면서도 GPS 없는 환경과 저해상도 카메라, 그리고 즉각적 추정이라는 제약 아래서 동작한다. 두 분야의 정확도를 비교하려면 영상 좌표 오차와 지상 좌표 오차를 구분하고, 거리·해상도·기준점 조건과 평가 성분을 함께 명시해야 한다.
 
 ---
 
-BA의 전제(static world, point feature, Gaussian noise)가 무너지기 시작하는 것은 카메라가 이동하는 물체를 만났을 때다. 측량사는 다리를 측량하지 로봇 축구 경기장을 측량하지 않았다. 그 균열은 Ch.2에서 시작된다. 컴퓨터 비전은 Harris corner와 optical flow로 이 유산을 실시간으로 이어받으려 했다.
+BA의 전제(static world, point feature, Gaussian noise)가 무너지기 시작하는 것은 카메라가 이동하는 물체를 만났을 때다. 측량사는 다리를 측량하지 로봇 축구 경기장을 측량하지 않았다. 그에 앞서 최적화에 넣을 대응점부터 찾아야 한다. Ch.2는 Harris corner와 optical flow를 통해 이미지에서 그 입력을 확보해 온 경로를 따른다.

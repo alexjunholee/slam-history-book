@@ -8,9 +8,9 @@ In 1986 Randall Smith and Peter Cheeseman set out to formalize uncertainty in a 
 
 ## 4.1 The mathematics of uncertain spatial relationships — Smith, Self, Cheeseman (1988)
 
-In 1986 Randall Smith and Peter Cheeseman at SRI International set out to express how error propagates when a robot accumulates measurements across several places. Their working notes appeared in 1988 as ["Estimating Uncertain Spatial Relationships in Robotics"](https://arxiv.org/abs/1304.3111). The question was clear: when a robot measures B from A and then C from B, how is the uncertainty from A to C computed?
+In 1986 Randall Smith, Matthew Self, and Peter Cheeseman at SRI International set out to express how error propagates when a robot accumulates measurements across several places. Their work was presented at UAI 1986 and published in 1988 as ["Estimating Uncertain Spatial Relationships in Robotics"](https://arxiv.org/abs/1304.3111). The question was clear: when a robot measures B from A and then C from B, how is the uncertainty from A to C computed?
 
-The [Kalman filter](https://www.cs.unc.edu/~welch/kalman/kalmanPaper.html) already existed. It had been used since 1960 for radar tracking, ballistic calculation, and satellite-orbit correction. Smith and Cheeseman reformulated Kalman's covariance-propagation equations for the composition of spatial transforms. They placed the robot pose $\mathbf{x}_r$ and landmark positions $\mathbf{m}_i$ in one state vector and maintained the joint covariance $\mathbf{P}$ over the entire state.
+The [Kalman filter](https://www.cs.unc.edu/~welch/kalman/kalmanPaper.html) already existed. It had been used since 1960 for radar tracking, ballistic calculation, and satellite-orbit correction. Smith, Self, and Cheeseman reformulated Kalman's covariance-propagation equations for the composition of spatial transforms. They placed the robot pose $\mathbf{x}_r$ and landmark positions $\mathbf{m}_i$ in one state vector and maintained the joint covariance $\mathbf{P}$ over the entire state.
 
 $$\mathbf{x} = [\mathbf{x}_r^\top,\ \mathbf{m}_1^\top,\ \ldots,\ \mathbf{m}_N^\top]^\top$$
 
@@ -18,13 +18,13 @@ $$\mathbf{P} = \begin{bmatrix} \mathbf{P}_{rr} & \mathbf{P}_{rm} \\ \mathbf{P}_{
 
 The off-diagonal block $\mathbf{P}_{rm}$ records the crucial relation: robot-pose uncertainty and landmark-position uncertainty are *correlated*. Only by tracking that correlation can the estimate remain consistent. The paper demonstrated this explicitly, establishing a starting point for the SLAM field.
 
-> 🔗 **Borrowed.** Smith-Cheeseman's (1988) spatial-relationship mathematics inherits directly from Kalman's (1960) covariance propagation. A technique for tracking a single moving object became a framework for tracking a robot and every element of its map at once.
+> 🔗 **Borrowed.** Smith-Self-Cheeseman's (1988) spatial-relationship mathematics inherits directly from Kalman's (1960) covariance propagation. A technique for tracking a single moving object became a framework for tracking a robot and every element of its map at once.
 
 ---
 
 ## 4.2 How the name "SLAM" settled in
 
-There is no "SLAM" in the 1988 Smith-Cheeseman paper. In the early 1990s, Hugh Durrant-Whyte, who had moved from Oxford to Sydney, and John Leonard at MIT used different names for the same problem in their respective labs. Once the groups began citing each other, they needed a shared term, and "SLAM" gradually became standard. Researchers' memories differ on which document used it first. No canonical first-use paper exists.
+There is no "SLAM" in the 1988 Smith-Self-Cheeseman paper. In the early 1990s, Hugh Durrant-Whyte, who had moved from Oxford to Sydney, and John Leonard at MIT used different names for the same problem in their respective labs. Once the groups began citing each other, they needed a shared term, and "SLAM" gradually became standard. Researchers' memories differ on which document used it first. No canonical first-use paper exists.
 
 Leonard and Durrant-Whyte's 1991 paper, ["Simultaneous Map Building and Localization for an Autonomous Mobile Robot"](https://doi.org/10.1109/IROS.1991.174711), is often cited as an early mainstream robotics paper to state the problem in its title. The title captured the intuition before the acronym existed: mapping and localization are inseparable and must be performed simultaneously.
 
@@ -51,7 +51,7 @@ $$\mathbf{P} = (\mathbf{I} - \mathbf{K}\mathbf{H})\mathbf{P}^-$$
 
 These two stages define EKF-SLAM. The structure is simple, and that simplicity imposed a scalability ceiling from the start.
 
-The problem is state dimension. A state containing a 6DOF pose and $N$ 3D landmarks has dimension $6 + 3N$; its covariance matrix contains $(6+3N)^2$ entries, an $O(N^2)$ structure. A single update costs $O(N^2)$ both for the Kalman gain (inverting $\mathbf{S} = \mathbf{H}\mathbf{P}^-\mathbf{H}^\top + \mathbf{R}$) and for the covariance update. 100 landmarks gives $306 \times 306 \approx$ 94k entries; 1,000 landmarks gives $3006 \times 3006 \approx$ 9M. A regular PC in the early 2000s could maintain only tens to low hundreds of landmarks in real time.
+The problem is state dimension. A state containing a 6DOF pose and $N$ 3D landmarks has dimension $6 + 3N$; its covariance matrix contains $(6+3N)^2$ entries, an $O(N^2)$ structure. Even with a fixed observation dimension, updating the full covariance costs $O(N^2)$. The Kalman gain requires multiplying the state–observation covariance by the inverse of $\mathbf{S} = \mathbf{H}\mathbf{P}^-\mathbf{H}^\top + \mathbf{R}$; the size of $\mathbf{S}$ depends on the observation dimension. 100 landmarks gives $306 \times 306 \approx$ 94k entries; 1,000 landmarks gives $3006 \times 3006 \approx$ 9M. A regular PC in the early 2000s could maintain only tens to low hundreds of landmarks in real time.
 
 [Andrew Davison's MonoSLAM (2003)](https://www.doc.ic.ac.uk/~ajd/Publications/davison_iccv2003.pdf) was limited to a few dozen landmarks in its live demos because EKF-SLAM's $O(N^2)$ wall set the ceiling.
 
@@ -65,7 +65,7 @@ At 100 landmarks the covariance matrix is $306 \times 306$ (6DOF pose + 100 3D l
 
 The main workaround through the mid-2000s was submapping: partition the map into small overlapping regions, run an EKF inside each one, and connect them through a separate structure. [Chong and Kleeman (1999)](http://www.cs.cmu.edu/afs/cs/Web/People/motionplanning/papers/sbp_papers/integrated1/chong_feature_map.pdf) proposed an early form. Information loss at submap boundaries, difficult loop closure, and implementation complexity made these approaches hard to deploy.
 
-> 🔗 **Borrowed.** The submap-partitioning idea of Chong-Kleeman (1999) carries forward into the local-window optimization of modern SLAM. ORB-SLAM's local map and VINS-Mono's sliding window sit conceptually on the same principle. Only the implementation tool changed, from EKF to bundle adjustment.
+> 🔗 **Borrowed.** Chong-Kleeman's (1999) submaps and local-window optimization in modern SLAM share the goal of limiting computation. ORB-SLAM's local map and VINS-Mono's sliding window reflect that concern. Their map partitioning and state marginalization differ, however, so the parallel does not establish direct inheritance of the same method.
 
 ---
 
@@ -79,7 +79,7 @@ The cause sits in linearization error. The EKF approximates nonlinear motion and
 
 In 2007 [Shoudong Huang and Gamini Dissanayake](https://doi.org/10.1109/TRO.2007.903811) analyzed the cause of this inconsistency more precisely. They found that basic constraints among Jacobians evaluated at the current state estimate break down, driving EKF-SLAM's inconsistency. As a result, the variance of the robot's heading angle (yaw) can wrongly converge to zero when it should remain nonzero. Later observability-based analyses start from this result: the system's observable degrees of freedom change with the linearization point, and the filter injects spurious information into unobservable directions.
 
-> 📜 **Prediction vs. outcome.** After Julier and Uhlmann's 2001 counterexample, researchers spent nearly a decade designing consistent estimators. Filter variants included the Unscented Kalman Filter (UKF), Invariant EKF, and robust covariance methods. From the vantage point of 2026, however, the practical resolution came *not from filtering but from optimization*. [iSAM](https://www.cs.cmu.edu/~kaess/pub/Kaess08tro.pdf) (Kaess et al., 2008), [g2o](http://ais.informatik.uni-freiburg.de/publications/papers/kuemmerle11icra.pdf) (Kümmerle et al., 2011), and GTSAM effectively replaced the filter. Iterative optimization refreshes the Jacobian linearization rather than freezing it at the current estimate, avoiding the inconsistency structurally. Optimization, not a new filter, filled the gap exposed by the counterexample.
+> 📜 **Prediction vs. outcome.** After Julier and Uhlmann's 2001 counterexample, researchers spent nearly a decade designing consistent estimators. Filter variants included the Unscented Kalman Filter (UKF), Invariant EKF, and robust covariance methods. From the vantage point of 2026, however, optimization-based estimation became another major approach to the problem. [iSAM](https://www.cs.cmu.edu/~kaess/pub/Kaess08tro.pdf) (Kaess et al., 2008), [g2o](http://ais.informatik.uni-freiburg.de/publications/papers/kuemmerle11icra.pdf) (Kümmerle et al., 2011), and GTSAM became widely used, while filter-based VIO continued to develop. Iterative optimization can relinearize retained states, but this alone does not guarantee consistency. Unobservable directions and the linearization used during marginalization must also be managed.
 
 ---
 
@@ -113,7 +113,7 @@ Around 2010, choosing the EKF as the backend for a new SLAM system became uncomm
 
 Filter vs. optimization coexistence. The EKF's retreat from backend primacy does not mean it disappeared. As of 2026, some autonomous-driving implementations still prefer filter-based backends. Optimization-based SLAM needs iterative convergence, which can make real-time guarantees difficult. Sparse EKFs and UKFs reappear in low-cost embedded systems. The mix depends on the use case and its constraints.
 
-Non-Gaussian uncertainty. The EKF assumes that uncertainty follows a Gaussian distribution. Real-world sensor errors are often multimodal or heavy-tailed. A single Gaussian severely oversimplifies actual uncertainty, especially under asymmetric perceptual aliasing (different places looking the same). Particle filters can represent non-Gaussian distributions in theory but become impractical in high-dimensional states. Stein particles, normalizing flows, and learning-based uncertainty estimation are being tried, but few forms have been validated inside real-time SLAM as of 2026.
+Non-Gaussian uncertainty. The EKF assumes that uncertainty follows a Gaussian distribution. Real-world sensor errors are often multimodal or heavy-tailed. A single Gaussian severely oversimplifies actual uncertainty, especially when perceptual aliasing creates multiple location hypotheses (different places looking the same). Particle filters can represent non-Gaussian distributions in theory but become impractical in high-dimensional states. Stein particles, normalizing flows, and learning-based uncertainty estimation are being tried, but few forms have been validated inside real-time SLAM as of 2026.
 
 ---
 

@@ -6,7 +6,7 @@ In 2026, you pick up a phone and an AR layer sticks to the wall. Indoor delivery
 
 Go back to 2003 and the scene is different. Andrew Davison, in a lab at Imperial College London, demonstrated real-time 3D tracking with one laptop and one webcam. The system, called [MonoSLAM](https://www.doc.ic.ac.uk/~ajd/Publications/davison_iccv2003.pdf), ran at 30 Hz on a desktop, tracked about ten features per frame, and maintained a sparse map of a few dozen landmarks. It covered one desk in one room; when the camera left the desk, the map diverged. That scale and limitation were representative of real-time monocular SLAM at the time.
 
-Those systems tracked far fewer features per frame than a phone AR session does today. More striking than the difference between 2003 and 2026 is *the path* by which it narrowed.
+Those systems tracked far fewer features per frame than a phone AR session does today. How did the tracking systems of 2003 develop into the AR systems of 2026?
 
 ---
 
@@ -34,21 +34,21 @@ The book runs in six parts.
 
 **Part 1: Prehistory** traces the tools that photogrammetry and classical computer vision built up before SLAM was born in robotics. Why is bundle adjustment still the skeleton of every optimization backend?
 
-**Part 2: The Birth of SLAM** follows the period in which robots began building their own maps, from Smith-Cheeseman's 1986 stochastic framework to Davison's MonoSLAM. The problem took shape in the late 1980s, and the acronym "SLAM" and a shared terminology settled through the Durrant-Whyte and Leonard line of work in the 1990s. How did EKF become the dominant paradigm, and why were its limits structural?
+**Part 2: Classical SLAM** follows probabilistic mapping and the limits of the EKF through MonoSLAM, PTAM, graph-based SLAM, and optimality certification. How did joint mapping and estimation expand from filtering to optimization?
 
-**Part 3: The Parallel Revolution** covers the decade from PTAM splitting mapping and camera tracking in 2007 through graph-based SLAM and loop closure, up to ORB-SLAM. This was the decade in which "real-time SLAM" became possible on a desktop.
+**Part 3: Maturity** covers ORB-SLAM, inertial preintegration, continuous-time estimation, direct methods, RGB-D, and place recognition. It traces how systems expanded beyond early real-time demonstrations to larger environments and more varied sensors.
 
-**Part 4: Methodological Divergence** handles the split between feature-based and direct methods, the arrival of RGB-D, and the process by which place recognition broke off into its own subfield. How did different assumptions produce different ecosystems?
+**Part 4: Learning Fusion** covers monocular depth estimation, end-to-end SLAM, and hybrid methods that combine geometry with learning. Which computations did learning take over, and where did geometric constraints remain?
 
-**Part 5: The Inflow of Learning** covers monocular depth estimation, end-to-end SLAM, Neural Radiance Fields, and 3D Gaussian Splatting. It follows how quickly deep learning absorbs the geometry pipeline and where that process meets resistance.
+**Part 5: Representation** covers Neural Radiance Fields, 3D Gaussian Splatting, dynamic-scene representations, and 3D foundation models. Changes in how maps and scenes are represented also changed the relationship between tracking and reconstruction.
 
 **Part 6: Dead Ends and Open Problems** pulls out the failed routes in SLAM's history and the structural unresolved problems still sitting behind today's perception that it is "solved."
 
 ---
 
-A useful map needs boundaries. Questions such as whether foundation models will replace SLAM fall outside this book's scope; its material is what happened in the past and why. Nor does it set out to declare earlier research wrong. It asks what a choice meant under the constraints of its moment. Homogeneous coordinates, epipolar geometry, and EKF formulas are assumed knowledge. The task here is to trace lineage rather than explain concepts; choosing a camera or LiDAR belongs to another book.
+A useful map needs boundaries. The relationship between foundation models and SLAM is treated as an open question arising from current research, without predicting a settled outcome. The book's material is what happened in the past and why. Nor does it set out to declare earlier research wrong. It asks what a choice meant under the constraints of its moment. Homogeneous coordinates, epipolar geometry, and EKF formulas are assumed knowledge. The task here is to trace lineage rather than explain concepts; choosing a camera or LiDAR belongs to another book.
 
-For a systematic account of the equations, theorems, and proofs, see the [SLAM Handbook](https://github.com/SLAM-Handbook-contributors/slam-handbook-public-release). Edited by Carlone, Kim, Barfoot, Cremers, and Dellaert and published by Cambridge University Press in 2026, its 18 chapters cover the current theory and systems of SLAM. This book records the path to that point.
+For a systematic account of the equations, theorems, and proofs, see the [SLAM Handbook](https://github.com/SLAM-Handbook-contributors/slam-handbook-public-release). Edited by Carlone, Kim, Barfoot, Cremers, and Dellaert and published by Cambridge University Press in 2026, its 18 chapters cover the current theory and systems of SLAM. The present history records the path to that point.
 
 The five editors close the Handbook with the line *"If someone tells you 'SLAM is solved,' don't listen to them."* The tendency to treat SLAM as solved, noted at the opening of this chapter, is a phenomenon within the field rather than its consensus.
 

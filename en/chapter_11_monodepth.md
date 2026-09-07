@@ -40,13 +40,13 @@ The design still had several limitations. Moving objects and reflective surfaces
 
 Depth units and scales differ across these datasets. NYU contains indoor metric depth, KITTI provides outdoor LiDAR points, ReDWeb derives stereo data from movies, and MegaDepth uses SfM reconstructions. Combining them without normalization would give the network inconsistent targets.
 
-Ranftl addressed the mismatch with an **affine-invariant loss**. Before comparison, the method normalizes each image's predicted and ground-truth depth through an affine transformation consisting of scale and shift. It subtracts the median to remove the shift and divides by the median absolute deviation (MAD) to remove scale. This scale-and-shift-invariant normalization eliminates unit mismatches across datasets, so the network learns relative depth ordering rather than absolute distance.
+Ranftl addressed the mismatch with an **affine-invariant loss**. Before comparison, the method normalizes each image's predicted and ground-truth depth through an affine transformation consisting of scale and shift. It subtracts the median to remove the shift and divides by the mean absolute deviation from that median to remove scale. This scale-and-shift-invariant normalization eliminates unit mismatches across datasets, so the network learns relative depth ordering rather than absolute distance.
 
 The original MiDaS mixed several datasets and demonstrated zero-shot transfer to datasets excluded from training. Later MiDaS releases expanded the training mixture to as many as 12 datasets. The family estimated relative depth across distributions as different as indoor and outdoor imagery, but it did not recover absolute scale.
 
 Ranftl's team separately released [**DPT** (Dense Prediction Transformer)](https://arxiv.org/abs/2103.13413) in 2021, replacing the MiDaS backbone with a ViT-based architecture. DPT became the default backbone from MiDaS v3 onward, followed by a refinement in v3.1 (2022). The change substantially improved performance.
 
-> 🔗 **Borrowed.** MiDaS v3 and, later, Depth Anything adopted CLIP, DINOv2, and ViT-family backbones. Replacing the backbone became a common source of performance gains in the foundation-model era, and DPT (Ranftl 2021) provided an early large-scale demonstration in depth estimation.
+> 🔗 **Borrowed.** DPT in MiDaS v3 used a ViT-based encoder, while the later Depth Anything used an encoder pretrained with DINOv2. Replacing the backbone became a common source of performance gains in the foundation-model era, and DPT (Ranftl 2021) provided an early large-scale demonstration in depth estimation.
 
 ---
 
@@ -56,7 +56,7 @@ In January 2024, **Depth Anything**, developed by Lihe Yang's team at TikTok Res
 
 The model surpassed MiDaS and earlier methods across the major KITTI, NYU, ScanNet, and DIODE benchmarks. Its ViT-L backbone contained 335M parameters. Inference was far from real-time, reflecting the method's emphasis on prediction quality.
 
-[**Depth Anything v2**](https://arxiv.org/abs/2406.09414), released later the same year, added large quantities of synthetic data, including Unreal Engine-based Virtual KITTI and Hypersim. Such data covers surfaces that are difficult to annotate in real imagery, including reflective and transparent materials. Version 2 visibly improved edge detail and thin structures over v1.
+[**Depth Anything v2**](https://arxiv.org/abs/2406.09414), released later the same year, trained a teacher on synthetic datasets including Virtual KITTI and Hypersim, then trained student models on real images pseudo-labeled by that teacher. Such data covers surfaces that are difficult to annotate in real imagery, including reflective and transparent materials. Version 2 visibly improved edge detail and thin structures over v1.
 
 Depth Anything still produces relative depth without scale.
 
@@ -66,7 +66,7 @@ Depth Anything still produces relative depth without scale.
 
 ## 5. Re-entry into SLAM
 
-Around 2021, SLAM researchers began incorporating monocular depth models into their pipelines, initially for initialization. Monocular SLAM requires a sufficient baseline to triangulate from two frames and has ambiguous scale from the outset.
+CNN-SLAM incorporated monocular depth predictions into SLAM in 2017. Later systems also used learned depth for initialization. Monocular SLAM requires a sufficient baseline to triangulate from two frames and has ambiguous scale from the outset.
 
 Adding a depth prior to the first frame accelerates initialization and supplies an initial scene structure. A metric model, or a prior calibrated against a known reference, can also initialize metric scale. [DROID-SLAM, released in 2021 by Teed and Deng](https://arxiv.org/abs/2108.10869), combines recurrent optical flow with BA. Follow-up work in that lineage incorporated monocular depth priors into geometric initialization.
 
