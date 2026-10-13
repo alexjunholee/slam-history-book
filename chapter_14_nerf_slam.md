@@ -72,7 +72,7 @@ UCL의 [Wang et al.(2023) **Co-SLAM**](https://arxiv.org/abs/2304.14377)은 전�
 
 같은 해 같은 CVPR에서 Idiap/EPFL의 [Johari et al.의 **ESLAM**](https://arxiv.org/abs/2211.11704)은 비슷한 문제를 다른 각도에서 풀었다. 3D feature grid 대신 multi-scale axis-aligned feature plane을 써 메모리 증가를 $O(n^3)$에서 $O(n^2)$로 낮추고, volume density 대신 TSDF를 decoding 목표로 삼아 수렴을 가속했다.
 
-Antoni Rosinol(MIT)이 2022년에 공개한 [**NeRF-SLAM**](https://arxiv.org/abs/2210.13641)은 다른 접근이었다. 포즈와 dense depth, 그 불확실성은 DROID-SLAM이 제공하고, 별도의 Instant-NGP 기반 mapping 모듈이 이를 받아 radiance field를 학습했다.
+Antoni Rosinol(MIT)이 2022년에 공개한 [**NeRF-SLAM**](https://arxiv.org/abs/2210.13641)은 다른 접근이었다. DROID-SLAM으로 포즈와 dense depth를 추정하고, 그 최적화의 Hessian에서 주변 공분산을 추가로 계산했다. 별도의 Instant-NGP 기반 mapping 모듈은 이 추정값과 불확실성을 받아 radiance field를 학습했다.
 
 > 🔗 **차용.** NeRF-SLAM은 DROID-SLAM의 recurrent update와 Dense Bundle Adjustment가 만든 pose·depth 추정을 가져오고, 지도 표현에 Instant-NGP를 결합했다. Neural radiance field가 기존 pose 추정기를 대체한 것이 아니라, 그 출력 위에 실시간 dense map을 쌓는 구성이었다.
 

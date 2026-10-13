@@ -48,7 +48,7 @@ Lighting changes remained a serious problem. Entering a tunnel, facing backlight
 
 [Engel, Koltun & Cremers 2018. DSO (PAMI)](https://doi.org/10.1109/TPAMI.2017.2658577) first appeared on arXiv in 2016. "Direct Sparse Odometry" is sparser than LSD-SLAM and uses far fewer pixels than DTAM, while applying a more thorough photometric calibration.
 
-The system selects roughly 2,000 high-gradient pixels in each keyframe. This is more than ORB-SLAM2's default setting (nFeatures=1000) and far fewer than LSD-SLAM's semi-dense set of all pixels with a gradient. DSO performs sliding-window bundle adjustment over these pixels, optimizing camera pose, inverse depth, and affine brightness parameters $(a_i, b_i)$. It marginalizes frames that leave the window and uses the Schur complement to eliminate variables and limit the size of the remaining window problem. Total computation depends on window size, pixel count, and iteration count.
+The system selects roughly 2,000 candidate pixels per keyframe, then keeps about 2,000 active points across all active frames combined in the optimization. Candidate count and active-point count are distinct. Selection considers both image coverage and gradient strength relative to the surroundings. DSO performs sliding-window bundle adjustment over the active points, optimizing camera pose, inverse depth, and affine brightness parameters $(a_i, b_i)$. It marginalizes frames that leave the window and uses the Schur complement to eliminate variables and limit the size of the remaining window problem. Total computation depends on window size, pixel count, and iteration count.
 
 DSO separates the camera's photometric model into three layers. First, prior calibration corrects vignetting, the falloff in brightness toward the edges of the lens. Second, it inverts the camera response function, or gamma curve, in advance to convert the sensor's nonlinear light measurements into a linear intensity domain. Third, it uses exposure time $t_i$ as input metadata and estimates the remaining affine brightness changes $(a_i, b_i)$ online:
 
@@ -80,7 +80,7 @@ Follow-up work from the Cremers group, [Basalt](https://arxiv.org/abs/1904.06504
 
 ## 5. Limits of the Direct Method
 
-Direct methods retain more image information. They use pixels that feature detectors discard, including regions whose gradients are low but consistent. The photometric residual also provides a continuous optimization landscape without the discretization imposed by descriptor matching.
+Direct methods use image intensity itself in the residual rather than features summarized by descriptors. Their sampling differs: DTAM uses dense photometric information, while LSD-SLAM uses semi-dense regions with intensity gradients. DSO selects pixels with sufficient gradient relative to their surroundings and spreads them across the image; where strong gradients are absent, it lowers the threshold to exploit weaker intensity variations. This can retain information where corners are scarce, but on nearly constant-intensity surfaces the residual is insensitive to pose changes.
 
 As of 2026, however, most deployed systems remain feature-based for several reasons.
 

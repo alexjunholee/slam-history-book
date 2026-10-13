@@ -952,7 +952,7 @@ Harris의 직관과 Lowe의 불변성이 기반을 놓았고, Rublee의 속도 �
 
 Harris와 Lowe가 이미지 안에서 "볼 만한 점"을 골라내는 방법을 다듬는 동안, 다른 계보는 그 점들이 두 장의 사진에 동시에 찍혔을 때 무엇을 알 수 있는가를 물었다. 특징을 *검출*하는 문제와 특징으로부터 *공간을 재구성*하는 문제는 같은 시기에 각자 발전했고, 2000년대 중반에야 하나의 파이프라인으로 합쳐졌다.
 
-1981년 케임브리지 이론심리학자 H.C. Longuet-Higgins는 *Nature*에 세 페이지짜리 논문을 실었다. 제목은 "[A Computer Algorithm for Reconstructing a Scene from Two Projections](https://cseweb.ucsd.edu/classes/fa01/cse291/hclh/SceneReconstruction.pdf)". 그는 두 장의 사진에 찍힌 같은 점들의 좌표 여덟 쌍으로 카메라의 상대 운동과 장면 구조를 복원하는 선형 알고리즘을 제시했다. 로봇공학자도 컴퓨터 비전 연구자도 아니었다. 사진측량과 motion perception에 선행 연구가 있었으므로 이 논문을 SfM 전체의 시작으로 볼 수는 없지만, 현대 컴퓨터 비전의 two-view geometry를 여는 영향력 있는 전환점이었다. 이후 self-calibration, incremental SfM, Bundler와 대규모 인터넷 사진 재구성이 이어졌고, Johannes Schönberger의 2016년 COLMAP은 그 축적을 강건한 범용 오픈소스 파이프라인으로 정리했다.
+1981년 서식스 대학교의 H.C. Longuet-Higgins는 *Nature*에 세 페이지짜리 논문을 실었다. 제목은 "[A Computer Algorithm for Reconstructing a Scene from Two Projections](https://cseweb.ucsd.edu/classes/fa01/cse291/hclh/SceneReconstruction.pdf)". 그는 두 장의 사진에 찍힌 같은 점들의 좌표 여덟 쌍으로 카메라의 상대 운동과 장면 구조를 복원하는 선형 알고리즘을 제시했다. 당시 소속은 실험심리학 연구실이었다. 사진측량과 motion perception에 선행 연구가 있었으므로 이 논문을 SfM 전체의 시작으로 볼 수는 없지만, 현대 컴퓨터 비전의 two-view geometry를 여는 영향력 있는 전환점이었다. 이후 self-calibration, incremental SfM, Bundler와 대규모 인터넷 사진 재구성이 이어졌고, Johannes Schönberger의 2016년 COLMAP은 그 축적을 강건한 범용 오픈소스 파이프라인으로 정리했다.
 
 ---
 
@@ -1201,7 +1201,7 @@ EKF-SLAM이 100 landmark 수준의 실시간 천장에 부딪힐 무렵, Imperia
 
 EKF-SLAM은 상태와 불확실성을 함께 추정하는 지도 구축 방법을 제시했지만, 공분산 행렬이 landmark 수 $N$에 대해 $O(N^2)$로 커지는 구조적 벽에 부딪혔다. Davison과 Klein은 여기서부터 각자 다른 방향으로 걸었다.
 
-2003년, Davison은 Imperial College 실험실에서 웹캠 한 대를 노트북에 꽂았다. 1988년 Smith와 Cheeseman이 세운 확률 공간관계 수학, 그 위에 Leonard와 Durrant-Whyte가 얹은 EKF-SLAM 틀을 그대로 가져왔지만 센서는 카메라 하나뿐이었다. IMU도 스테레오도 레이저도 없는 상태에서 Shi-Tomasi 1994 코너 검출기와 Kalman 예측-갱신 루프만 붙여 실시간으로 돌렸다. 당시 기준으로 무모한 조합이었다.
+2003년, Oxford의 Davison은 손에 들고 움직이는 카메라의 위치와 주변 지도를 데스크톱 PC에서 실시간으로 추정했다. 1988년 Smith와 Cheeseman이 세운 확률 공간관계 수학, 그 위에 Leonard와 Durrant-Whyte가 얹은 EKF-SLAM 틀을 가져왔지만 센서는 카메라 하나뿐이었다. IMU도 스테레오도 레이저도 없이 Shi-Tomasi 1994 코너 검출기와 Kalman 예측-갱신 루프를 사용했다. 당시 기준으로 무모한 조합이었다.
 
 4년 뒤 2007년, Oxford의 Klein과 Murray가 다른 답을 냈다. tracking과 mapping을 두 스레드로 쪼갠 것이다. 그 분리가 이후 10년 Visual SLAM의 뼈대가 되었다.
 
@@ -1213,7 +1213,7 @@ EKF-SLAM은 상태와 불확실성을 함께 추정하는 지도 구축 방법�
 
 당시 SLAM 분야의 주류는 레이저 센서였다. LiDAR는 2D 거리를 직접 제공했고, 스테레오 카메라는 픽셀 수준에서 깊이를 복원했다. 단안 카메라는 깊이 정보 자체가 없었다. 단안으로 3D 구조를 추정하려면 최소 두 프레임이 필요했고, 초기 깊이 추정의 불확실성이 EKF 상태 벡터 전체로 전파되었다. 이론적으로 가능했지만 실시간으로 돌린다는 것은 별개의 문제였다.
 
-MonoSLAM은 IMU나 스테레오 카메라 없이 단안 카메라만 썼다. 이 구성은 추가 하드웨어와 스테레오 캘리브레이션을 요구하지 않았다. 단안 실시간 SLAM의 가능성은 증명됐지만, EKF 구조는 센서와 지도를 확장하는 데 맞지 않았다.
+MonoSLAM은 IMU나 스테레오 카메라 없이 단안 카메라만 썼다. 이 구성은 추가 하드웨어와 스테레오 캘리브레이션을 요구하지 않았다. 단안 실시간 SLAM의 가능성은 증명됐지만, 지도가 커질수록 EKF 공분산 행렬의 계산 부담도 늘었다.
 
 ---
 
@@ -1241,7 +1241,7 @@ MonoSLAM의 상태 벡터는 [Smith-Cheeseman(1988)](https://arxiv.org/abs/1304.
 
 2007년 ISMAR에 Klein과 Murray가 [Parallel Tracking and Mapping for Small AR Workspaces](https://doi.org/10.1109/ISMAR.2007.4538852)를 올렸다. 같은 해 PAMI에는 Davison의 MonoSLAM 정식판이 실렸고, 두 논문의 연구 계보도 맞닿아 있었다.
 
-Klein은 당시 Murray 그룹 박사과정이었다. Murray 그룹은 Oxford Active Vision Laboratory의 직계였고, 몇 년 전까지 Davison이 박사과정 학생으로 있던 바로 그 방이었다. Murray는 Davison의 지도교수였다. 같은 연구실 계보에서 나온 PTAM은 MonoSLAM이 보여 준 단안 실시간 가능성을 이어받되, EKF 대신 다른 구조를 택했다.
+Klein은 Cambridge에서 Tom Drummond의 지도로 박사학위를 받았고, PTAM을 발표할 당시에는 Oxford에서 Murray와 함께 일하는 박사후 연구원이었다. Murray는 Davison의 지도교수이기도 했다. 이 연구실 계보에서 나온 PTAM은 MonoSLAM이 보여 준 단안 실시간 가능성을 이어받되, EKF 대신 tracking과 mapping을 분리하는 구조를 택했다.
 
 단안 실시간의 가능성은 확인됐다. PTAM은 확장을 위해 EKF 대신 tracking과 mapping을 분리한 구조를 택했다.
 
@@ -1531,7 +1531,7 @@ Range-aided SLAM은 [Papalia et al. CORA (2024)](https://arxiv.org/abs/2302.1161
 
 Landmark 쪽에서는 [Holmes & Barfoot (2023)](https://arxiv.org/abs/2308.05631)이 Schur complement로 landmark를 미리 소거해 SE-Sync에 바로 넣을 수 있는 형태로 만들었다. Holmes·Khosoussi·Rosen은 Handbook Ch.6을 공저했다. 이 계보가 2025년 한 테이블에 모였다.
 
-그러나 벽도 드러났다. anisotropic noise와 truncated-quadratic outlier를 POP(Polynomial Optimization Problem)로 일반화하면 Lasserre moment relaxation이 필요한데, 유도된 SDP가 **degenerate**해 constraint qualification이 실패하고 Riemannian Staircase의 수렴 조건이 깨진다. Yang의 2022년 sparse monomial basis 같은 우회가 있지만 전용 solver는 일반 local solver보다 느리다. 속도와 증명 가능성을 동시에 확보하는 알고리즘은 아직 없다. Visual SLAM·VIO에는 perspective projection과 IMU preintegration의 구조적 비호환이라는 더 깊은 장벽이 있다.
+그러나 벽도 드러났다. anisotropic noise와 truncated-quadratic outlier를 POP(Polynomial Optimization Problem)로 일반화하면 Lasserre moment relaxation이 필요한데, 유도된 SDP가 **degenerate**해 Riemannian Staircase의 수렴 보장에 필요한 constraint qualification이 성립하지 않을 수 있다. 이는 수렴 보장을 적용할 수 없다는 뜻이지 모든 실행이 발산한다는 뜻은 아니다. Yang의 2022년 sparse monomial basis 같은 우회가 있지만 전용 solver는 일반 local solver보다 느리다. Visual SLAM·VIO에서는 perspective projection과 IMU preintegration을 이 정식화에 포함하는 문제도 남아 있다.
 
 > 📜 **예언 vs 실제.** Carlone이 2015년 ICRA에서 "Lagrangian dual이 tight한 인스턴스가 왜 대부분인지 이론적 해명이 필요하다"고 적었다. 10년이 지났고, 답은 부분적으로만 나왔다. Rosen-Carlone-Bandeira-Leonard의 exact recovery 정리가 "노이즈가 $\beta$ 이하"라는 충분조건을 주었지만, 실제 SLAM 인스턴스에서 $\beta$를 사전에 계산하는 방법은 없다. tightness가 언제 깨지는지에 대한 **사전**(a priori) 조건은 2026년 기준 여전히 per-instance certificate로 대체되어 있다.
 
@@ -1935,7 +1935,7 @@ LSD-SLAM은 실외 대규모 환경에서도 동작하는 장면을 공개했다
 
 [Engel, Koltun & Cremers 2018. DSO (PAMI)](https://doi.org/10.1109/TPAMI.2017.2658577)는 2016년 arXiv에 먼저 공개되었다. "Direct Sparse Odometry"는 LSD-SLAM보다 sparse하고 DTAM보다 훨씬 적은 픽셀을 쓰되, photometric calibration을 철저히 했다.
 
-시스템은 각 키프레임에서 gradient가 높은 픽셀 약 2,000개를 선택한다. ORB-SLAM2의 기본 설정(nFeatures=1000)에 비해 많고, LSD-SLAM의 semi-dense(gradient 있는 픽셀 전체)보다 훨씬 적다. 이 픽셀들에 대해 sliding window bundle adjustment를 수행하는데, 최적화 변수가 camera pose뿐 아니라 inverse depth, affine brightness 파라미터 $(a_i, b_i)$까지 포함한다. 윈도우를 벗어난 프레임은 marginalization으로 제거되며, Schur complement로 제거할 변수를 소거해 남은 창의 최적화 크기를 제한한다. 전체 계산량은 창 크기와 픽셀 수, 반복 횟수에 달려 있다.
+시스템은 각 키프레임에서 약 2,000개의 후보 픽셀을 고른 뒤, 여러 활성 프레임을 합쳐 약 2,000개의 점을 최적화에 유지한다. 후보 수와 실제 활성 점 수는 구별해야 한다. 픽셀 선택에는 영상 내 분포와 주변 대비 gradient 세기를 함께 쓴다. 이 점들에 대해 sliding window bundle adjustment를 수행하는데, 최적화 변수가 camera pose뿐 아니라 inverse depth, affine brightness 파라미터 $(a_i, b_i)$까지 포함한다. 윈도우를 벗어난 프레임은 marginalization으로 제거되며, Schur complement로 제거할 변수를 소거해 남은 창의 최적화 크기를 제한한다. 전체 계산량은 창 크기와 픽셀 수, 반복 횟수에 달려 있다.
 
 DSO는 카메라 photometric 모델을 세 층으로 분리한다. 첫째, vignetting(렌즈 주변부로 갈수록 밝기가 감소하는 효과)은 사전 캘리브레이션으로 보정한다. 둘째, camera response function(gamma curve, 센서가 빛을 비선형으로 기록하는 특성)도 사전에 역함수를 추정해 linear intensity domain으로 변환한다. 셋째, 프레임의 노출 시간 $t_i$는 입력 메타데이터로 사용하고, 남은 affine brightness 변화 $(a_i, b_i)$를 실시간으로 추정한다:
 
@@ -1967,7 +1967,7 @@ Cremers 그룹의 후속 작업들, [Basalt](https://arxiv.org/abs/1904.06504)(2
 
 ## 5. direct method의 한계
 
-Direct method는 descriptor로 요약한 특징점 대신 영상 밝기 자체를 잔차에 넣는다. 그렇다고 모든 픽셀이나 gradient가 거의 없는 픽셀까지 유효한 것은 아니다. DTAM은 dense한 광도 정보를 사용했고 LSD-SLAM은 semi-dense 영역을, DSO는 영상 전역에 고르게 퍼진 **충분한 intensity gradient**의 픽셀을 골랐다. 차이는 낮은 gradient를 무조건 쓰는 데 있지 않고, 별도의 descriptor 없이 밝기 변화가 주는 미분 가능한 잔차를 직접 최적화하는 데 있다.
+Direct method는 descriptor로 요약한 특징점 대신 영상 밝기 자체를 잔차에 넣는다. 픽셀을 고르는 범위는 방법마다 다르다. DTAM은 dense한 광도 정보를, LSD-SLAM은 gradient가 있는 semi-dense 영역을 썼다. DSO는 주변에 비해 gradient가 충분한 픽셀을 영상 전역에서 고르게 고르되, 강한 gradient가 없는 영역에서는 임계값을 낮춰 약한 밝기 변화도 활용했다. 이 때문에 코너가 드문 곳에서도 정보를 얻을 수 있지만, 밝기가 거의 일정한 면에서는 자세 변화에 대한 잔차의 민감도가 낮다.
 
 그럼에도 2026년 기준 대다수 배포 시스템은 feature-based다.
 
@@ -2399,7 +2399,7 @@ PoseNet이 물려받은 것은 [AlexNet(Krizhevsky et al. 2012)](https://papers.
 
 Kendall이 직접 수집한 Cambridge Landmarks 데이터셋(킹스 칼리지 예배당, 거리, 옛 병원 등 여러 야외 장면)에서 PoseNet은 장면에 따라 위치 오차 2 m 안팎, 방향 오차 5-8° 수준을 기록했다(원 논문 §5 기준). 2015년 기준으로는 인상적인 수치였다. GPU 한 장으로 5 ms 이내에 답이 나왔다. 특징 추출도, RANSAC도, 지도 조회도 없었다.
 
-후속 연구가 이어졌다. [Bayesian PoseNet(Kendall & Cipolla 2016)](https://arxiv.org/abs/1509.05909)은 Monte Carlo Dropout으로 자세 불확실성을 추정하려 했다. LSTM PoseNet은 시퀀스 정보를 통합했다. Geometric loss를 추가한 변형이 등장했다. Kendall 자신도 2017년에 재귀 구조와 photometric loss를 결합한 버전을 냈다.
+후속 연구는 서로 다른 부분을 바꾸었다. [Bayesian PoseNet(Kendall & Cipolla 2016)](https://arxiv.org/abs/1509.05909)은 Monte Carlo Dropout으로 자세 불확실성을 추정했다. [Walch 등의 LSTM PoseNet](https://arxiv.org/abs/1611.07890)은 2016년 처음 공개되어 ICCV 2017에 발표됐으며, 시간에 따른 영상 시퀀스가 아니라 한 영상에서 추출한 특징의 공간적 관계를 LSTM으로 처리했다. [Kendall과 Cipolla의 2017년 연구](https://arxiv.org/abs/1704.00390)는 자세 회귀의 손실 함수를 다뤘다. 그중 재투영 손실은 3D점을 정답 자세와 예측 자세로 투영한 영상 좌표의 차이를 이용하며, 밝기 차이를 비교하는 photometric loss와는 다르다.
 
 그러나 비교 기준이 올라갈수록 격차가 드러났다. 같은 장면에서 [Active Search(Sattler et al. 2012)](https://www.graphics.rwth-aachen.de/media/papers/sattler_eccv12_preprint_1.pdf)나 DenseVLAD는 위치 오차 0.2 m 수준을 달성했다. PoseNet 계열은 수 미터 오차에서 좀처럼 벗어나지 못했다. 이미지 한 장에서 절대 자세를 회귀하는 접근에는 원론적 한계가 있었다.
 
@@ -2415,35 +2415,35 @@ LSTM이 temporal modeling을 맡으면서 drift 억제를 기대했다. KITTI �
 
 Tinghui Zhou(UC Berkeley)가 같은 해에 발표한 [Zhou et al. 2017. SfMLearner](https://arxiv.org/abs/1704.07813)는 다른 각도로 접근했다. 자기지도(self-supervised) 학습으로 depth와 ego-motion을 동시에 추정하되, photometric reprojection loss를 학습 신호로 썼다. 라벨 없이 학습 가능하다는 점이 강점이었다.
 
-> 🔗 **차용.** SfMLearner의 photometric loss는 고전 direct SLAM이 사용하는 intensity residual과 수학적으로 동일하다. [DSO(Engel et al. 2018)](https://arxiv.org/abs/1607.02565)의 photometric 원리를 미분가능 학습 프레임워크로 옮겼다. SfMLearner의 self-supervision 아이디어는 MonoDepth2를 거쳐 결국 DROID-SLAM의 전제 조건 중 하나가 된다.
+> 🔗 **차용.** SfMLearner와 [DSO(Engel et al. 2018)](https://arxiv.org/abs/1607.02565)는 기하적으로 대응시킨 영상의 밝기 차이를 이용한다는 원리를 공유한다. 다만 DSO는 이를 자세와 지도의 직접 최적화에 쓰고, SfMLearner는 깊이와 카메라 운동을 예측하는 망의 학습 신호로 쓴다. SfMLearner의 자기지도 접근은 MonoDepth2 같은 단안 깊이 연구로 이어졌다. 미분 가능한 기하를 사용하는 DROID-SLAM은 pose와 optical flow의 정답으로 학습하므로 이 자기지도 계열과 구별한다.
 
 다만 SfMLearner의 짧은 구간 VO 평가는 장기 궤적과 루프 클로저까지 포함한 ORB-SLAM의 시스템 성능과 구별해서 읽어야 한다.
 
 ---
 
-## 12.3 실패 원인 세 가지
+## 12.3 기하 제약, 일반화, 불확실성
 
-2019년에서 2020년 사이, end-to-end pose regression과 learned odometry를 둘러싼 논의에서는 세 가지 한계가 반복해서 드러났다.
+2019–2020년 무렵 end-to-end pose regression과 learned odometry에는 기하 제약, 훈련 분포 밖 일반화, 불확실성 추정이라는 서로 다른 문제가 남았다. 가령 [Sattler et al.(2019)](https://arxiv.org/abs/1903.07504)은 absolute pose regression의 한계를 분석했다. 이 결과는 시간에 따른 운동을 추정하는 learned odometry의 문제와 구별해서 읽어야 한다.
 
 **첫 번째: inductive bias의 부재.** 고전 SLAM은 수십 년에 걸쳐 축적된 기하학적 제약을 알고리즘 구조 안에 새겨 넣었다. epipolar constraint, rigid body motion 가정, scale invariance, 공간의 연속성. CNN은 이것들을 데이터로부터 새로 배워야 했다. ImageNet의 고양이와 자동차 사진이 3D 공간의 metric geometry를 가르쳐주지는 않는다. 회귀 망이 pose를 맞추는 것처럼 보여도, 실제로 그것이 3D 공간을 이해해서인지 아니면 특정 조명·색상·질감 조합을 외워서인지 구별하기 어려웠다.
 
-**두 번째: 일반화 실패.** 훈련 집합 밖으로 나가면 성능이 급락했다. 한 장면에서 학습한 PoseNet은 보지 못한 장면의 절대 위치를 그대로 추정할 수 없었고, KITTI에서 학습한 learned odometry도 카메라·주행 환경·영상 통계가 달라지면 오차가 커졌다. 고전 ORB-SLAM은 특징 검출에 실패하거나 조명이 극단적으로 변하면 추적을 잃었지만, 실패를 명시적으로 감지하고 재초기화하는 절차를 둘 수 있었다. end-to-end 모델은 잘못된 추정과 실패 감지를 함께 해결해야 했다.
+**두 번째: 훈련 분포 밖 일반화.** 특정 장면에서 학습한 PoseNet은 보지 못한 장면의 절대 좌표를 그대로 알려 줄 수 없다. 상대 운동을 추정하는 learned odometry도 카메라·주행 방식·영상 분포가 달라지면 별도의 검증이 필요하다. CoRL 2020의 [TartanVO](https://proceedings.mlr.press/v155/wang21h.html)는 데이터셋을 넘는 일반화를 주요 설계 문제로 다뤘다. 고전 ORB-SLAM 역시 특징 검출이나 조명 조건이 달라지면 추적을 잃는다. 실패 감지와 복구 절차는 기하 기반 시스템과 학습 기반 시스템 모두에 필요하다.
 
-**세 번째: 불확실성 정량화의 부재.** SLAM이 단순한 pose 추정기로 끝나지 않는 이유는 downstream 시스템(경로 계획, 장애물 회피)이 위치 추정의 공분산을 요구하기 때문이다. EKF와 factor graph는 공분산을 자연스럽게 전파한다. Bayesian PoseNet이 dropout으로 분산을 추정하려 했지만, 그 분산이 실제 위치 오차와 calibrated 관계를 맺는지 검증하기 어려웠다. 특히 훈련 분포 밖 입력에서 Bayesian PoseNet은 오히려 자신만만한 틀린 답을 냈다. 틀린 것보다 자신만만하게 틀리는 것이 로봇 시스템에는 더 위험하다.
+**세 번째: 불확실성 추정의 검증.** 경로 계획과 장애물 회피에는 위치 추정뿐 아니라 그 오차를 판단할 정보도 필요하다. EKF는 공분산을 갱신하고, factor graph에서는 추정치 주변의 불확실성을 계산할 수 있지만, 이 값들도 모델과 근사의 영향을 받는다. Bayesian PoseNet은 dropout을 이용해 불확실성을 추정했고, 원 논문은 이를 위치 오차 추정과 학습 장면의 포함 여부 판별에 활용했다. 다만 이 평가 결과만으로 임의의 훈련 분포 밖 입력에서 불확실성이 실제 오차와 잘 맞는다고 보장할 수는 없다.
 
 ---
 
 ## 12.4 반성의 기록
 
-박사학위를 마친 뒤인 2019년, Kendall은 Wayve로 자리를 옮겨 자율주행용 imitation learning과 world model 연구로 방향을 틀었다. 이후 연구 방향은 달라졌지만, 학습 기반 localization 자체를 포기한 것은 아니었다.
+Kendall은 2017년 Cambridge에서 박사학위를 받았고 같은 해 Wayve를 공동 창업했다. [이후 연구](https://alexgkendall.com/)에는 자율주행용 imitation learning과 world model이 포함됐다. 카메라 자세를 추정하던 연구에서 장면을 이해하고 주행 행동을 학습하는 문제로 범위가 넓어졌다.
 
-Federico Tombari 그룹(TU Munich, 이후 Google)도 앞선 2017년에 [CNN-SLAM(Tateno et al. 2017)](https://arxiv.org/abs/1704.03489)을 시도했다. CNN이 예측한 dense depth를 직접(direct) monocular SLAM의 깊이 측정과 융합하려는 접근이었다. 학습 부분이 dense depth에 국한되었다는 점에서 완전한 end-to-end는 아니었지만, "CNN이 단안 SLAM의 스케일·저텍스처 문제를 해결해 줄 수 있지 않을까"라는 기대의 한 갈래였다. 성능은 장면에 따라 들쭉날쭉했고, 정확도에서 일관된 우위를 보이지 못했다.
+Tateno·Tombari·Laina·Navab의 [CNN-SLAM(2017)](https://arxiv.org/abs/1704.03489)은 CNN이 예측한 dense depth를 직접(direct) monocular SLAM의 깊이 측정과 융합했다. 영상의 질감이 부족한 영역에서는 예측 깊이에 더 의존하고, 기하 추정이 가능한 곳에서는 SLAM 측정을 활용했다. 예측 깊이로 절대 스케일을 추정하는 방법도 제시했다. 두 벤치마크에서 평가한 이 방식은 학습과 기하를 결합한 당시의 사례였다.
 
-> 📜 **예언 vs 실제.** Kendall은 PoseNet 논문(2015)에서 불확실성 추정, temporal 정보 통합, 더 넓은 규모의 장면으로의 확장을 다음 과제로 꼽았다. Bayesian PoseNet(2016), LSTM PoseNet(2016), 복수의 outdoor 확장 실험으로 세 방향 모두 실행되었다. 그러나 각 시도가 새 벽에 부딪혔고, 이 접근법은 결국 주류에서 멀어졌다. 예언이 합리적이어도 기반 접근 자체의 한계가 크면 소용없다.
+> 📜 **예언 vs 실제.** PoseNet 논문(2015)은 다중 시점 기하로 얻는 학습 자료, 확률적 확장, 한 모델이 학습할 수 있는 장면 규모의 한계를 후속 과제로 제시했다. Bayesian PoseNet(2016)은 그중 확률적 자세 추정과 불확실성 평가를 다뤘다. LSTM PoseNet의 공간 특징 처리는 시간 정보 통합의 실현으로 분류할 수 없으며, 이 후속 연구들만으로 원 논문의 모든 과제가 해결됐다고 볼 수는 없다. Absolute pose regression의 정확도와 일반화는 이후에도 검증 과제로 남았다.
 
 일부 시도는 다른 방향으로 살아남았다. SfMLearner의 photometric self-supervision은 MonoDepth2(Godard 2019) 같은 후속 단안 깊이 연구로 이어졌다. DROID-SLAM(Teed & Deng 2021)은 미분 가능한 기하 구조를 활용하지만, pose와 optical flow의 감독 신호로 학습한다. DeepVO가 보여준 LSTM 기반 temporal modeling은 시각-관성 학습 연구에서 변형된 형태로 재등장했다. 아이디어의 용도가 바뀌었을 뿐이다.
 
-> 📜 **예언 vs 실제.** Zhou는 SfMLearner 논문(2017)에서 dynamic object 처리와 photometric noise에 대한 강건성을 남은 과제로 제시했다. [GeoNet(Yin & Shi 2018)](https://arxiv.org/abs/1803.02276)을 비롯한 후속 self-supervised 연구들이 부분적으로 이 방향을 밀었다. 그러나 self-supervised VO 단독으로 SLAM을 대체하는 경로는 주류에 합류하지 못했다. photometric self-supervision 자체는 계보를 이어갔지만, end-to-end VO라는 목표는 주류가 되지 못했다.
+> 📜 **예언 vs 실제.** Zhou는 SfMLearner 논문(2017)에서 dynamic object 처리와 photometric noise에 대한 강건성을 남은 과제로 제시했다. [GeoNet(Yin & Shi 2018)](https://arxiv.org/abs/1803.02276)을 비롯한 후속 self-supervised 연구들이 부분적으로 이 방향을 밀었다. GeoNet은 정적 영역과 동적 영역을 나누어 다루며 깊이·optical flow·카메라 운동을 함께 학습했다.
 
 ---
 
@@ -2453,9 +2453,9 @@ Federico Tombari 그룹(TU Munich, 이후 Google)도 앞선 2017년에 [CNN-SLAM
 
 > 🔗 **차용.** 이 원칙의 실천은 13장에서 다루는 CodeSLAM(Bloesch 2018)과 DROID-SLAM(Teed & Deng 2021)에서 구체화된다. 두 시스템 모두 factor graph 또는 bundle adjustment라는 기하학적 뼈대를 유지하고, 학습 부분은 CodeSLAM에서 depth 표현을, DROID-SLAM에서 dense correspondence와 반복 update를 맡는다. PoseNet이 버린 뼈대가 사실 포기할 수 없는 것이었다는 확인이다.
 
-고전 파이프라인이 학습 기반 대안에 일관되게 우월한 것이 아니었다. ORB-SLAM도 textureless 환경에서, 야간에서, 비에서 자주 실패했다. 문제는 end-to-end의 오류가 더 불투명하고 더 예측 불가능하다는 데 있었다.
+고전 파이프라인이 학습 기반 대안에 일관되게 우월한 것은 아니다. PoseNet은 특징점 기반 정합이 실패하는 일부 조명 변화와 motion blur 조건에서 동작을 보였다. 반대로 Sattler et al.(2019)의 평가는 당시 absolute pose regression이 3D 구조 기반 위치 추정의 정확도에 미치지 못함을 보였다. 어느 방법이 유리한지는 입력 조건과 평가 과제에 따라 달랐다.
 
-실패를 데이터셋이나 아키텍처 하나만으로 설명할 수는 없었다. 이미지에서 바로 pose로 직결하는 경로에 30년짜리 기하학 지식이 통째로 빠져 있었다.
+이 비교에서 중요한 구별은 이미지에서 pose를 직접 회귀하는 것과, 영상의 대응 관계에 기하 제약을 적용해 pose를 구하는 것이었다. CodeSLAM과 DROID-SLAM은 후자의 계산에 학습된 표현을 결합했다.
 
 ---
 
@@ -2463,9 +2463,9 @@ Federico Tombari 그룹(TU Munich, 이후 Google)도 앞선 2017년에 [CNN-SLAM
 
 **어떤 inductive bias를 어떻게 주입할 것인가.** "geometry는 알고리즘으로"라는 원칙은 맞지만, 어떤 기하학을 어느 수준에서 코드화해야 하는지는 여전히 열린 질문이다. rigid body motion인가, epipolar constraint인가. foundation model 시대에 이 경계는 다시 흐려지고 있다. GaussianSLAM이나 3DGS 기반 시스템이 geometry를 학습 표현 안에 녹이는 방식을 실험하고 있다.
 
-**Learned uncertainty의 calibration.** Bayesian PoseNet의 실패 이후에도 이 문제는 해결되지 않았다. 딥러닝 기반 uncertainty estimate가 실제 오차와 얼마나 calibrated 관계를 가지는지(특히 out-of-distribution 입력에서)는 2026년 기준으로도 열려 있다. 자율주행이 이 질문에 실용적 압력을 가하고 있다.
+**Learned uncertainty의 calibration.** Bayesian PoseNet의 불확실성 추정 시도 이후에도 이 문제는 해결되지 않았다. 딥러닝 기반 uncertainty estimate가 실제 오차와 얼마나 calibrated 관계를 가지는지(특히 out-of-distribution 입력에서)는 2026년 기준으로도 열려 있다. 자율주행이 이 질문에 실용적 압력을 가하고 있다.
 
-**"End-to-end"의 의미 재정의.** PoseNet이 정의한 end-to-end(이미지→pose, 학습만으로)는 실패했다. 그러나 foundation model이 등장한 2023년 이후 end-to-end의 의미가 바뀌고 있다. SLAM의 어느 모듈을 학습으로 채우고 어느 모듈을 알고리즘으로 유지할 것인가. 이 분할선 자체가 재협상 중이다.
+**"End-to-end"의 의미 재정의.** PoseNet은 end-to-end를 이미지에서 pose로 직접 회귀하는 형태로 구현했다. 그러나 foundation model이 등장한 2023년 이후 end-to-end의 의미가 바뀌고 있다. SLAM의 어느 모듈을 학습으로 채우고 어느 모듈을 알고리즘으로 유지할 것인가. 이 분할선 자체가 재협상 중이다.
 
 "geometry는 알고리즘으로, learning은 feature로"라는 원칙이 이 시기에 굳어졌다. 2018년 Kensington의 Imperial College London, Andrew Davison 연구실에서 그 원칙을 구현한 CodeSLAM이 나왔다.
 
@@ -2683,7 +2683,7 @@ UCL의 [Wang et al.(2023) **Co-SLAM**](https://arxiv.org/abs/2304.14377)은 전�
 
 같은 해 같은 CVPR에서 Idiap/EPFL의 [Johari et al.의 **ESLAM**](https://arxiv.org/abs/2211.11704)은 비슷한 문제를 다른 각도에서 풀었다. 3D feature grid 대신 multi-scale axis-aligned feature plane을 써 메모리 증가를 $O(n^3)$에서 $O(n^2)$로 낮추고, volume density 대신 TSDF를 decoding 목표로 삼아 수렴을 가속했다.
 
-Antoni Rosinol(MIT)이 2022년에 공개한 [**NeRF-SLAM**](https://arxiv.org/abs/2210.13641)은 다른 접근이었다. 포즈와 dense depth, 그 불확실성은 DROID-SLAM이 제공하고, 별도의 Instant-NGP 기반 mapping 모듈이 이를 받아 radiance field를 학습했다.
+Antoni Rosinol(MIT)이 2022년에 공개한 [**NeRF-SLAM**](https://arxiv.org/abs/2210.13641)은 다른 접근이었다. DROID-SLAM으로 포즈와 dense depth를 추정하고, 그 최적화의 Hessian에서 주변 공분산을 추가로 계산했다. 별도의 Instant-NGP 기반 mapping 모듈은 이 추정값과 불확실성을 받아 radiance field를 학습했다.
 
 > 🔗 **차용.** NeRF-SLAM은 DROID-SLAM의 recurrent update와 Dense Bundle Adjustment가 만든 pose·depth 추정을 가져오고, 지도 표현에 Instant-NGP를 결합했다. Neural radiance field가 기존 pose 추정기를 대체한 것이 아니라, 그 출력 위에 실시간 dense map을 쌓는 구성이었다.
 
@@ -2792,15 +2792,15 @@ monocular 설정에서는 scale이 문제다. depth 없이 절대 메트릭 스�
 
 $$\mathcal{L}_{iso} = \sum_k \| \mathbf{s}_k - \bar{s}_k \mathbf{1} \|_1$$
 
-여기서 $\mathbf{s}_k \in \mathbb{R}^3$는 k번째 Gaussian의 스케일 벡터, $\bar{s}_k = \frac{1}{3}\sum_j s_{k,j}$는 세 축 스케일의 평균이다. 이 등방성(isotropy) 정규화는 Gaussian이 지나치게 얇은 판 형태로 퇴화하는 것을 막는다. monocular에서 depth 감독 없이 Gaussian이 카메라 평면에 달라붙는 현상을 억제한다.
+여기서 $\mathbf{s}_k \in \mathbb{R}^3$는 k번째 Gaussian의 스케일 벡터, $\bar{s}_k = \frac{1}{3}\sum_j s_{k,j}$는 세 축 스케일의 평균이다. 이 등방성(isotropy) 정규화는 세 축의 길이가 크게 벌어지는 것을 억제한다. 충분한 시점 제약이 없을 때 Gaussian이 시선 방향으로 길게 늘어나 렌더링과 추적을 방해하는 현상을 줄인다.
 
-Tracking에서 Matsuki는 포즈를 Gaussian 렌더링 photometric loss로 직접 최적화했다. 새 Gaussian을 만들 때 해당 픽셀에 렌더링된 depth가 있으면 이를 쓰고, 없으면 렌더링된 depth의 중앙값을 사용한다. 이 절차와 등방성 손실은 내부 지도의 상대적 스케일을 일관되게 유지하지만, 절대 메트릭 스케일을 복원하지는 않는다.
+Tracking에서 Matsuki는 Gaussian을 렌더링한 영상과 관측 영상의 photometric loss로 포즈를 직접 최적화했다. 새 Gaussian을 넣을 때 렌더링된 depth가 있는 픽셀은 그 깊이 주변에 작은 분산으로, depth가 없는 픽셀은 렌더링된 깊이의 중앙값 주변에 큰 분산으로 초기화한다. 이렇게 만든 깊이 가설은 여러 시점의 관측으로 조정한다. 초기화와 등방성 손실이 절대 메트릭 스케일을 복원하는 것은 아니다.
 
 > 🔗 **구분.** MonoGS는 pretrained monocular depth predictor나 외부 tracking 모듈을 사용하지 않는다. 따라서 MonoDepth2를 직접 차용했다는 계보는 논문에서 확인되지 않는다.
 
 Matsuki는 Imperial Dyson Robotics Lab 출신이다. Davison이 지도한 연구실에서 나온 Sucar(iMAP), Bloesch(CodeSLAM)와 같은 계보다. Lab의 관심이 implicit MLP → Gaussian explicit 표현으로 이동한 흐름을 MonoGS가 대표한다.
 
-TUM-RGBD 데이터셋에서 MonoGS는 monocular 평균 ATE RMSE 4.44cm, RGB-D 1.58cm를 기록했다. 단안 ATE는 정답 궤적에 scale alignment를 한 뒤 평가한 값이고, RGB-D는 rigid alignment만 적용했다. 렌더링 품질은 RGB-D 설정 Replica 기준 평균 PSNR 37.50 dB로 동세대 GS-SLAM 계열과 견줄 만한 수준이었다.
+[MonoGS의 2023년 첫 arXiv 원고](https://arxiv.org/abs/2312.06741v1)에서 TUM-RGBD 데이터셋의 평균 ATE RMSE는 monocular 4.44cm, RGB-D 1.58cm였다. 단안 ATE는 정답 궤적에 scale alignment를 한 뒤 평가한 값이고, RGB-D는 rigid alignment만 적용했다. 렌더링 품질은 RGB-D 설정 Replica 기준 평균 PSNR 37.50 dB로 동세대 GS-SLAM 계열과 견줄 만한 수준이었다.
 
 ---
 
@@ -2839,7 +2839,7 @@ RTG-SLAM의 전략은 Gaussian의 수를 제어하는 것이다. 현재 카메�
 
 # Ch.15b — 정적 세계 가정이 무너지는 자리: Dynamic과 Deformable SLAM
 
-2015년 Javier Fuentes-Pacheco는 동료 Ruiz-Ascencio, Rendón-Mancha와 함께 [*Visual simultaneous localization and mapping: a survey*](https://link.springer.com/article/10.1007/s10462-012-9365-8)를 *Artificial Intelligence Review*에 발표했다. 그 서베이의 마지막 절이 "Dynamic and Deformable Environments"였다. 그 이전에도 움직이는 물체를 다룬 논문은 있었지만 대부분 RANSAC이 걸러내야 할 outlier로 취급했다. 이 서베이는 동적 환경을 독립 주제로 묶어 다룬 이른 문헌이었다. 11년이 지난 2026년, *The SLAM Handbook*은 이 주제에 37페이지를 할애했다. 저자는 Lukas Schmid, José María Martínez Montiel, Shoudong Huang, Daniel Cremers, José Neira, Javier Civera 여섯 명이다. 정적 세계는 SLAM의 출발점이었지만, 거리의 자율주행차와 집안의 서비스 로봇, 장기의 내시경은 모두 그 가정 밖에서 작동해야 했다.
+2015년 Javier Fuentes-Pacheco는 동료 Ruiz-Ascencio, Rendón-Mancha와 함께 [*Visual simultaneous localization and mapping: a survey*](https://link.springer.com/article/10.1007/s10462-012-9365-8)를 *Artificial Intelligence Review*에 발표했다. 그 서베이의 마지막 절이 "Dynamic and Deformable Environments"였다. 그 이전에도 움직이는 물체를 다룬 논문은 있었지만 대부분 RANSAC이 걸러내야 할 outlier로 취급했다. 이 서베이는 동적 환경을 독립 주제로 묶어 다룬 이른 문헌이었다. 11년 뒤인 2026년 4월 21일자 *The SLAM Handbook* 원고는 이 주제에 37페이지를 할애했다. 저자는 Lukas Schmid, José María Martínez Montiel, Shoudong Huang, Daniel Cremers, José Neira, Javier Civera 여섯 명이다. 정적 세계는 SLAM의 출발점이었지만, 거리의 자율주행차와 집안의 서비스 로봇, 장기의 내시경은 모두 그 가정 밖에서 작동해야 했다.
 
 ---
 
@@ -2873,11 +2873,11 @@ Handbook은 이 계보를 §15.2.3 "Dense Dynamic SLAM"으로 정리하면서 Sc
 
 Short-term이 프레임 사이의 운동이라면, long-term은 방문 사이의 변화다. 어제 본 의자가 오늘은 옆으로 밀려 있다. 이 문제는 다른 계보에서 자랐다.
 
-Sherbrooke의 Mathieu Labbé가 Michaud 지도 아래 2013년부터 개발한 [RTAB-Map](https://introlab.github.io/rtabmap/)은 인간 기억 모델에서 직접 빌려왔다. short-term, working, long-term memory의 계층을 두고, 시간과 관측 빈도에 따라 노드를 옮겼다. 한 세션 안에서는 작동 메모리에 남고, 자주 방문하지 않으면 장기 메모리로 내려가고, 의미가 없어지면 폐기되는 구조다. 2019년 JFR 논문에서 Labbé는 이 구조가 다중 세션 SLAM에서 어떻게 스케일하는지 정리했다. 한국과학기술원 김아영 팀의 임현준이 2021년 발표한 [ERASOR](https://arxiv.org/abs/2103.04316)는 지도를 깨끗이 만드는 문제를 scene differencing으로 풀었다. 같은 장소를 두 번 지나갔을 때 사라진 점을 찾아낸다.
+Sherbrooke의 Mathieu Labbé가 Michaud 지도 아래 2013년부터 개발한 [RTAB-Map](https://introlab.github.io/rtabmap/)은 인간 기억 모델에서 직접 빌려왔다. short-term, working, long-term memory의 계층을 두고, 시간과 관측 빈도에 따라 노드를 옮겼다. 한 세션 안에서는 작동 메모리에 남고, 자주 방문하지 않으면 장기 메모리로 내려가고, 의미가 없어지면 폐기되는 구조다. 2019년 JFR 논문에서 Labbé는 이 구조가 다중 세션 SLAM에서 어떻게 스케일하는지 정리했다. KAIST URL의 임형태·황성원·명현이 2021년 발표한 [ERASOR](https://arxiv.org/abs/2103.04316)는 누적된 LiDAR 지도에서 움직이는 물체가 남긴 흔적을 제거했다. 지도와 개별 스캔의 영역별 높이 범위를 비교해 동적 점이 있을 법한 구역을 고르고, 구역별 지면 추정으로 지면과 동적 물체의 점을 구별했다.
 
 Handbook §15.3 전체를 관통하는 구분이 하나 있다. **absence of evidence vs evidence of absence**. 의자가 없는 것인지, 내가 못 본 것인지를 구별해야 한다. 이 구분이 빠지면 map cleaning은 정당한 객체를 지우고, change detection은 가려진 영역을 잘못 판정한다. Schmid가 2022년 RA-L에 발표한 [Panoptic Multi-TSDF](https://arxiv.org/abs/2109.10165)는 이 문제를 submap 구조로 풀었다. 각 객체를 독립 submap으로 관리하고, local consistency 하에서 active와 inactive를 구분했다. 같은 그룹이 2024년 낸 [Khronos](https://arxiv.org/abs/2402.13817)는 graduated non-convexity로 association을 견고화하고, loop closure 이후에도 deformable geometric change detection을 돌려, 각 객체의 변화 시점까지 추정한다. Metric-semantic 지도가 4D spatio-temporal 지도로 바뀐다.
 
-> 🔗 **차용.** Panoptic Multi-TSDF는 여러 TSDF submap을 함께 관리하는 volumetric submapping과, 객체별 모델을 두는 object-centric mapping 계열을 결합했다. 논문의 관련 연구와 참고문헌에서는 ORB-SLAM Atlas를 직접 계승했다는 근거가 확인되지 않는다.
+> 🔗 **차용.** Panoptic Multi-TSDF는 여러 TSDF submap을 함께 관리하는 volumetric submapping과, 객체별 모델을 두는 object-centric mapping 계열을 결합했다.
 
 같은 질문은 LiDAR 쪽에서 별도 계보로 전개됐다. KAIST URL의 Jang·Lee·Nahrendra·Myung이 2026년 공개한 [Chamelion](https://arxiv.org/abs/2602.08189)은 dual-head 네트워크 위에 scene-mixing augmentation을 얹어, 공사 현장이나 재배치가 잦은 실내처럼 구조가 자주 바뀌는 transient 환경에서 change detection을 ground truth 없이 돌린다. Khronos가 RGB-D·panoptic 쪽에서 4D를 세웠다면, Chamelion은 포인트 클라우드 위에서 long-term map maintenance 쪽으로 그 질문을 끌고 간다.
 
@@ -2899,7 +2899,7 @@ Tsinghua의 Song이 2018년 낸 [MIS-SLAM](https://ieeexplore.ieee.org/document/
 
 Handbook §15.4.1은 **Floating Map Ambiguity**를 강조한다. 비강체 객체의 rigid motion과 카메라의 rigid motion은 prior 없이는 구별되지 않는다. 손이 30cm 움직인 것인지 카메라가 30cm 움직인 것인지, 관측만으로는 어느 쪽도 말할 수 없다. 이 운동 분해의 모호성은 단안 SLAM의 오래된 scale ambiguity와는 성격이 다르다. Scale만이 아니라 trajectory와 deformation이 동시에 결합하여 ill-posed가 된다. DefSLAM과 NR-SLAM이 isometric prior, visco-elastic prior로 이 ambiguity를 부분적으로 깨지만, 원리적 해법은 2026년 기준에도 없다.
 
-> 📜 **예언 vs 실제.** Newcombe는 DynamicFusion(2015) §7 Future Work에서 "extension to larger scenes and topology changes"와 "integration with loop closure"를 다음 과제로 꼽았다. 토폴로지 변화는 2017년 KillingFusion이 다뤘고, 대규모 scene은 surfel 기반 SurfelWarp(2019)가 일부 확장했다. 2024년 Khronos도 deformation graph, loop closure, change detection을 한 장기 scene-mapping 시스템에 결합했다. 다만 Khronos 논문은 DynamicFusion을 인용하지 않으므로, 이를 DynamicFusion의 Future Work에 대한 직접 응답이라고 단정할 근거는 없다.
+> 📜 **예언 vs 실제.** Newcombe는 DynamicFusion(2015) §7 Future Work에서 "extension to larger scenes and topology changes"와 "integration with loop closure"를 다음 과제로 꼽았다. 토폴로지 변화는 2017년 KillingFusion이 다뤘고, 대규모 scene은 surfel 기반 SurfelWarp(2019)가 일부 확장했다. 2024년 Khronos도 deformation graph, loop closure, change detection을 한 장기 scene-mapping 시스템에 결합했다. Khronos의 대상은 시간에 따라 물체가 놓인 위치와 구성이 달라지는 장면의 지도였다.
 
 ---
 
@@ -3293,7 +3293,7 @@ Event camera SLAM은 경로가 달랐다. 초기에는 하드웨어의 제약이
 
 풀린 것은 2003년의 문제다. 정적 장면, 안정된 조명, 제한된 공간, 단안 카메라의 기하학이라는 가정들 위에서 EKF가 작동했고, graph SLAM이 루프를 닫았으며, ORB-SLAM이 keyframe을 관리했다. 각 답은 진짜 답이고, 각 가정은 진지하게 선택된 단순화였다.
 
-그러나 각 계보가 풀었다고 선언한 자리 바로 옆에는 아직 열린 문제가 남아 있다. 앞선 장들에서 표시한 문제를 한곳에 모으면, 서로 다른 계보가 같은 제약과 마주치는 지점이 드러난다. 여기서 새 문제를 만드는 것이 아니라 이미 남아 있던 문제의 구조를 읽는다.
+그러나 각 계보가 해결했다고 선언한 영역 바로 곁에도 아직 풀리지 않은 문제가 남아 있다. 앞선 장들에서 짚은 문제들을 함께 살펴보면, 서로 다른 계보가 같은 제약에 부딪히는 지점이 드러난다. 살펴볼 것은 새로 만든 문제가 아니라 이미 남아 있던 문제들의 구조다.
 
 ---
 
@@ -3329,7 +3329,7 @@ Monocular scale은 1980년대 SfM 이론이 이미 밝힌 기하학적 모호성
 
 TSDF 계보에서 메모리 문제는 표현의 한계로 드러났다. [Voxblox](https://arxiv.org/abs/1611.03631)·[OctoMap](https://octomap.github.io/)이 비용을 줄였어도 dense 표현의 메모리는 지도 범위와 voxel 해상도에 따라 빠르게 늘고, 어느 영역에 어느 해상도를 둘지 자동 결정하는 범용 adaptive-resolution 방식은 확립되지 않았다(Ch.9 §🧭 참조). NeRF-SLAM도 같은 천장에 막혔다. 도시 규모는 개방형이다(Ch.14 §🧭 참조). Gaussian Splatting에서도 장면 범위와 세부도가 커지면 필요한 Gaussian 수가 늘며, [Compact 3DGS](https://arxiv.org/abs/2311.13681)(Lee et al. 2024) 계열이 압축을 탐색하지만 합의된 방법은 없다(Ch.15 §🧭 참조). Foundation 3D에서 이 문제는 transformer의 물리적 한계로 재정의된다. 모든 image token 사이의 attention은 token 수에 대해 quadratic한 메모리를 요구하므로 긴 시퀀스로 확장하기 어렵고, Spann3R의 incremental 방식은 부분 답이다(Ch.16 §🧭 참조). 표현이 바뀌어도 크기의 장벽은 같은 자리에 있다.
 
-크기 문제의 다른 얼굴은 **데이터 이동 비용**이다. 용량이 아니라 프로세서-메모리 사이 비트 이동의 물리적 비용이 전력을 먹는다. Davison은 Handbook Ch.18 §18.8에서 12번째 SLAM 지표로 "on-device data movement, measured in bits × millimetres"를 제안하며 metric을 하드웨어 공학의 언어로 재정의한다(p.547). Handbook Ch.16의 식도 표현별 복잡도를 구분한다. label별 flat voxel map은 $O(L\cdot V/\delta^3)$이고(Eq. 16.34), metric-semantic hierarchy는 $O(V/\delta^3+N_\text{objects}+N_\text{rooms}+\cdots)$이며(Eq. 16.35), topological 3D scene graph는 $O(N_\text{sub-sym}+N_\text{objects}+N_\text{rooms}+\cdots)$다(Eq. 16.36). Davison의 12번째 지표 재정의가 얼마나 받아들여질지는 결론이 없다.
+크기 문제의 다른 얼굴은 **데이터 이동 비용**이다. 용량이 아니라 프로세서-메모리 사이 비트 이동의 물리적 비용이 전력을 먹는다. Davison은 Handbook Ch.18 §18.8에서 12번째 SLAM 지표로 "on-device data movement, measured in bits × millimetres"를 제안하며 metric을 하드웨어 공학의 언어로 재정의한다(p.547). Handbook Ch.16의 식도 표현별 복잡도를 구분한다. label별 flat voxel map은 $O(L\cdot V/\delta^3)$이고(Eq. 16.34), metric-semantic hierarchy는 $O(V/\delta^3+N_\text{objects}+N_\text{rooms}+\cdots)$이며(Eq. 16.35), topological 3D scene graph처럼 기하 계층을 더 작게 표현하면 $O(N_\text{sub-sym}+N_\text{objects}+N_\text{rooms}+\cdots)$가 된다(Eq. 16.36). 마지막 감소에는 기하 표현의 변경이 따르며 원래 복셀 지도의 정보를 일부 잃을 수 있다. Davison의 12번째 지표 재정의가 얼마나 받아들여질지는 결론이 없다.
 
 ---
 
@@ -3339,7 +3339,7 @@ Julier와 Uhlmann이 Ch.4에서 EKF의 inconsistency를 증명한 이래, SLAM �
 
 비가우시안 불확실성은 EKF의 핵심 가정에 닿는다. 현실 센서 오류는 다중 모드·heavy-tail이 흔하고, Stein particle·normalizing flow·learned uncertainty가 시도되나 실시간 검증은 제한적이다(Ch.4 §4.8 참조). Graph SLAM에서 robust cost function 선택도 직관에 기댄다. Huber·Cauchy·Geman-McClure 중 환경·센서에 맞는 kernel을 사전 결정하는 원칙적 방법이 없다(Ch.6 §🧭 참조). [Ch.6b](chapter_06b_certifiable.md)의 tightness 경계도 같은 층위다. SE-Sync의 exact recovery는 노이즈 $\beta$ 이하라는 충분조건만 주고, 실제 인스턴스에서 $\beta$를 사전 계산하는 방법은 없다. Visual SLAM·VIO로 certifiable을 확장하는 문제, 새 측정이 들어올 때 SDP를 다시 풀어 certificate를 갱신하는 online certification도 열린 채 남는다.
 
-학습 기반 방법에서 문제는 더 날카롭다. Bayesian PoseNet 실패 이후에도 learned uncertainty가 OOD 입력에서 calibrated인지는 열려 있다(Ch.12 §🧭 참조). DROID-SLAM 계보에서 확인했듯 learned prior는 훈련 도메인 밖에서 성능이 저하되어도 그 정도가 겉으로 드러나지 않을 수 있다. learned 실패는 그럴듯한 모양으로 나타날 수 있다. geometric 방법에도 잘못된 지역해나 과도한 확신처럼 겉으로 드러나지 않는 실패가 있다. [TartanAir](https://arxiv.org/abs/2003.14338) 같은 합성 데이터로도 sim-to-real gap이 남는다(Ch.13 §🧭 참조).
+학습 기반 방법에서 문제는 더 날카롭다. Bayesian PoseNet의 불확실성 추정 시도 이후에도 learned uncertainty가 OOD 입력에서 calibrated인지는 열려 있다(Ch.12 §🧭 참조). DROID-SLAM 계보에서 확인했듯 learned prior는 훈련 도메인 밖에서 성능이 저하되어도 그 정도가 겉으로 드러나지 않을 수 있다. learned 실패는 그럴듯한 모양으로 나타날 수 있다. geometric 방법에도 잘못된 지역해나 과도한 확신처럼 겉으로 드러나지 않는 실패가 있다. [TartanAir](https://arxiv.org/abs/2003.14338) 같은 합성 데이터로도 sim-to-real gap이 남는다(Ch.13 §🧭 참조).
 
 Foundation 3D에서는 이 문제가 loop closure 재정의로 이어진다. DUSt3R 계열에서 pointmap 기반 교정 propagate는 MASt3R-SLAM이 기존 방식으로 처리하지만 원리적 해법인지는 불확실하다(Ch.16 §🧭 참조). 자율주행·의료 로봇에서 calibrated uncertainty가 필수인데 그 수준의 시스템은 드물다.
 
@@ -3353,7 +3353,7 @@ Visual SLAM과 LiDAR SLAM은 같은 시기에 같은 문제를 다른 언어로 
 
 LVI-SAM은 visual-inertial subsystem과 lidar-inertial subsystem을 factor graph로 결합했고, 저자들은 이를 tightly coupled 시스템으로 규정했다. 두 subsystem이 서로 정보를 주고받으면서도 필요하면 독립 동작하는 구조라는 점은 함께 구분해야 한다. 안개·강우 같은 자율주행 시나리오에서 다중 센서 융합의 알고리즘·캘리브레이션 난이도는 여전히 장벽이다(Ch.17 §🧭 참조). Solid-state LiDAR 보급이 가져온 알고리즘 공백도 같은 층위다. 원래 LOAM의 360° scan-line 가정과 달리 제한된 FoV와 비반복 pattern을 쓰는 센서는 다른 관측 조건을 만든다. FAST-LIO2와 Livox LOAM이 일부를 다루지만 센서 계열 전반에 대한 일반화는 미흡하다(Ch.17 §🧭 참조).
 
-융합 문제는 wide-baseline 매칭에서도 나타난다. 큰 시점 변화에서 Harris·ORB 같은 hand-crafted local feature의 성능이 저하되지만, 모든 데이터에 적용되는 45도 임계값은 확인되지 않는다. DUSt3R는 전통적인 sparse matching 단계를 두지 않지만 이것이 descriptor 문제의 종말인지 우회인지는 판단이 이르다(Ch.2 §2.7 참조). Place recognition과 metric localization의 통합도 파이프라인 수준의 단절이다. 두 과정을 하나의 표현으로 통합하는 2023-2025년 시도들이 있었지만 정밀도·속도를 동시에 달성한 방법은 없다(Ch.10 §10.7 참조).
+융합 문제는 wide-baseline 매칭에서도 나타난다. 큰 시점 변화에서 Harris·ORB 같은 hand-crafted local feature의 성능이 저하되지만, 모든 데이터에 적용되는 45도 임계값은 확인되지 않는다. DUSt3R는 전통적인 sparse matching 단계를 두지 않지만 이것이 descriptor 문제의 종말인지 다른 정식화로의 전환인지는 판단이 이르다(Ch.2 §2.7 참조). Place recognition과 metric localization의 통합도 파이프라인 수준의 단절이다. 두 과정을 하나의 표현으로 통합하려는 2023–2025년 연구에서도 위치 추정의 정밀도와 처리 속도를 함께 확보하는 문제가 남았다(Ch.10 §10.7 참조).
 
 Event camera는 모달리티가 새로울 때 알고리즘이 얼마나 뒤따르는지를 보여준다. 2022년 이후 상업 고해상도 event camera가 보급되었지만 frame 기반 pipeline과의 통합, event representation, real-world benchmark가 동시 진행 중이다(Ch.18 §🧭 참조). Kinect가 2010년 출시되고 1년 뒤 KinectFusion이 나왔던 순서와 같다.
 
@@ -3401,7 +3401,7 @@ Ch.0은 SLAM이 풀렸다고 여겨지는 시대를 묘사했다. 그 묘사는 
 
 ## 19.9 계보 약도
 
-연도는 논문이 처음 공개된 시점을 기준으로 적었다. 따라서 ORB-SLAM3은 arXiv 공개 연도인 2020년, MASt3R-SLAM은 첫 공개 연도인 2024년으로 표시한다.
+연도는 각 장에서 다룬 학회·저널 발표 또는 선공개 시점을 가리킨다. SE-Sync의 2019년, VINS-Mono의 2018년, FAST-LIO의 2021년은 저널 발표 연도다. ORB-SLAM3의 2020년과 MASt3R-SLAM의 2024년은 선공개 시점이다. 따라서 이 도식의 연도를 모두 최초 공개 연도로 비교해서는 안 된다.
 
 ```mermaid
 graph TD
@@ -3616,9 +3616,9 @@ The core is the **reprojection error**. Minimize the difference between the 2D i
 
 $$E = \sum_{i,j} \| x_{ij} - \pi(K_i, R_i, t_i, X_j) \|^2$$
 
-The name "bundle" comes from the bundle of rays extending out from each camera center to the observed 3D points. Camera poses and point locations are adjusted together so that those rays meet at the 3D points. It took forty years for a technique that began in military and intelligence applications to be absorbed into academia.
+The name "bundle" comes from the bundle of rays extending out from each camera center to the observed 3D points. Camera poses and point locations are adjusted together so that those rays meet at the 3D points. Brown worked in military surveying, but bundle adjustment continued to develop in the photogrammetric literature.
 
-> 🔗 **Borrowed.** Bundle techniques from satellite geolocation entered the computer vision community in the 1990s. While military classification kept those methods out of reach, academia independently rediscovered the same problem. Triggs 1999 is where the two streams met.
+> 🔗 **Translation.** Triggs et al. (1999) synthesized photogrammetric bundle adjustment for potential implementers in computer vision. The paper connected fields that approached the same optimization problem with different terminology and practices. Its account does not establish military classification as the cause of an independent rediscovery in computer vision.
 
 ---
 
@@ -3630,7 +3630,7 @@ Reprojection error minimization is a nonlinear least-squares problem. There is n
 
 In 1944, [Kenneth Levenberg](https://cs.uwaterloo.ca/~y328yu/classics/levenberg.pdf) published a method that interpolated between Gauss-Newton and steepest descent with a damping parameter $\lambda$. Larger $\lambda$ moves toward steepest descent for safe convergence; smaller $\lambda$ uses the fast convergence of Gauss-Newton. In its basic form, the strategy adds $\lambda \mathbf{I}$ to the matrix $\mathbf{J}^{\top}\mathbf{J}$ of the linearized normal equations, improving numerical stability. It was twenty years ahead of computer vision. In 1963, [Donald Marquardt](https://epubs.siam.org/doi/10.1137/0111030) independently rediscovered the same idea and formulated it more explicitly. The name settled as the **Levenberg-Marquardt (LM) algorithm**.
 
-Another thirty-five years passed before the LM algorithm became the standard BA solver in computer vision. The delay came from the walls between fields, not from missing technology.
+Another thirty-five years passed before the LM algorithm became the standard BA solver in computer vision.
 
 ---
 
@@ -3668,7 +3668,7 @@ The acronym "SLAM" came into broad use through 1990s literature that included [D
 
 Lie groups and factor graphs replaced the matrix notation of 1999, and neural networks took over descriptor computation, but the common structure of minimizing observation residuals persists. Visual BA uses reprojection errors from multiple viewpoints to estimate camera poses and the map, while LiDAR systems use sensor-specific constraints such as distance or point-to-plane residuals. Pulfrich's glass plate has become a pixel array, and hand calculation has moved to the GPU. The underlying estimation problem remains the same.
 
-This continuity is both a strength and a weakness. The field inherits a hundred years of convergence proofs and practical validation. When BA's assumptions (static world, point features, Gaussian noise) fail in real environments, however, there is no ready alternative.
+This continuity is both a strength and a weakness. The field can draw on accumulated optimization theory and practical validation. When BA's assumptions (static world, point features, Gaussian noise) fail in real environments, the supporting theory and validation no longer apply without checking those changed conditions.
 
 ---
 
@@ -3831,7 +3831,7 @@ Harris's intuition and Lowe's invariance supplied the foundation, and Rublee's s
 
 While Harris and Lowe were refining how to detect salient points in one image, a different lineage asked what could be recovered when those points appeared in two images. Feature *detection* and spatial *reconstruction* developed side by side over the same period; only in the mid-2000s did they merge into one pipeline.
 
-In 1981, H.C. Longuet-Higgins, a theoretical psychologist at Cambridge, published a three-page paper in *Nature*. The title was "[A Computer Algorithm for Reconstructing a Scene from Two Projections](https://cseweb.ucsd.edu/classes/fa01/cse291/hclh/SceneReconstruction.pdf)." He showed that eight coordinate pairs for the same points in two photographs were enough to solve simultaneously for camera motion and the scene's three-dimensional shape. He was neither a roboticist nor a computer vision researcher. Structure from Motion (SfM) began in those three pages, and the mathematics reached a widely used engineering system in 2016, when Johannes Schönberger released COLMAP.
+In 1981, H.C. Longuet-Higgins at the University of Sussex published a three-page paper in *Nature*, "[A Computer Algorithm for Reconstructing a Scene from Two Projections](https://cseweb.ucsd.edu/classes/fa01/cse291/hclh/SceneReconstruction.pdf)." He presented a linear algorithm for recovering camera motion and scene structure from eight corresponding point pairs in two photographs. His affiliation was the Laboratory of Experimental Psychology. Photogrammetry and motion-perception research preceded this paper, so it did not mark the beginning of all Structure from Motion (SfM), but it was an influential turning point in modern two-view geometry. Self-calibration, incremental SfM, Bundler, and large-scale reconstruction from internet photographs followed; Johannes Schönberger's COLMAP assembled that accumulated work into a robust general-purpose open-source pipeline in 2016.
 
 ---
 
@@ -4080,7 +4080,7 @@ While EKF-SLAM reached its real-time ceiling at around 100 landmarks, Andrew Dav
 
 EKF-SLAM provided a way to estimate a map together with its uncertainty, but its covariance matrix hit a structural wall that grew as $O(N^2)$ in the number of landmarks $N$. The theory was not wrong; the limit followed from the design. Davison and Klein responded in different ways.
 
-In 2003, Davison plugged a single webcam into a laptop in an Imperial College lab. He carried over the probabilistic spatial-relations mathematics that Smith and Cheeseman had laid down in 1988 and the EKF-SLAM structure that Leonard and Durrant-Whyte had built on it, but used a single camera as the sensor. With no IMU or stereo rig, he combined the 1994 Shi-Tomasi corner detector with a Kalman predict-update loop and ran the system in real time. By the standards of the day, it was an unusual combination.
+In 2003, Davison at Oxford estimated the pose of a hand-held camera and a map of its surroundings in real time on a desktop PC. He carried over the probabilistic spatial-relations mathematics that Smith and Cheeseman had laid down in 1988 and the EKF-SLAM structure that Leonard and Durrant-Whyte had built on it, but used a single camera as the sensor. With no IMU, stereo rig, or laser, he combined the 1994 Shi-Tomasi corner detector with a Kalman predict-update loop. By the standards of the day, it was an unusual combination.
 
 Four years later, in 2007, Klein and Murray at Oxford offered a different answer. They split tracking and mapping into two threads, an architecture that became the backbone of Visual SLAM for the next ten years.
 
@@ -4088,11 +4088,11 @@ Four years later, in 2007, Klein and Murray at Oxford offered a different answer
 
 ## 1. The 2003 demo
 
-At ICCV 2003, Davison's [Real-Time Simultaneous Localisation and Mapping with a Single Camera](https://doi.org/10.1109/ICCV.2003.1238654) stirred the room. The individual components were familiar; seeing them work together in real time was not.
+At ICCV 2003, Davison presented [Real-Time Simultaneous Localisation and Mapping with a Single Camera](https://doi.org/10.1109/ICCV.2003.1238654). It was an early demonstration of real-time SLAM using a monocular camera alone.
 
 The mainstream of SLAM at the time used laser sensors. LiDAR delivered 2D ranges directly, and stereo cameras recovered depth at the pixel level. A monocular camera had no depth information to begin with. Estimating 3D structure from a single camera required at least two frames, and uncertainty in the initial depth estimate propagated through the entire EKF state vector. The theory existed; real-time implementation remained difficult.
 
-Davison chose a monocular camera for practical reasons. An IMU meant extra hardware, and stereo carried a calibration burden. He wanted "to prove it with one camera," reasoning that other sensors could be added later. That logic held. The EKF's capacity to absorb those additions did not.
+MonoSLAM used a single camera without an IMU or stereo rig, avoiding the extra hardware and stereo calibration those configurations require. It demonstrated the feasibility of monocular real-time SLAM, while the EKF's growing covariance matrix limited map size.
 
 ---
 
@@ -4120,7 +4120,7 @@ That bounded feature count exposed the EKF's ceiling. Klein confronted the same 
 
 In 2007, Klein and Murray presented [Parallel Tracking and Mapping for Small AR Workspaces](https://doi.org/10.1109/ISMAR.2007.4538852) at ISMAR. The same year, PAMI carried the finished version of Davison's MonoSLAM. Their appearance in the same year reflected a direct lineage.
 
-Klein was then a doctoral student in Murray's group, which continued the Oxford Active Vision Laboratory where Davison had recently completed his doctorate under Murray. Klein saw in MonoSLAM not the EKF itself but proof that a monocular camera could run in real time.
+Klein had completed his doctorate under Tom Drummond at Cambridge and was working with Murray as a postdoctoral researcher at Oxford when PTAM appeared. Murray had also supervised Davison. PTAM continued MonoSLAM's demonstration of monocular real-time operation within this research lineage, but replaced the EKF with separate tracking and mapping threads.
 
 The next problem was scale, and Klein discarded the EKF.
 
@@ -4148,7 +4148,7 @@ The essential matrix $\mathbf{E}$ is a $3\times 3$ matrix capturing the pure geo
 
 > 🔗 **Borrowed.** PTAM's 5-point essential-matrix initialization follows the minimal-solver lineage opened by David Nistér's 2004 "An Efficient Solution to the Five-Point Relative Pose Problem" (the PTAM paper directly cites the follow-up Stewénius·Engels·Nistér 2006 ISPRS). Nistér's solver used the minimum number of correspondences needed to build a monocular camera's initial map. PTAM placed it inside a RANSAC loop to estimate the relative pose of the first two keyframes at near-real-time speed.
 
-> 🔗 **Borrowed.** PTAM's keyframe structure traces back to the Leonard-Durrant-Whyte submap idea. The notion that "if the full map is hard to optimize at once, break it into regions" was expressed in PTAM as a set of keyframes. The covisibility graph of the subsequent ORB-SLAM is a more refined version of this keyframe management.
+> 🔀 **Structural parallel.** Leonard-Durrant-Whyte submaps and PTAM's keyframe map both manage computation through selected local units. The PTAM paper, however, does not cite that submap lineage as a direct design source. It explains keyframe selection through parallel tracking and mapping and the needs of local bundle adjustment. ORB-SLAM later added a covisibility graph.
 
 ---
 
@@ -4410,7 +4410,7 @@ Outliers came first. As Ch.6 §6.7 noted, imperfect loop-closure verification in
 
 On the landmark side, [Holmes & Barfoot (2023)](https://arxiv.org/abs/2308.05631) used the Schur complement to eliminate landmarks in advance, leaving a PGO that SE-Sync can solve directly. Holmes, Khosoussi, and Rosen later co-authored Ch.6 of the Handbook in 2025.
 
-Limits also appeared. Generalizing anisotropic noise and truncated-quadratic outliers to a POP (Polynomial Optimization Problem) calls for Lasserre's moment relaxation, but the derived SDP is **degenerate**: constraint qualification fails and the Riemannian Staircase no longer converges. Yang's 2022 sparse monomial basis offers a workaround, but its specialized solver remains slower than a general local solver. No algorithm is yet both fast and certifiable. Visual SLAM and VIO face a deeper limit, the structural incompatibility of perspective projection and IMU preintegration, treated in the 🧭 section.
+Limits also appeared. Generalizing anisotropic noise and truncated-quadratic outliers to a POP (Polynomial Optimization Problem) calls for Lasserre's moment relaxation, but the derived SDP can be **degenerate**: constraint qualification conditions required by the Riemannian Staircase convergence guarantee can fail. This removes the guarantee; it does not establish that every run diverges. Yang's 2022 sparse monomial basis offers a workaround, but its specialized solver remains slower than a general local solver. Visual SLAM and VIO face further obstacles in incorporating perspective projection and IMU preintegration, treated in the 🧭 section.
 
 > 📜 **Prediction vs. outcome.** At ICRA 2015 Carlone wrote that "theoretical explanation for why most instances have a tight Lagrangian dual is needed." Ten years later, only part of the answer had arrived. The exact-recovery theorem of Rosen-Carlone-Bandeira-Leonard gave a sufficient condition, "noise below $\beta$," but no way to compute $\beta$ in advance for an actual SLAM instance. As of 2026, no **a priori** condition predicts when tightness breaks; per-instance certificates serve in its place.
 
@@ -4818,7 +4818,7 @@ Lighting changes remained a serious problem. Entering a tunnel, facing backlight
 
 [Engel, Koltun & Cremers 2018. DSO (PAMI)](https://doi.org/10.1109/TPAMI.2017.2658577) first appeared on arXiv in 2016. "Direct Sparse Odometry" is sparser than LSD-SLAM and uses far fewer pixels than DTAM, while applying a more thorough photometric calibration.
 
-The system selects roughly 2,000 high-gradient pixels in each keyframe. This is more than ORB-SLAM2's default setting (nFeatures=1000) and far fewer than LSD-SLAM's semi-dense set of all pixels with a gradient. DSO performs sliding-window bundle adjustment over these pixels, optimizing camera pose, inverse depth, and affine brightness parameters $(a_i, b_i)$. It marginalizes frames that leave the window and uses the Schur complement to eliminate variables and limit the size of the remaining window problem. Total computation depends on window size, pixel count, and iteration count.
+The system selects roughly 2,000 candidate pixels per keyframe, then keeps about 2,000 active points across all active frames combined in the optimization. Candidate count and active-point count are distinct. Selection considers both image coverage and gradient strength relative to the surroundings. DSO performs sliding-window bundle adjustment over the active points, optimizing camera pose, inverse depth, and affine brightness parameters $(a_i, b_i)$. It marginalizes frames that leave the window and uses the Schur complement to eliminate variables and limit the size of the remaining window problem. Total computation depends on window size, pixel count, and iteration count.
 
 DSO separates the camera's photometric model into three layers. First, prior calibration corrects vignetting, the falloff in brightness toward the edges of the lens. Second, it inverts the camera response function, or gamma curve, in advance to convert the sensor's nonlinear light measurements into a linear intensity domain. Third, it uses exposure time $t_i$ as input metadata and estimates the remaining affine brightness changes $(a_i, b_i)$ online:
 
@@ -4850,7 +4850,7 @@ Follow-up work from the Cremers group, [Basalt](https://arxiv.org/abs/1904.06504
 
 ## 5. Limits of the Direct Method
 
-Direct methods retain more image information. They use pixels that feature detectors discard, including regions whose gradients are low but consistent. The photometric residual also provides a continuous optimization landscape without the discretization imposed by descriptor matching.
+Direct methods use image intensity itself in the residual rather than features summarized by descriptors. Their sampling differs: DTAM uses dense photometric information, while LSD-SLAM uses semi-dense regions with intensity gradients. DSO selects pixels with sufficient gradient relative to their surroundings and spreads them across the image; where strong gradients are absent, it lowers the threshold to exploit weaker intensity variations. This can retain information where corners are scarce, but on nearly constant-intensity surfaces the residual is insensitive to pose changes.
 
 As of 2026, however, most deployed systems remain feature-based for several reasons.
 
@@ -5284,7 +5284,7 @@ PoseNet followed [AlexNet (Krizhevsky et al. 2012)](https://papers.nips.cc/paper
 
 On the Cambridge Landmarks dataset collected by Kendall, which included King's College Chapel, streets, a former hospital, and several other outdoor scenes, PoseNet achieved position errors of around 2 m and orientation errors of 5–8°, depending on the scene (§5 of the original paper). A single GPU produced a pose within 5 ms without feature extraction, RANSAC, or map lookup.
 
-The paper triggered immediate follow-ups. [Bayesian PoseNet (Kendall & Cipolla 2016)](https://arxiv.org/abs/1509.05909) tried to estimate pose uncertainty via Monte Carlo Dropout. LSTM PoseNet integrated sequence information. Variants with added geometric loss appeared. Kendall himself released a 2017 version combining a recurrent structure with photometric loss.
+Follow-up studies changed different parts of the method. [Bayesian PoseNet (Kendall & Cipolla 2016)](https://arxiv.org/abs/1509.05909) estimated pose uncertainty through Monte Carlo Dropout. [Walch et al.'s LSTM PoseNet](https://arxiv.org/abs/1611.07890), first released in 2016 and presented at ICCV 2017, used LSTMs to process spatial relationships among features from a single image, rather than a temporal image sequence. [Kendall and Cipolla's 2017 study](https://arxiv.org/abs/1704.00390) examined loss functions for pose regression. Its reprojection loss compared the image coordinates of 3D points projected with ground-truth and predicted poses; it was not a photometric loss based on brightness differences.
 
 As benchmark performance improved, however, the gap became visible. On the same scenes, [Active Search (Sattler et al. 2012)](https://www.graphics.rwth-aachen.de/media/papers/sattler_eccv12_preprint_1.pdf) and DenseVLAD achieved position errors of roughly 0.2 m. The PoseNet family rarely improved beyond errors of several meters, revealing a fundamental limitation of regressing an absolute pose from one image.
 
@@ -5300,35 +5300,35 @@ The LSTM was intended to use temporal context to suppress drift. DeepVO showed l
 
 [Zhou et al. 2017. SfMLearner](https://arxiv.org/abs/1704.07813), released the same year by Tinghui Zhou at UC Berkeley, took a different approach. It jointly estimated depth and ego-motion through self-supervised learning, using photometric reprojection loss as the training signal and requiring no labels.
 
-> 🔗 **Borrowed.** SfMLearner's photometric loss is mathematically identical to the intensity residual in classical direct SLAM. It placed the photometric principle of [DSO (Engel et al. 2018)](https://arxiv.org/abs/1607.02565) in a differentiable learning framework, and its self-supervision later appeared in MonoDepth2 and DROID-SLAM.
+> 🔗 **Borrowed.** SfMLearner and [DSO (Engel et al. 2018)](https://arxiv.org/abs/1607.02565) share the principle of comparing brightness at geometrically corresponding image locations. DSO uses these differences to optimize poses and a map directly; SfMLearner uses them to train networks that predict depth and camera motion. SfMLearner's self-supervised approach continued in monocular-depth methods such as MonoDepth2. DROID-SLAM also uses differentiable geometry, but its pose and optical-flow supervision distinguishes it from this self-supervised line.
 
 SfMLearner's evaluation on short VO snippets must be distinguished from ORB-SLAM's system performance over longer trajectories with loop closure.
 
 ---
 
-## 12.3 Three causes of failure
+## 12.3 Geometry, generalization, and uncertainty
 
-Between 2019 and 2020, researchers increasingly examined the limitations of this work. In a 2019 talk, Sudeep Pillai of MIT, later TRI, organized the structural problems of end-to-end methods into three categories.
+Geometric constraints, generalization beyond the training distribution, and uncertainty estimation raised distinct questions for end-to-end pose regression and learned odometry around 2019–2020. [Sattler et al. (2019)](https://arxiv.org/abs/1903.07504), for example, examined the limits of absolute pose regression; these results should be distinguished from the temporal estimation problem addressed by learned odometry.
 
 **First: absence of inductive bias.** Classical SLAM explicitly encoded geometric constraints accumulated over decades, including the epipolar constraint, rigid-body motion, scale invariance, and spatial continuity. A CNN had to infer them from data, while ImageNet classification offered little supervision for the metric geometry of 3D space. Even when a regression network estimated the correct pose, it was difficult to determine whether it had learned 3D structure or memorized combinations of lighting, color, and texture.
 
-**Second: generalization failure.** Performance collapsed outside the training distribution. A PoseNet trained on Cambridge Landmarks was unusable on Oxford streets, and a DeepVO trained on KITTI accumulated exponentially growing drift on other vehicle datasets without radar. Classical ORB-SLAM also failed when feature detection broke down or lighting changed drastically, but its failure was predictable and the system could reinitialize. End-to-end models could instead return an incorrect estimate without indicating the magnitude of the error.
+**Second: generalization beyond the training distribution.** A scene-specific PoseNet cannot directly supply absolute coordinates for an unseen scene. Learned odometry estimates relative motion, but deployment with a different camera, motion pattern, or image distribution requires its own validation. [TartanVO](https://proceedings.mlr.press/v155/wang21h.html), presented at CoRL 2020, treated cross-dataset generalization as a central design problem. Classical ORB-SLAM can also lose tracking when features or lighting change; recovery procedures and failure detection are necessary for both geometric and learned systems.
 
-**Third: absence of uncertainty quantification.** SLAM cannot function only as a pose estimator because downstream systems, including path planning and obstacle avoidance, require the covariance of the localization estimate. EKFs and factor graphs propagate covariance naturally. Bayesian PoseNet attempted to estimate variance through dropout, but the calibration between that variance and actual position error was difficult to verify. On inputs outside the training distribution, it could return a confident but incorrect estimate, which is more dangerous for a robotic system than a visible failure.
+**Third: validating uncertainty estimates.** Path planning and obstacle avoidance need information about localization error as well as the estimated pose. An EKF updates covariance, and a factor graph can provide uncertainty around an estimate, but both depend on modeling and approximation choices. Bayesian PoseNet used dropout to estimate uncertainty and evaluated it for localization-error estimation and detection of whether the input showed the learned scene. These results do not guarantee calibration for arbitrary inputs outside the training distribution.
 
 ---
 
 ## 12.4 Reassessment
 
-After completing his PhD in 2019, Kendall moved to Wayve and shifted toward imitation learning and world-model research for autonomous driving. He continued to study learning-based localization but rejected absolute pose regression from a single image as the appropriate problem formulation.
+Kendall received his PhD at Cambridge in 2017 and co-founded Wayve that year. [His later research](https://alexgkendall.com/) included imitation learning and world models for autonomous driving, expanding from camera pose estimation to scene understanding and learned driving behavior.
 
-Earlier, in 2017, Federico Tombari's group at TU Munich, later Google, developed [CNN-SLAM (Tateno et al. 2017)](https://arxiv.org/abs/1704.03489). It fused dense depth predicted by a CNN with the depth estimate from direct monocular SLAM. Because learning was confined to dense depth, the method was not fully end to end, but it tested whether a CNN could address scale ambiguity and low-texture regions in monocular SLAM. Results varied across scenes, and the method did not consistently improve accuracy.
+[CNN-SLAM (Tateno, Tombari, Laina, and Navab, 2017)](https://arxiv.org/abs/1704.03489) fused CNN-predicted dense depth with depth measurements from direct monocular SLAM. It relied more on predicted depth in low-texture regions and on SLAM measurements where geometric estimation was reliable. It also used predicted depth to estimate absolute scale. Evaluated on two benchmarks, the method was an early example of combining learning and geometry.
 
-> 📜 **Prediction vs. outcome.** In the PoseNet paper (2015), Kendall identified uncertainty estimation, temporal integration, and extension to larger scenes as the next tasks. Bayesian PoseNet (2016), LSTM PoseNet (2016), and multiple outdoor experiments pursued all three directions. Each encountered further limitations, and researchers ultimately abandoned the broader absolute-pose-regression approach. The proposed extensions could not overcome the weakness of the underlying formulation.
+> 📜 **Prediction vs. outcome.** The PoseNet paper (2015) proposed further work on training data obtained through multiview geometry, probabilistic extensions, and the limits on scene size that one model could learn. Bayesian PoseNet (2016) addressed probabilistic pose estimation and uncertainty evaluation. LSTM PoseNet's spatial feature processing does not demonstrate temporal integration, and these follow-up studies do not establish that all of the original tasks were resolved. Accuracy and generalization in absolute pose regression remained subjects of evaluation.
 
 Some components remained useful in other settings. SfMLearner's photometric self-supervision continued in monocular-depth methods such as MonoDepth2 (Godard 2019). DROID-SLAM (Teed & Deng 2021) also uses differentiable geometry, but trains with pose and optical-flow supervision. DeepVO's LSTM-based temporal modeling also reappeared in modified form in visual-inertial learning research. The methods changed even as their individual ideas persisted.
 
-> 📜 **Prediction vs. outcome.** In the SfMLearner paper (2017), Zhou identified dynamic-object handling and robustness to photometric noise as remaining tasks. Later self-supervised work, including [GeoNet (Yin & Shi 2018)](https://arxiv.org/abs/1803.02276), made partial progress. Self-supervised VO did not replace SLAM in the mainstream, but photometric self-supervision persisted after the field rejected end-to-end VO as the larger objective.
+> 📜 **Prediction vs. outcome.** In the SfMLearner paper (2017), Zhou identified dynamic-object handling and robustness to photometric noise as remaining tasks. Later self-supervised work, including [GeoNet (Yin & Shi 2018)](https://arxiv.org/abs/1803.02276), made partial progress. GeoNet jointly learned depth, optical flow, and camera motion while modeling static and dynamic regions separately.
 
 ---
 
@@ -5338,9 +5338,9 @@ Around 2020, a common design rule was to keep geometry explicit and use learning
 
 > 🔗 **Borrowed.** CodeSLAM (Bloesch 2018) and DROID-SLAM (Teed & Deng 2021) implement this principle. Both retain the geometric structure of a factor graph or bundle adjustment and use learning for depth representation in CodeSLAM and for dense correspondence and recurrent updates in DROID-SLAM, retaining constraints that PoseNet had removed.
 
-The classical pipeline was not uniformly superior to learning-based alternatives. ORB-SLAM also failed in textureless environments, at night, and in rain. The distinction was that errors from end-to-end models were less interpretable and predictable than failures in classical SLAM.
+The classical pipeline was not uniformly superior to learning-based alternatives. PoseNet demonstrated operation under some lighting changes and motion blur where feature-based registration failed. In contrast, Sattler et al. (2019) found that the absolute pose regression methods they evaluated did not match the accuracy of structure-based localization. The comparison depended on the input conditions and evaluation task.
 
-Neither a particular dataset nor a particular architecture fully explained the failure. A direct mapping from image to pose omitted the geometric constraints accumulated over thirty years.
+The important distinction was between directly regressing pose from an image and estimating pose from visual correspondences under geometric constraints. CodeSLAM and DROID-SLAM combined learned representations with the latter computation.
 
 ---
 
@@ -5350,7 +5350,7 @@ Neither a particular dataset nor a particular architecture fully explained the f
 
 **Calibration of learned uncertainty.** Bayesian PoseNet did not resolve this problem. Whether uncertainty estimates from deep learning remain calibrated to actual error, especially for out-of-distribution inputs, was still open as of 2026. Autonomous-driving applications make the question practically urgent.
 
-**Redefining "end-to-end."** PoseNet's definition of end to end, learning a direct image-to-pose mapping, failed. Since foundation models appeared in 2023, however, the term has begun to change. Researchers are again deciding which SLAM modules should be learned and which should remain explicit algorithms.
+**Redefining "end-to-end."** PoseNet implemented end to end as a learned direct mapping from image to pose. Since foundation models appeared in 2023, however, the term has begun to change. Researchers are again deciding which SLAM modules should be learned and which should remain explicit algorithms.
 
 CodeSLAM, released by Andrew Davison's lab at Imperial College London in 2018, embodied this division between explicit geometry and learned representation.
 
@@ -5498,7 +5498,7 @@ At Imperial College in 2021, Edgar Sucar treated this as a SLAM problem rather t
 
 In 2021, Edgar Sucar at Imperial College used a learned representation not for tracking but for *the map itself*. His iMAP system adapted NeRF, a method developed outside SLAM.
 
-In March 2020, Ben Mildenhall and his colleagues posted [Mildenhall et al. 2020. NeRF](https://arxiv.org/abs/2003.08934) to arXiv. The paper synthesized photorealistic novel views from calibrated images, and the SLAM community initially treated it as a rendering method rather than a map-building technique. Fourteen months later, Sucar's ICCV 2021 presentation of iMAP demonstrated that NeRF could serve as the map representation itself. Extending the KinectFusion lineage from Ch.9, iMAP was an early system testing whether an implicit neural field could replace a TSDF voxel grid.
+In March 2020, Ben Mildenhall and his colleagues posted [Mildenhall et al. 2020. NeRF](https://arxiv.org/abs/2003.08934) to arXiv. It optimized a continuous volumetric scene function from images with known poses to synthesize unseen views. NeRF was initially presented as a solution to novel-view synthesis. At ICCV 2021, Sucar presented iMAP, showing how an implicit neural field could support joint estimation of the map and camera pose. iMAP was an early attempt to recast the dense-mapping problem of KinectFusion (Ch.9) in this representation.
 
 NeRF followed several coordinate-based MLP representations of 3D introduced around 2019. [Park et al.'s DeepSDF](https://arxiv.org/abs/1901.05103) represented object surfaces with an MLP that mapped coordinates to signed distance. [Mescheder et al.'s Occupancy Networks](https://arxiv.org/abs/1812.03828) mapped the same input to occupancy probability. [Sitzmann et al.'s SRN](https://arxiv.org/abs/1906.01618) stored a scene feature vector at each coordinate and formed images through differentiable ray marching. All three mapped coordinates to a field value. Mildenhall et al.'s 2020 NeRF added volume-rendering integration and positional encoding, applying the formulation to view synthesis. iMAP inherited this entire one-year lineage rather than one paper alone.
 
@@ -5554,7 +5554,7 @@ Like iMAP, NICE-SLAM froze the MLP and grid features while optimizing pose durin
 
 The grid introduced its own limitations because memory grew with the cube of resolution. The system could handle one or two indoor rooms but did not scale to multi-story buildings or outdoor environments. It also remained far from real-time operation.
 
-At SIGGRAPH 2022, Thomas Müller's [Müller et al. 2022. Instant-NGP](https://nvlabs.github.io/instant-ngp/) addressed this bottleneck with a hash-table-based feature encoding. The representation reduced the memory growth of voxel grids and cut training time from minutes to seconds. Although Instant-NGP was not a SLAM paper, most subsequent NeRF-SLAM systems adopted hash encoding.
+At SIGGRAPH 2022, Thomas Müller's [Müller et al. 2022. Instant-NGP](https://nvlabs.github.io/instant-ngp/) combined multi-resolution hash encoding with a GPU implementation to accelerate training. Its public implementation demonstrated training in seconds on some demo scenes using supported NVIDIA GPUs. Instant-NGP was not a SLAM paper, but several later NeRF-SLAM systems adopted its hash encoding.
 
 > 🔗 **Borrowed.** NICE-SLAM's multi-resolution feature grid was designed independently at roughly the same time as Instant-NGP's hash encoding, but Instant-NGP's hash grid soon replaced it in many NeRF-SLAM implementations. The feature grid also extends the grid-based representation of KinectFusion (Ch.9), replacing stored TSDF values with learned features.
 
@@ -5568,11 +5568,11 @@ UCL's [Wang et al. (2023) **Co-SLAM**](https://arxiv.org/abs/2304.14377) followe
 
 At the same CVPR, [Johari et al.'s **ESLAM**](https://arxiv.org/abs/2211.11704) from Idiap and EPFL addressed the same problem differently. It replaced the 3D feature grid with multi-scale axis-aligned feature planes, reducing memory growth from $O(n^3)$ to $O(n^2)$, and decoded TSDF rather than volume density to accelerate convergence.
 
-Antoni Rosinol at MIT released [**NeRF-SLAM**](https://arxiv.org/abs/2210.13641) in 2023. It retained classical SLAM tracking and factor-graph optimization while replacing only the map representation with NeRF. A DROID-SLAM frontend supplied poses and dense depth; NeRF-SLAM used those poses, depths, and uncertainties to construct an Instant-NGP-based map in parallel.
+Antoni Rosinol at MIT released [**NeRF-SLAM**](https://arxiv.org/abs/2210.13641) in 2022. It used DROID-SLAM to estimate poses and dense depth, then computed marginal covariances from the optimization Hessian. A separate Instant-NGP-based mapping module used these estimates and uncertainties to learn a radiance field.
 
-> 🔗 **Borrowed.** The NeRF-SLAM backend uses Dellaert's factor-graph optimization (Ch.6). NeRF changed the map representation while leaving the graph-based mathematics of pose estimation established after 2005 intact.
+> 🔗 **Borrowed.** NeRF-SLAM takes the pose and depth estimates produced by DROID-SLAM's recurrent updates and Dense Bundle Adjustment, and combines them with an Instant-NGP map. The radiance field does not replace the pose estimator; it builds a real-time dense map from that estimator's outputs.
 
-Rosinol used a modular design, replacing only the map representation rather than introducing NeRF throughout the pipeline. Classical SLAM functions such as loop closure remained in place.
+NeRF-SLAM separates dense monocular estimation from neural mapping. Tracking does not depend on optimizing the current pose against the radiance field; the mapping module receives the poses, depth maps, and uncertainty produced by the SLAM module. This modular structure allows improvements to the estimator and map representation separately.
 
 ---
 
@@ -5611,13 +5611,13 @@ At SIGGRAPH in August 2023, Bernhard Kerbl of INRIA, Georgios Kopanas, Thomas Le
 
 ## The structure of 3DGS
 
-Kerbl represented scenes as an explicit set of Gaussians. Each Gaussian has a position (mean) $\boldsymbol{\mu} \in \mathbb{R}^3$, a covariance matrix $\boldsymbol{\Sigma} \in \mathbb{R}^{3 \times 3}$, an opacity $\alpha \in (0,1]$, and a color expressed in spherical harmonics coefficients. For training stability the covariance is factored into a scale vector $\mathbf{s}$ and a unit quaternion $\mathbf{q}$:
+Kerbl represented scenes as an explicit set of Gaussians. Each Gaussian has a position (mean) $\boldsymbol{\mu} \in \mathbb{R}^3$, a covariance matrix $\boldsymbol{\Sigma} \in \mathbb{R}^{3 \times 3}$, a learnable opacity $o \in (0,1]$, and a color expressed in spherical harmonics coefficients. For training stability the covariance is factored into a scale vector $\mathbf{s}$ and a unit quaternion $\mathbf{q}$:
 
 $$\boldsymbol{\Sigma} = \mathbf{R}\mathbf{S}\mathbf{S}^\top\mathbf{R}^\top$$
 
-Rendering alpha-blends the projected 2D Gaussians in depth order. Each Gaussian's effective opacity $\alpha_i$ is the product of the learnable opacity $\sigma_i$ and the 2D Gaussian density $G_i(\mathbf{x})$ evaluated at the pixel location. The pixel color $C$ is
+Rendering alpha-blends the projected 2D Gaussians in depth order. Each Gaussian's effective opacity $\alpha_i$ is the product of the learnable opacity $o_i$ and the 2D Gaussian density $G_i(\mathbf{x})$ evaluated at the pixel location. The pixel color $C$ is
 
-$$C = \sum_{i \in N} c_i \alpha_i \prod_{j<i}(1 - \alpha_j), \quad \alpha_i = \sigma_i \cdot G_i(\mathbf{x})$$
+$$C = \sum_{i \in N} c_i \alpha_i \prod_{j<i}(1 - \alpha_j), \quad \alpha_i = o_i G_i(\mathbf{x})$$
 
 Unlike NeRF, which numerically approximates a volume-rendering integral, 3DGS runs directly through a GPU rasterization pipeline. Its tile-based rasterizer implements both forward and backward passes as custom CUDA kernels. On a single RTX 3090, it renders at more than 30 fps after training. This novel-view rendering rate cannot be compared directly as a speed ratio with NICE-SLAM's full tracking-and-mapping throughput.
 
@@ -5673,19 +5673,19 @@ In the Limitations & Future Work section of the 2024 CVPR paper, Keetha listed s
 
 [Matsuki et al. 2024. MonoGS (CVPR)](https://arxiv.org/abs/2312.06741), by Hidenobu Matsuki at Imperial College's Dyson Robotics Lab and his colleagues, removed the depth-sensor requirement. It performs 3DGS SLAM from a single monocular RGB camera.
 
-Scale is the central difficulty in the monocular setting because metric recovery without depth remains unsolved even in SfM. Matsuki optimized the Gaussian geometry directly and added a geometric-consistency loss between rendered depth and neighboring Gaussians.
+Scale is a central difficulty in the monocular setting: projective geometry alone does not determine absolute metric scale. Matsuki optimized Gaussian geometry directly and added an isotropy loss, but the monocular trajectory remains scale-free.
 
 $$\mathcal{L}_{iso} = \sum_k \| \mathbf{s}_k - \bar{s}_k \mathbf{1} \|_1$$
 
-Here $\mathbf{s}_k \in \mathbb{R}^3$ is the scale vector of the $k$-th Gaussian, and $\bar{s}_k = \frac{1}{3}\sum_j s_{k,j}$ is the mean scale across its three axes. This isotropy regularization prevents Gaussians from degenerating into excessively thin plates. Without depth supervision, monocular Gaussians tend to remain near the camera plane, and the regularizer suppresses that failure mode.
+Here $\mathbf{s}_k \in \mathbb{R}^3$ is the scale vector of the $k$-th Gaussian, and $\bar{s}_k = \frac{1}{3}\sum_j s_{k,j}$ is the mean scale across its three axes. Isotropy regularization discourages large differences between those axis lengths. It reduces elongation along the viewing direction when viewpoint constraints are insufficient, limiting artifacts that interfere with rendering and tracking.
 
-For tracking, Matsuki directly optimizes pose with the photometric loss from Gaussian rendering. During first-frame initialization, a monocular depth prior provides the initial Gaussian positions. Later frames begin from the previous pose and undergo rendering-based refinement. Without a depth sensor, isotropic regularization and geometry-consistency losses across keyframes jointly maintain scale.
+For tracking, Matsuki optimizes pose directly with the photometric loss between the Gaussian rendering and the observed image. New Gaussians at pixels with rendered depth are initialized around that depth with low variance; those without rendered depth are initialized around the rendered image's median depth with high variance. Multiview observations then refine these depth hypotheses. Neither initialization nor isotropy regularization recovers absolute metric scale.
 
-> 🔗 **Borrowed.** MonoGS's monocular depth prior follows the Godard MonoDepth2 lineage covered in Ch.11. MonoGS applies the premise that self-supervised monocular depth can recover structure without direct depth supervision to Gaussian initialization.
+> 🔗 **Distinction.** MonoGS uses neither a pretrained monocular depth predictor nor an external tracking module. The paper therefore does not support a direct MonoDepth2 lineage for its initialization.
 
 Matsuki worked at Imperial's Dyson Robotics Lab, as did Sucar on iMAP and Bloesch on CodeSLAM under Davison's supervision. MonoGS reflects the lab's transition from implicit MLPs to explicit Gaussian representations.
 
-On the TUM-RGBD dataset, MonoGS recorded an average ATE RMSE of 4.44 cm monocular and 1.58 cm RGB-D. Rendering quality in the RGB-D setting on Replica reached an average PSNR of 37.50 dB, comparable to other same-generation GS-SLAM systems.
+In [the first arXiv version of MonoGS, released in 2023](https://arxiv.org/abs/2312.06741v1), average ATE RMSE on TUM-RGBD was 4.44 cm monocular and 1.58 cm RGB-D. Monocular trajectories were aligned to ground truth with scale adjustment; RGB-D trajectories used rigid alignment only. Rendering quality in the RGB-D setting on Replica reached an average PSNR of 37.50 dB, comparable to other same-generation GS-SLAM systems.
 
 ---
 
@@ -5726,7 +5726,7 @@ Dynamic scenes. 4DGS and Deformable 3DGS added a time dimension to Gaussians. In
 
 GS-SLAM, SplaTAM, and MonoGS all retained the static-world assumption. A separate line of research had addressed moving and deforming environments from the outset.
 
-In 2015, Javier Fuentes-Pacheco, Ruiz-Ascencio, and Rendón-Mancha published [*Visual simultaneous localization and mapping: a survey*](https://link.springer.com/article/10.1007/s10462-012-9365-8) in *Artificial Intelligence Review*. Its final section addressed "Dynamic and Deformable Environments." Earlier papers had studied moving objects, but most treated them as outliers for RANSAC to reject. The survey was an early account that treated dynamic environments as a distinct topic. Ten years later, the 2025 *SLAM Handbook* devoted 37 pages to it. Its six authors were Lukas Schmid, José María Martínez Montiel, Shoudong Huang, Daniel Cremers, José Neira, and Javier Civera. Although static scenes had been SLAM's starting point, self-driving cars, domestic service robots, and endoscopes all had to operate in changing environments.
+In 2015, Javier Fuentes-Pacheco, Ruiz-Ascencio, and Rendón-Mancha published [*Visual simultaneous localization and mapping: a survey*](https://link.springer.com/article/10.1007/s10462-012-9365-8) in *Artificial Intelligence Review*. Its final section addressed "Dynamic and Deformable Environments." Earlier papers had studied moving objects, but most treated them as outliers for RANSAC to reject. The survey was an early account that treated dynamic environments as a distinct topic. Eleven years later, the April 21, 2026 manuscript of the *SLAM Handbook* devoted 37 pages to it. Its six authors were Lukas Schmid, José María Martínez Montiel, Shoudong Huang, Daniel Cremers, José Neira, and Javier Civera. Although static scenes had been SLAM's starting point, self-driving cars, domestic service robots, and endoscopes all had to operate in changing environments.
 
 ---
 
@@ -5760,11 +5760,11 @@ The Handbook groups this work under §15.2.3, "Dense Dynamic SLAM," and presents
 
 Short-term dynamics describe motion between frames, whereas long-term dynamics describe changes between visits, such as a chair moved overnight. Research on this problem followed a different lineage.
 
-Under Michaud's supervision at Sherbrooke, Mathieu Labbé developed [RTAB-Map](https://introlab.github.io/rtabmap/) beginning in 2013, drawing directly on models of human memory. It organized short-term, working, and long-term memory hierarchically and moved nodes according to time and observation frequency. A node remained in working memory during a session, moved to long-term memory if it was not revisited often, and was discarded if it no longer carried useful information. In a 2019 JFR paper, Labbé described how this structure scaled to multi-session SLAM. Hyungtae Lim, working under Ayoung Kim at KAIST, took a different approach in [ERASOR](https://arxiv.org/abs/2103.04316) (2021). He formulated map cleaning as scene differencing, identifying points that disappeared between two traversals of the same location.
+Under Michaud's supervision at Sherbrooke, Mathieu Labbé developed [RTAB-Map](https://introlab.github.io/rtabmap/) beginning in 2013, drawing directly on models of human memory. It organized short-term, working, and long-term memory hierarchically and moved nodes according to time and observation frequency. A node remained in working memory during a session, moved to long-term memory if it was not revisited often, and was discarded if it no longer carried useful information. In a 2019 JFR paper, Labbé described how this structure scaled to multi-session SLAM. Hyungtae Lim, Sungwon Hwang, and Hyun Myung at KAIST URL introduced [ERASOR](https://arxiv.org/abs/2103.04316) in 2021 to remove traces of moving objects from accumulated LiDAR maps. It compared regional height ranges in the map and individual scans to identify candidate regions, then used region-wise ground-plane fitting to distinguish ground from dynamic-object points.
 
 Handbook §15.3 repeatedly distinguishes **absence of evidence from evidence of absence**. A mapping system must determine whether an object has disappeared or was simply not observed. Without this distinction, map cleaning can erase valid objects and change detection can misclassify occluded regions. Schmid's [Panoptic Multi-TSDF](https://arxiv.org/abs/2109.10165), published in RA-L in 2022, addressed the problem with independent submaps for each object and a local-consistency rule for active and inactive states. The same group's [Khronos](https://arxiv.org/abs/2402.13817) (2024) further used graduated non-convexity for robust association. After loop closure, it performed deformable geometric change detection and estimated when each object changed, extending a metric-semantic map into a 4D spatio-temporal representation.
 
-> 🔗 **Borrowed.** Panoptic Multi-TSDF adapts the multi-map management introduced by Atlas in the ORB-SLAM work of Ch.7. It replaces keyframe submaps with panoptic object submaps while retaining the principle of partitioning a map that has become too large or heterogeneous.
+> 🔗 **Borrowed.** Panoptic Multi-TSDF combines volumetric submapping, which maintains multiple TSDF submaps, with object-centric mapping, which assigns separate models to objects.
 
 LiDAR research addressed the same problem separately. Jang, Lee, Nahrendra, and Myung at KAIST URL released [Chamelion](https://arxiv.org/abs/2602.08189) in 2026. It combined scene-mixing augmentation with a dual-head network to perform change detection without ground truth in transient environments such as construction sites and frequently rearranged indoor spaces. Khronos built a 4D representation from RGB-D and panoptic inputs, whereas Chamelion addressed long-term maintenance of point-cloud maps.
 
@@ -5786,7 +5786,7 @@ Many applications are medical. Song at Tsinghua released [MIS-SLAM](https://ieee
 
 Handbook §15.4.1 highlights a fundamental problem: **Floating Map Ambiguity**. Without a prior, observations cannot distinguish the rigid motion of a non-rigid object from the camera's rigid motion. The image alone cannot determine whether a hand moved 30 cm or the camera moved 30 cm. This differs from the conventional scale ambiguity of monocular SLAM because scale, trajectory, and deformation become coupled in one ill-posed problem. DefSLAM and NR-SLAM partially constrain the ambiguity with isometric and visco-elastic priors, but no principled solution existed as of 2026.
 
-> 📜 **Prediction vs. outcome.** In §7, Future Work, of DynamicFusion (2015), Newcombe identified extension to larger scenes and topological changes, along with integration with loop closure, as the next challenges. KillingFusion addressed topological change in 2017, and the surfel-based SurfelWarp (2019) partially addressed larger scenes. Loop closure did not appear until Khronos introduced deformable geometric change detection in 2024, nine years later.
+> 📜 **Prediction vs. outcome.** In §7, Future Work, of DynamicFusion (2015), Newcombe identified extension to larger scenes and topological changes, along with integration with loop closure, as the next challenges. KillingFusion addressed topological change in 2017, and the surfel-based SurfelWarp (2019) partially addressed larger scenes. Khronos combined a deformation graph, loop closures, and change detection in a long-term scene-mapping system in 2024. Khronos mapped scenes whose objects and arrangements changed over time.
 
 ---
 
@@ -6184,9 +6184,9 @@ Full visual-LiDAR fusion, solid-state sensor algorithms, dynamic-object handling
 
 By 2026, AR layers remained fixed to walls, indoor delivery robots distinguished kitchens from conference rooms without a supplied map, and DUSt3R-family models recovered 3D structure from a few photographs in seconds. These systems solved many of the problems that defined SLAM in 2003, but only under particular assumptions.
 
-The 2003 formulation assumed a static scene, stable lighting, bounded space, and the geometry of a single camera. Under those conditions, the EKF tracked state, graph SLAM closed loops, and ORB-SLAM managed keyframes. The solutions remain valid within the simplifying assumptions on which they were built.
+The 2003 formulation assumed a static scene, stable lighting, bounded space, and the geometry of a single camera. Under those conditions, the EKF tracked state, graph SLAM closed loops, and ORB-SLAM managed keyframes. The solutions remain valid within the simplifying assumptions on which they were built. Each assumption was a carefully chosen simplification.
 
-Across the preceding chapters, the unresolved problems recur beside the conditions under which individual methods succeed. Collected together, they reveal where apparently separate lineages face the same constraints.
+Yet unresolved problems remain alongside what each lineage has claimed to solve. The problems identified in the preceding chapters reveal, when considered together, where different lineages face the same constraints. These are existing problems whose shared structure can be examined, not newly posed questions.
 
 ---
 
@@ -6222,7 +6222,7 @@ Monocular scale is a geometric ambiguity established in 1980s SfM theory. Withou
 
 In the TSDF lineage, memory became a limit of the representation. [Voxblox](https://arxiv.org/abs/1611.03631) and [OctoMap](https://octomap.github.io/) reduced the cost, but memory for a dense representation still rises rapidly with mapped volume and voxel resolution, and no general adaptive-resolution policy has been established (see Ch.9 §🧭). NeRF-SLAM also remains open at city scale (see Ch.14 §🧭). In Gaussian Splatting, the required number of Gaussians rises with scene extent and detail; the [Compact 3DGS](https://arxiv.org/abs/2311.13681) (Lee et al. 2024) family explores compression, but no approach has become standard (see Ch.15 §🧭). Foundation 3D moves the limit into the transformer: attention across all image tokens has quadratic memory cost in the token count, making long sequences difficult, and Spann3R provides only a partial incremental solution (see Ch.16 §🧭). The representations differ, but each reaches a scale-dependent memory limit.
 
-Scale also raises **data movement cost**, the energy needed to move bits between processor and memory rather than the capacity of the representation alone. In Handbook Ch.18 §18.8, Davison proposes "on-device data movement, measured in bits × millimetres" as the 12th SLAM performance metric. [Hughes et al.](https://doi.org/10.15607/RSS.2022.XVIII.050) likewise describe how a hierarchical scene graph reduces memory from $O(L \cdot V/\delta^3)$ to $O(N_\text{sub} + N_\text{obj} + N_\text{rooms})$ (Handbook Ch.16 Eq. 16.34-16.36). It remains unclear whether mainstream evaluations will adopt data movement as a metric.
+Scale also raises **data movement cost**, the energy needed to move bits between processor and memory rather than the capacity of the representation alone. In Handbook Ch.18 §18.8, Davison proposes "on-device data movement, measured in bits × millimetres" as the 12th SLAM performance metric. Handbook Ch.16 distinguishes three representation costs: a flat voxel map storing labels requires $O(L\cdot V/\delta^3)$ (Eq. 16.34); a metric-semantic hierarchy requires $O(V/\delta^3+N_\text{objects}+N_\text{rooms}+\cdots)$ (Eq. 16.35); and a representation with a more compact sub-symbolic layer, such as a topological 3D scene graph, requires $O(N_\text{sub-sym}+N_\text{objects}+N_\text{rooms}+\cdots)$ (Eq. 16.36). The last reduction changes the geometric representation and can be lossy. It remains unclear whether mainstream evaluations will adopt data movement as a metric.
 
 ---
 
@@ -6244,9 +6244,9 @@ Davison frames the issue with a question: *"If a network has built a 3D model fr
 
 Visual SLAM and LiDAR SLAM addressed localization and mapping with different measurements and algorithms. Their lineages have not yet merged into a common architecture.
 
-LVI-SAM coupled visual odometry with LIO-SAM, but largely at a loosely coupled level. Autonomous-driving systems need LiDAR to take over when cameras fail in fog or rain, yet tightly coupled fusion remains difficult both algorithmically and in calibration (see Ch.17 §🧭). Solid-state LiDAR poses a related problem. Limited fields of view and non-repetitive patterns differ from the original LOAM's 360° scan-line assumptions. FAST-LIO2 and Livox LOAM address parts of this setting, but generalization across sensor families remains limited (see Ch.17 §🧭).
+LVI-SAM combines visual-inertial and lidar-inertial subsystems through factor graphs; its authors describe it as tightly coupled. The subsystems exchange information while retaining the ability to operate independently when needed. Algorithm design and calibration remain difficult in autonomous-driving conditions such as fog and rain (see Ch.17 §🧭). Solid-state LiDAR poses a related problem. Limited fields of view and non-repetitive patterns differ from the original LOAM's 360° scan-line assumptions. FAST-LIO2 and Livox LOAM address parts of this setting, but generalization across sensor families remains limited (see Ch.17 §🧭).
 
-Wide-baseline matching presents a related integration problem. Beyond 45 degrees of viewpoint change, Harris- and ORB-based matching drops sharply. DUSt3R bypasses explicit matching, but it is too early to know whether this resolves the descriptor problem or avoids it temporarily (see Ch.2 §2.7). Place recognition and metric localization also remain separate pipeline stages. Attempts from 2023–2025 to unify them in one representation achieved neither the required precision nor speed (see Ch.10 §10.7).
+Wide-baseline matching presents a related integration problem. Large viewpoint changes can degrade hand-crafted local features such as Harris and ORB; the methods do not establish a universal 45-degree cutoff across datasets. DUSt3R bypasses a traditional sparse-matching stage, but it is too early to know whether this resolves the descriptor problem or changes the formulation (see Ch.2 §2.7). Place recognition and metric localization also remain separate pipeline stages. Work from 2023–2025 sought to unify them in one representation, while the trade-off between metric accuracy and processing speed remained a practical concern (see Ch.10 §10.7).
 
 Event cameras show the lag between new hardware and mature algorithms. Commercial high-resolution event cameras spread after 2022, while integration with frame-based pipelines, event representations, and real-world benchmarks all remained under development (see Ch.18 §🧭). Kinect followed a similar sequence: the sensor launched in 2010 and KinectFusion arrived a year later.
 
@@ -6260,7 +6260,7 @@ Davison's Handbook Ch.18 emphasizes a topic rarely covered in SLAM histories: ma
 
 Dennard scaling broke, and single-core CPU clock speed stalled near 4 GHz in the mid-2000s; *"this has stopped being true"* (Handbook Ch.18, p.528). Wearable Spatial AI still has to fit into glasses weighing 65 g and consuming less than 1 W. The gap favors heterogeneous, specialized, parallel hardware.
 
-Several hardware examples appeared by the mid-2020s. [Apple Vision Pro R1](https://www.apple.com/apple-vision-pro/specs/) (2023) is a dedicated chip for 12 ms sensor processing; [Meta ARIA Gen 2](https://www.projectaria.com/ariagen2/) (2024) carries custom silicon for "ultra low power and on-device machine perception." The [Graphcore IPU](https://www.graphcore.ai/products/ipu) has thousands of independent cores with local memory communicating by message passing. Manchester's [SCAMP5](https://personalpages.manchester.ac.uk/staff/p.dudek/papers/carey-iscas2013.pdf) implements 256×256 per-pixel in-plane processing at 1.2 W, while [SpiNNaker](https://apt.cs.manchester.ac.uk/projects/SpiNNaker/) connects up to one million ARM cores in a neuromorphic structure. Each supports a different graph topology, and no systematic theory maps Spatial AI algorithms to these architectures.
+Several hardware examples appeared by the mid-2020s. [Apple Vision Pro R1](https://www.apple.com/apple-vision-pro/specs/) (2023) is a dedicated chip for 12 ms sensor processing; [Meta Aria Gen 2](https://ai.meta.com/blog/aria-gen-2-research-glasses-under-the-hood-reality-labs/) (2025) carries custom silicon for "ultra low power and on-device machine perception." The [Graphcore IPU](https://www.graphcore.ai/products/ipu) has thousands of independent cores with local memory communicating by message passing. Manchester's [SCAMP5](https://personalpages.manchester.ac.uk/staff/p.dudek/papers/carey-iscas2013.pdf) implements 256×256 per-pixel in-plane processing at 1.2 W, while [SpiNNaker](https://apt.cs.manchester.ac.uk/projects/SpiNNaker/) connects up to one million ARM cores in a neuromorphic structure. Each supports a different graph topology, and no systematic theory maps Spatial AI algorithms to these architectures.
 
 Davison's later work on **Gaussian Belief Propagation** addresses this hardware structure. [Ortiz et al.](https://arxiv.org/abs/2203.11618) (2022) accelerated bundle adjustment on the IPU with GBP by 30× over a CPU, and [Murai et al. Robot Web](https://arxiv.org/abs/2306.04620) (2024) demonstrated multi-robot SLAM in which robots shared factor-graph fragments over Wi-Fi and converged through asynchronous message passing. The motivation was that *"we must get away from the idea that a 'god's eye view' of the whole structure of the graph will ever be available"* (Handbook Ch.18, p.541). The factor graph becomes the main representation, and local messages replace full-posterior computation. Whether this approach will combine with transformer-based systems such as MASt3R-SLAM remains unanswered.
 
@@ -6296,9 +6296,11 @@ Methods regarded as solved in 2026 remain conditional in the same way. Their nex
 
 ## 19.9 Lineage map
 
+Years refer to the conference or journal publication, or the earlier public release, discussed in each chapter. SE-Sync (2019), VINS-Mono (2018), and FAST-LIO (2021) use journal publication years; ORB-SLAM3 (2020) and MASt3R-SLAM (2024) use earlier release dates. The labels therefore do not provide a uniform comparison of first-publication dates.
+
 ```mermaid
 graph TD
-  PM[사진측량 1858]
+  PM[Photogrammetry 1858]
   BA[Bundle Adjustment<br/>Brown 1958]
   SfM[Photo Tourism 2006]
   COLMAP[COLMAP 2016]
@@ -6347,6 +6349,7 @@ graph TD
   VGGT[VGGT 2025]
   MASlam[MASt3R-SLAM 2024]
 
+  Kimera[Kimera 2020]
   Hydra[Hydra 2022]
   Clio[Clio 2024]
 
@@ -6355,17 +6358,20 @@ graph TD
   PTAM -.-> LSD --> DSO --> VIDSO
   LM --> FG --> iSAM --> iSAM2
   FG --> g2o
-  iSAM2 -.-> SESync --> TEASER
-  Forster --> VINS --> ORB3
-  VIDSO --> Forster
+  FG -.-> SESync
+  Forster --> VINS
+  Forster --> ORB3
+  Forster --> VIDSO
   Kinect --> Elastic
-  Elastic -.-> LOAM --> FAST
+  LOAM -.-> FAST
   NeRF --> iMAP --> NICE
-  NICE -.-> GS3D --> Spla --> MonoGS
-  PTAM -.-> DROID --> DPV
-  COLMAP -.-> DUSt3R --> MASt --> VGGT
+  GS3D --> Spla
+  GS3D --> MonoGS
+  DROID --> DPV
+  COLMAP -.-> DUSt3R --> MASt
+  DUSt3R -.-> VGGT
   MASt --> MASlam
-  ORB3 -.-> Hydra --> Clio
+  Kimera --> Hydra --> Clio
 
   click PM "#chapter-1" "Ch.1 Prehistory — Photogrammetry"
   click BA "#chapter-1" "Ch.1 Prehistory — Bundle Adjustment"
@@ -6404,6 +6410,7 @@ graph TD
   click MASt "#chapter-16" "Ch.16 — MASt3R"
   click VGGT "#chapter-16" "Ch.16 — VGGT"
   click MASlam "#chapter-16" "Ch.16 — MASt3R-SLAM"
+  click Kimera "#chapter-16" "Ch.16 — Kimera"
   click Hydra "#chapter-16" "Ch.16 §16.6 Semantic Foundation"
   click Clio "#chapter-16" "Ch.16 §16.6 — Clio"
 ```

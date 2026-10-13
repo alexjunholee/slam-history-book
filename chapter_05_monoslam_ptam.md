@@ -2,7 +2,7 @@
 
 EKF-SLAM은 상태와 불확실성을 함께 추정하는 지도 구축 방법을 제시했지만, 공분산 행렬이 landmark 수 $N$에 대해 $O(N^2)$로 커지는 구조적 벽에 부딪혔다. Davison과 Klein은 여기서부터 각자 다른 방향으로 걸었다.
 
-2003년, Davison은 Imperial College 실험실에서 웹캠 한 대를 노트북에 꽂았다. 1988년 Smith와 Cheeseman이 세운 확률 공간관계 수학, 그 위에 Leonard와 Durrant-Whyte가 얹은 EKF-SLAM 틀을 그대로 가져왔지만 센서는 카메라 하나뿐이었다. IMU도 스테레오도 레이저도 없는 상태에서 Shi-Tomasi 1994 코너 검출기와 Kalman 예측-갱신 루프만 붙여 실시간으로 돌렸다. 당시 기준으로 무모한 조합이었다.
+2003년, Oxford의 Davison은 손에 들고 움직이는 카메라의 위치와 주변 지도를 데스크톱 PC에서 실시간으로 추정했다. 1988년 Smith와 Cheeseman이 세운 확률 공간관계 수학, 그 위에 Leonard와 Durrant-Whyte가 얹은 EKF-SLAM 틀을 가져왔지만 센서는 카메라 하나뿐이었다. IMU도 스테레오도 레이저도 없이 Shi-Tomasi 1994 코너 검출기와 Kalman 예측-갱신 루프를 사용했다. 당시 기준으로 무모한 조합이었다.
 
 4년 뒤 2007년, Oxford의 Klein과 Murray가 다른 답을 냈다. tracking과 mapping을 두 스레드로 쪼갠 것이다. 그 분리가 이후 10년 Visual SLAM의 뼈대가 되었다.
 
@@ -14,7 +14,7 @@ EKF-SLAM은 상태와 불확실성을 함께 추정하는 지도 구축 방법�
 
 당시 SLAM 분야의 주류는 레이저 센서였다. LiDAR는 2D 거리를 직접 제공했고, 스테레오 카메라는 픽셀 수준에서 깊이를 복원했다. 단안 카메라는 깊이 정보 자체가 없었다. 단안으로 3D 구조를 추정하려면 최소 두 프레임이 필요했고, 초기 깊이 추정의 불확실성이 EKF 상태 벡터 전체로 전파되었다. 이론적으로 가능했지만 실시간으로 돌린다는 것은 별개의 문제였다.
 
-MonoSLAM은 IMU나 스테레오 카메라 없이 단안 카메라만 썼다. 이 구성은 추가 하드웨어와 스테레오 캘리브레이션을 요구하지 않았다. 단안 실시간 SLAM의 가능성은 증명됐지만, EKF 구조는 센서와 지도를 확장하는 데 맞지 않았다.
+MonoSLAM은 IMU나 스테레오 카메라 없이 단안 카메라만 썼다. 이 구성은 추가 하드웨어와 스테레오 캘리브레이션을 요구하지 않았다. 단안 실시간 SLAM의 가능성은 증명됐지만, 지도가 커질수록 EKF 공분산 행렬의 계산 부담도 늘었다.
 
 ---
 
@@ -42,7 +42,7 @@ MonoSLAM의 상태 벡터는 [Smith-Cheeseman(1988)](https://arxiv.org/abs/1304.
 
 2007년 ISMAR에 Klein과 Murray가 [Parallel Tracking and Mapping for Small AR Workspaces](https://doi.org/10.1109/ISMAR.2007.4538852)를 올렸다. 같은 해 PAMI에는 Davison의 MonoSLAM 정식판이 실렸고, 두 논문의 연구 계보도 맞닿아 있었다.
 
-Klein은 당시 Murray 그룹 박사과정이었다. Murray 그룹은 Oxford Active Vision Laboratory의 직계였고, 몇 년 전까지 Davison이 박사과정 학생으로 있던 바로 그 방이었다. Murray는 Davison의 지도교수였다. 같은 연구실 계보에서 나온 PTAM은 MonoSLAM이 보여 준 단안 실시간 가능성을 이어받되, EKF 대신 다른 구조를 택했다.
+Klein은 Cambridge에서 Tom Drummond의 지도로 박사학위를 받았고, PTAM을 발표할 당시에는 Oxford에서 Murray와 함께 일하는 박사후 연구원이었다. Murray는 Davison의 지도교수이기도 했다. 이 연구실 계보에서 나온 PTAM은 MonoSLAM이 보여 준 단안 실시간 가능성을 이어받되, EKF 대신 tracking과 mapping을 분리하는 구조를 택했다.
 
 단안 실시간의 가능성은 확인됐다. PTAM은 확장을 위해 EKF 대신 tracking과 mapping을 분리한 구조를 택했다.
 

@@ -2,7 +2,7 @@
 
 Harris와 Lowe가 이미지 안에서 "볼 만한 점"을 골라내는 방법을 다듬는 동안, 다른 계보는 그 점들이 두 장의 사진에 동시에 찍혔을 때 무엇을 알 수 있는가를 물었다. 특징을 *검출*하는 문제와 특징으로부터 *공간을 재구성*하는 문제는 같은 시기에 각자 발전했고, 2000년대 중반에야 하나의 파이프라인으로 합쳐졌다.
 
-1981년 케임브리지 이론심리학자 H.C. Longuet-Higgins는 *Nature*에 세 페이지짜리 논문을 실었다. 제목은 "[A Computer Algorithm for Reconstructing a Scene from Two Projections](https://cseweb.ucsd.edu/classes/fa01/cse291/hclh/SceneReconstruction.pdf)". 그는 두 장의 사진에 찍힌 같은 점들의 좌표 여덟 쌍으로 카메라의 상대 운동과 장면 구조를 복원하는 선형 알고리즘을 제시했다. 로봇공학자도 컴퓨터 비전 연구자도 아니었다. 사진측량과 motion perception에 선행 연구가 있었으므로 이 논문을 SfM 전체의 시작으로 볼 수는 없지만, 현대 컴퓨터 비전의 two-view geometry를 여는 영향력 있는 전환점이었다. 이후 self-calibration, incremental SfM, Bundler와 대규모 인터넷 사진 재구성이 이어졌고, Johannes Schönberger의 2016년 COLMAP은 그 축적을 강건한 범용 오픈소스 파이프라인으로 정리했다.
+1981년 서식스 대학교의 H.C. Longuet-Higgins는 *Nature*에 세 페이지짜리 논문을 실었다. 제목은 "[A Computer Algorithm for Reconstructing a Scene from Two Projections](https://cseweb.ucsd.edu/classes/fa01/cse291/hclh/SceneReconstruction.pdf)". 그는 두 장의 사진에 찍힌 같은 점들의 좌표 여덟 쌍으로 카메라의 상대 운동과 장면 구조를 복원하는 선형 알고리즘을 제시했다. 당시 소속은 실험심리학 연구실이었다. 사진측량과 motion perception에 선행 연구가 있었으므로 이 논문을 SfM 전체의 시작으로 볼 수는 없지만, 현대 컴퓨터 비전의 two-view geometry를 여는 영향력 있는 전환점이었다. 이후 self-calibration, incremental SfM, Bundler와 대규모 인터넷 사진 재구성이 이어졌고, Johannes Schönberger의 2016년 COLMAP은 그 축적을 강건한 범용 오픈소스 파이프라인으로 정리했다.
 
 ---
 

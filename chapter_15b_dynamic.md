@@ -1,6 +1,6 @@
 # Ch.15b — 정적 세계 가정이 무너지는 자리: Dynamic과 Deformable SLAM
 
-2015년 Javier Fuentes-Pacheco는 동료 Ruiz-Ascencio, Rendón-Mancha와 함께 [*Visual simultaneous localization and mapping: a survey*](https://link.springer.com/article/10.1007/s10462-012-9365-8)를 *Artificial Intelligence Review*에 발표했다. 그 서베이의 마지막 절이 "Dynamic and Deformable Environments"였다. 그 이전에도 움직이는 물체를 다룬 논문은 있었지만 대부분 RANSAC이 걸러내야 할 outlier로 취급했다. 이 서베이는 동적 환경을 독립 주제로 묶어 다룬 이른 문헌이었다. 11년이 지난 2026년, *The SLAM Handbook*은 이 주제에 37페이지를 할애했다. 저자는 Lukas Schmid, José María Martínez Montiel, Shoudong Huang, Daniel Cremers, José Neira, Javier Civera 여섯 명이다. 정적 세계는 SLAM의 출발점이었지만, 거리의 자율주행차와 집안의 서비스 로봇, 장기의 내시경은 모두 그 가정 밖에서 작동해야 했다.
+2015년 Javier Fuentes-Pacheco는 동료 Ruiz-Ascencio, Rendón-Mancha와 함께 [*Visual simultaneous localization and mapping: a survey*](https://link.springer.com/article/10.1007/s10462-012-9365-8)를 *Artificial Intelligence Review*에 발표했다. 그 서베이의 마지막 절이 "Dynamic and Deformable Environments"였다. 그 이전에도 움직이는 물체를 다룬 논문은 있었지만 대부분 RANSAC이 걸러내야 할 outlier로 취급했다. 이 서베이는 동적 환경을 독립 주제로 묶어 다룬 이른 문헌이었다. 11년 뒤인 2026년 4월 21일자 *The SLAM Handbook* 원고는 이 주제에 37페이지를 할애했다. 저자는 Lukas Schmid, José María Martínez Montiel, Shoudong Huang, Daniel Cremers, José Neira, Javier Civera 여섯 명이다. 정적 세계는 SLAM의 출발점이었지만, 거리의 자율주행차와 집안의 서비스 로봇, 장기의 내시경은 모두 그 가정 밖에서 작동해야 했다.
 
 ---
 
@@ -34,11 +34,11 @@ Handbook은 이 계보를 §15.2.3 "Dense Dynamic SLAM"으로 정리하면서 Sc
 
 Short-term이 프레임 사이의 운동이라면, long-term은 방문 사이의 변화다. 어제 본 의자가 오늘은 옆으로 밀려 있다. 이 문제는 다른 계보에서 자랐다.
 
-Sherbrooke의 Mathieu Labbé가 Michaud 지도 아래 2013년부터 개발한 [RTAB-Map](https://introlab.github.io/rtabmap/)은 인간 기억 모델에서 직접 빌려왔다. short-term, working, long-term memory의 계층을 두고, 시간과 관측 빈도에 따라 노드를 옮겼다. 한 세션 안에서는 작동 메모리에 남고, 자주 방문하지 않으면 장기 메모리로 내려가고, 의미가 없어지면 폐기되는 구조다. 2019년 JFR 논문에서 Labbé는 이 구조가 다중 세션 SLAM에서 어떻게 스케일하는지 정리했다. 한국과학기술원 김아영 팀의 임현준이 2021년 발표한 [ERASOR](https://arxiv.org/abs/2103.04316)는 지도를 깨끗이 만드는 문제를 scene differencing으로 풀었다. 같은 장소를 두 번 지나갔을 때 사라진 점을 찾아낸다.
+Sherbrooke의 Mathieu Labbé가 Michaud 지도 아래 2013년부터 개발한 [RTAB-Map](https://introlab.github.io/rtabmap/)은 인간 기억 모델에서 직접 빌려왔다. short-term, working, long-term memory의 계층을 두고, 시간과 관측 빈도에 따라 노드를 옮겼다. 한 세션 안에서는 작동 메모리에 남고, 자주 방문하지 않으면 장기 메모리로 내려가고, 의미가 없어지면 폐기되는 구조다. 2019년 JFR 논문에서 Labbé는 이 구조가 다중 세션 SLAM에서 어떻게 스케일하는지 정리했다. KAIST URL의 임형태·황성원·명현이 2021년 발표한 [ERASOR](https://arxiv.org/abs/2103.04316)는 누적된 LiDAR 지도에서 움직이는 물체가 남긴 흔적을 제거했다. 지도와 개별 스캔의 영역별 높이 범위를 비교해 동적 점이 있을 법한 구역을 고르고, 구역별 지면 추정으로 지면과 동적 물체의 점을 구별했다.
 
 Handbook §15.3 전체를 관통하는 구분이 하나 있다. **absence of evidence vs evidence of absence**. 의자가 없는 것인지, 내가 못 본 것인지를 구별해야 한다. 이 구분이 빠지면 map cleaning은 정당한 객체를 지우고, change detection은 가려진 영역을 잘못 판정한다. Schmid가 2022년 RA-L에 발표한 [Panoptic Multi-TSDF](https://arxiv.org/abs/2109.10165)는 이 문제를 submap 구조로 풀었다. 각 객체를 독립 submap으로 관리하고, local consistency 하에서 active와 inactive를 구분했다. 같은 그룹이 2024년 낸 [Khronos](https://arxiv.org/abs/2402.13817)는 graduated non-convexity로 association을 견고화하고, loop closure 이후에도 deformable geometric change detection을 돌려, 각 객체의 변화 시점까지 추정한다. Metric-semantic 지도가 4D spatio-temporal 지도로 바뀐다.
 
-> 🔗 **차용.** Panoptic Multi-TSDF는 여러 TSDF submap을 함께 관리하는 volumetric submapping과, 객체별 모델을 두는 object-centric mapping 계열을 결합했다. 논문의 관련 연구와 참고문헌에서는 ORB-SLAM Atlas를 직접 계승했다는 근거가 확인되지 않는다.
+> 🔗 **차용.** Panoptic Multi-TSDF는 여러 TSDF submap을 함께 관리하는 volumetric submapping과, 객체별 모델을 두는 object-centric mapping 계열을 결합했다.
 
 같은 질문은 LiDAR 쪽에서 별도 계보로 전개됐다. KAIST URL의 Jang·Lee·Nahrendra·Myung이 2026년 공개한 [Chamelion](https://arxiv.org/abs/2602.08189)은 dual-head 네트워크 위에 scene-mixing augmentation을 얹어, 공사 현장이나 재배치가 잦은 실내처럼 구조가 자주 바뀌는 transient 환경에서 change detection을 ground truth 없이 돌린다. Khronos가 RGB-D·panoptic 쪽에서 4D를 세웠다면, Chamelion은 포인트 클라우드 위에서 long-term map maintenance 쪽으로 그 질문을 끌고 간다.
 
@@ -60,7 +60,7 @@ Tsinghua의 Song이 2018년 낸 [MIS-SLAM](https://ieeexplore.ieee.org/document/
 
 Handbook §15.4.1은 **Floating Map Ambiguity**를 강조한다. 비강체 객체의 rigid motion과 카메라의 rigid motion은 prior 없이는 구별되지 않는다. 손이 30cm 움직인 것인지 카메라가 30cm 움직인 것인지, 관측만으로는 어느 쪽도 말할 수 없다. 이 운동 분해의 모호성은 단안 SLAM의 오래된 scale ambiguity와는 성격이 다르다. Scale만이 아니라 trajectory와 deformation이 동시에 결합하여 ill-posed가 된다. DefSLAM과 NR-SLAM이 isometric prior, visco-elastic prior로 이 ambiguity를 부분적으로 깨지만, 원리적 해법은 2026년 기준에도 없다.
 
-> 📜 **예언 vs 실제.** Newcombe는 DynamicFusion(2015) §7 Future Work에서 "extension to larger scenes and topology changes"와 "integration with loop closure"를 다음 과제로 꼽았다. 토폴로지 변화는 2017년 KillingFusion이 다뤘고, 대규모 scene은 surfel 기반 SurfelWarp(2019)가 일부 확장했다. 2024년 Khronos도 deformation graph, loop closure, change detection을 한 장기 scene-mapping 시스템에 결합했다. 다만 Khronos 논문은 DynamicFusion을 인용하지 않으므로, 이를 DynamicFusion의 Future Work에 대한 직접 응답이라고 단정할 근거는 없다.
+> 📜 **예언 vs 실제.** Newcombe는 DynamicFusion(2015) §7 Future Work에서 "extension to larger scenes and topology changes"와 "integration with loop closure"를 다음 과제로 꼽았다. 토폴로지 변화는 2017년 KillingFusion이 다뤘고, 대규모 scene은 surfel 기반 SurfelWarp(2019)가 일부 확장했다. 2024년 Khronos도 deformation graph, loop closure, change detection을 한 장기 scene-mapping 시스템에 결합했다. Khronos의 대상은 시간에 따라 물체가 놓인 위치와 구성이 달라지는 장면의 지도였다.
 
 ---
 

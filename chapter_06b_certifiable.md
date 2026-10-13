@@ -74,7 +74,7 @@ Range-aided SLAM은 [Papalia et al. CORA (2024)](https://arxiv.org/abs/2302.1161
 
 Landmark 쪽에서는 [Holmes & Barfoot (2023)](https://arxiv.org/abs/2308.05631)이 Schur complement로 landmark를 미리 소거해 SE-Sync에 바로 넣을 수 있는 형태로 만들었다. Holmes·Khosoussi·Rosen은 Handbook Ch.6을 공저했다. 이 계보가 2025년 한 테이블에 모였다.
 
-그러나 벽도 드러났다. anisotropic noise와 truncated-quadratic outlier를 POP(Polynomial Optimization Problem)로 일반화하면 Lasserre moment relaxation이 필요한데, 유도된 SDP가 **degenerate**해 constraint qualification이 실패하고 Riemannian Staircase의 수렴 조건이 깨진다. Yang의 2022년 sparse monomial basis 같은 우회가 있지만 전용 solver는 일반 local solver보다 느리다. 속도와 증명 가능성을 동시에 확보하는 알고리즘은 아직 없다. Visual SLAM·VIO에는 perspective projection과 IMU preintegration의 구조적 비호환이라는 더 깊은 장벽이 있다.
+그러나 벽도 드러났다. anisotropic noise와 truncated-quadratic outlier를 POP(Polynomial Optimization Problem)로 일반화하면 Lasserre moment relaxation이 필요한데, 유도된 SDP가 **degenerate**해 Riemannian Staircase의 수렴 보장에 필요한 constraint qualification이 성립하지 않을 수 있다. 이는 수렴 보장을 적용할 수 없다는 뜻이지 모든 실행이 발산한다는 뜻은 아니다. Yang의 2022년 sparse monomial basis 같은 우회가 있지만 전용 solver는 일반 local solver보다 느리다. Visual SLAM·VIO에서는 perspective projection과 IMU preintegration을 이 정식화에 포함하는 문제도 남아 있다.
 
 > 📜 **예언 vs 실제.** Carlone이 2015년 ICRA에서 "Lagrangian dual이 tight한 인스턴스가 왜 대부분인지 이론적 해명이 필요하다"고 적었다. 10년이 지났고, 답은 부분적으로만 나왔다. Rosen-Carlone-Bandeira-Leonard의 exact recovery 정리가 "노이즈가 $\beta$ 이하"라는 충분조건을 주었지만, 실제 SLAM 인스턴스에서 $\beta$를 사전에 계산하는 방법은 없다. tightness가 언제 깨지는지에 대한 **사전**(a priori) 조건은 2026년 기준 여전히 per-instance certificate로 대체되어 있다.
 

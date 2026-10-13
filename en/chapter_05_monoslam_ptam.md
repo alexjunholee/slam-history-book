@@ -2,7 +2,7 @@
 
 EKF-SLAM provided a way to estimate a map together with its uncertainty, but its covariance matrix hit a structural wall that grew as $O(N^2)$ in the number of landmarks $N$. The theory was not wrong; the limit followed from the design. Davison and Klein responded in different ways.
 
-In 2003, Davison plugged a single webcam into a laptop in an Imperial College lab. He carried over the probabilistic spatial-relations mathematics that Smith and Cheeseman had laid down in 1988 and the EKF-SLAM structure that Leonard and Durrant-Whyte had built on it, but used a single camera as the sensor. With no IMU or stereo rig, he combined the 1994 Shi-Tomasi corner detector with a Kalman predict-update loop and ran the system in real time. By the standards of the day, it was an unusual combination.
+In 2003, Davison at Oxford estimated the pose of a hand-held camera and a map of its surroundings in real time on a desktop PC. He carried over the probabilistic spatial-relations mathematics that Smith and Cheeseman had laid down in 1988 and the EKF-SLAM structure that Leonard and Durrant-Whyte had built on it, but used a single camera as the sensor. With no IMU, stereo rig, or laser, he combined the 1994 Shi-Tomasi corner detector with a Kalman predict-update loop. By the standards of the day, it was an unusual combination.
 
 Four years later, in 2007, Klein and Murray at Oxford offered a different answer. They split tracking and mapping into two threads, an architecture that became the backbone of Visual SLAM for the next ten years.
 
@@ -10,11 +10,11 @@ Four years later, in 2007, Klein and Murray at Oxford offered a different answer
 
 ## 1. The 2003 demo
 
-At ICCV 2003, Davison's [Real-Time Simultaneous Localisation and Mapping with a Single Camera](https://doi.org/10.1109/ICCV.2003.1238654) stirred the room. The individual components were familiar; seeing them work together in real time was not.
+At ICCV 2003, Davison presented [Real-Time Simultaneous Localisation and Mapping with a Single Camera](https://doi.org/10.1109/ICCV.2003.1238654). It was an early demonstration of real-time SLAM using a monocular camera alone.
 
 The mainstream of SLAM at the time used laser sensors. LiDAR delivered 2D ranges directly, and stereo cameras recovered depth at the pixel level. A monocular camera had no depth information to begin with. Estimating 3D structure from a single camera required at least two frames, and uncertainty in the initial depth estimate propagated through the entire EKF state vector. The theory existed; real-time implementation remained difficult.
 
-Davison chose a monocular camera for practical reasons. An IMU meant extra hardware, and stereo carried a calibration burden. He wanted "to prove it with one camera," reasoning that other sensors could be added later. That logic held. The EKF's capacity to absorb those additions did not.
+MonoSLAM used a single camera without an IMU or stereo rig, avoiding the extra hardware and stereo calibration those configurations require. It demonstrated the feasibility of monocular real-time SLAM, while the EKF's growing covariance matrix limited map size.
 
 ---
 
@@ -42,7 +42,7 @@ That bounded feature count exposed the EKF's ceiling. Klein confronted the same 
 
 In 2007, Klein and Murray presented [Parallel Tracking and Mapping for Small AR Workspaces](https://doi.org/10.1109/ISMAR.2007.4538852) at ISMAR. The same year, PAMI carried the finished version of Davison's MonoSLAM. Their appearance in the same year reflected a direct lineage.
 
-Klein was then a doctoral student in Murray's group, which continued the Oxford Active Vision Laboratory where Davison had recently completed his doctorate under Murray. Klein saw in MonoSLAM not the EKF itself but proof that a monocular camera could run in real time.
+Klein had completed his doctorate under Tom Drummond at Cambridge and was working with Murray as a postdoctoral researcher at Oxford when PTAM appeared. Murray had also supervised Davison. PTAM continued MonoSLAM's demonstration of monocular real-time operation within this research lineage, but replaced the EKF with separate tracking and mapping threads.
 
 The next problem was scale, and Klein discarded the EKF.
 
@@ -70,7 +70,7 @@ The essential matrix $\mathbf{E}$ is a $3\times 3$ matrix capturing the pure geo
 
 > 🔗 **Borrowed.** PTAM's 5-point essential-matrix initialization follows the minimal-solver lineage opened by David Nistér's 2004 "An Efficient Solution to the Five-Point Relative Pose Problem" (the PTAM paper directly cites the follow-up Stewénius·Engels·Nistér 2006 ISPRS). Nistér's solver used the minimum number of correspondences needed to build a monocular camera's initial map. PTAM placed it inside a RANSAC loop to estimate the relative pose of the first two keyframes at near-real-time speed.
 
-> 🔗 **Borrowed.** PTAM's keyframe structure traces back to the Leonard-Durrant-Whyte submap idea. The notion that "if the full map is hard to optimize at once, break it into regions" was expressed in PTAM as a set of keyframes. The covisibility graph of the subsequent ORB-SLAM is a more refined version of this keyframe management.
+> 🔀 **Structural parallel.** Leonard-Durrant-Whyte submaps and PTAM's keyframe map both manage computation through selected local units. The PTAM paper, however, does not cite that submap lineage as a direct design source. It explains keyframe selection through parallel tracking and mapping and the needs of local bundle adjustment. ORB-SLAM later added a covisibility graph.
 
 ---
 

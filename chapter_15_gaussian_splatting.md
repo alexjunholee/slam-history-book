@@ -74,15 +74,15 @@ monocular 설정에서는 scale이 문제다. depth 없이 절대 메트릭 스�
 
 $$\mathcal{L}_{iso} = \sum_k \| \mathbf{s}_k - \bar{s}_k \mathbf{1} \|_1$$
 
-여기서 $\mathbf{s}_k \in \mathbb{R}^3$는 k번째 Gaussian의 스케일 벡터, $\bar{s}_k = \frac{1}{3}\sum_j s_{k,j}$는 세 축 스케일의 평균이다. 이 등방성(isotropy) 정규화는 Gaussian이 지나치게 얇은 판 형태로 퇴화하는 것을 막는다. monocular에서 depth 감독 없이 Gaussian이 카메라 평면에 달라붙는 현상을 억제한다.
+여기서 $\mathbf{s}_k \in \mathbb{R}^3$는 k번째 Gaussian의 스케일 벡터, $\bar{s}_k = \frac{1}{3}\sum_j s_{k,j}$는 세 축 스케일의 평균이다. 이 등방성(isotropy) 정규화는 세 축의 길이가 크게 벌어지는 것을 억제한다. 충분한 시점 제약이 없을 때 Gaussian이 시선 방향으로 길게 늘어나 렌더링과 추적을 방해하는 현상을 줄인다.
 
-Tracking에서 Matsuki는 포즈를 Gaussian 렌더링 photometric loss로 직접 최적화했다. 새 Gaussian을 만들 때 해당 픽셀에 렌더링된 depth가 있으면 이를 쓰고, 없으면 렌더링된 depth의 중앙값을 사용한다. 이 절차와 등방성 손실은 내부 지도의 상대적 스케일을 일관되게 유지하지만, 절대 메트릭 스케일을 복원하지는 않는다.
+Tracking에서 Matsuki는 Gaussian을 렌더링한 영상과 관측 영상의 photometric loss로 포즈를 직접 최적화했다. 새 Gaussian을 넣을 때 렌더링된 depth가 있는 픽셀은 그 깊이 주변에 작은 분산으로, depth가 없는 픽셀은 렌더링된 깊이의 중앙값 주변에 큰 분산으로 초기화한다. 이렇게 만든 깊이 가설은 여러 시점의 관측으로 조정한다. 초기화와 등방성 손실이 절대 메트릭 스케일을 복원하는 것은 아니다.
 
 > 🔗 **구분.** MonoGS는 pretrained monocular depth predictor나 외부 tracking 모듈을 사용하지 않는다. 따라서 MonoDepth2를 직접 차용했다는 계보는 논문에서 확인되지 않는다.
 
 Matsuki는 Imperial Dyson Robotics Lab 출신이다. Davison이 지도한 연구실에서 나온 Sucar(iMAP), Bloesch(CodeSLAM)와 같은 계보다. Lab의 관심이 implicit MLP → Gaussian explicit 표현으로 이동한 흐름을 MonoGS가 대표한다.
 
-TUM-RGBD 데이터셋에서 MonoGS는 monocular 평균 ATE RMSE 4.44cm, RGB-D 1.58cm를 기록했다. 단안 ATE는 정답 궤적에 scale alignment를 한 뒤 평가한 값이고, RGB-D는 rigid alignment만 적용했다. 렌더링 품질은 RGB-D 설정 Replica 기준 평균 PSNR 37.50 dB로 동세대 GS-SLAM 계열과 견줄 만한 수준이었다.
+[MonoGS의 2023년 첫 arXiv 원고](https://arxiv.org/abs/2312.06741v1)에서 TUM-RGBD 데이터셋의 평균 ATE RMSE는 monocular 4.44cm, RGB-D 1.58cm였다. 단안 ATE는 정답 궤적에 scale alignment를 한 뒤 평가한 값이고, RGB-D는 rigid alignment만 적용했다. 렌더링 품질은 RGB-D 설정 Replica 기준 평균 PSNR 37.50 dB로 동세대 GS-SLAM 계열과 견줄 만한 수준이었다.
 
 ---
 

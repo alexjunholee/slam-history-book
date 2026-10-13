@@ -28,9 +28,9 @@ The core is the **reprojection error**. Minimize the difference between the 2D i
 
 $$E = \sum_{i,j} \| x_{ij} - \pi(K_i, R_i, t_i, X_j) \|^2$$
 
-The name "bundle" comes from the bundle of rays extending out from each camera center to the observed 3D points. Camera poses and point locations are adjusted together so that those rays meet at the 3D points. It took forty years for a technique that began in military and intelligence applications to be absorbed into academia.
+The name "bundle" comes from the bundle of rays extending out from each camera center to the observed 3D points. Camera poses and point locations are adjusted together so that those rays meet at the 3D points. Brown worked in military surveying, but bundle adjustment continued to develop in the photogrammetric literature.
 
-> 🔗 **Borrowed.** Bundle techniques from satellite geolocation entered the computer vision community in the 1990s. While military classification kept those methods out of reach, academia independently rediscovered the same problem. Triggs 1999 is where the two streams met.
+> 🔗 **Translation.** Triggs et al. (1999) synthesized photogrammetric bundle adjustment for potential implementers in computer vision. The paper connected fields that approached the same optimization problem with different terminology and practices. Its account does not establish military classification as the cause of an independent rediscovery in computer vision.
 
 ---
 
@@ -42,7 +42,7 @@ Reprojection error minimization is a nonlinear least-squares problem. There is n
 
 In 1944, [Kenneth Levenberg](https://cs.uwaterloo.ca/~y328yu/classics/levenberg.pdf) published a method that interpolated between Gauss-Newton and steepest descent with a damping parameter $\lambda$. Larger $\lambda$ moves toward steepest descent for safe convergence; smaller $\lambda$ uses the fast convergence of Gauss-Newton. In its basic form, the strategy adds $\lambda \mathbf{I}$ to the matrix $\mathbf{J}^{\top}\mathbf{J}$ of the linearized normal equations, improving numerical stability. It was twenty years ahead of computer vision. In 1963, [Donald Marquardt](https://epubs.siam.org/doi/10.1137/0111030) independently rediscovered the same idea and formulated it more explicitly. The name settled as the **Levenberg-Marquardt (LM) algorithm**.
 
-Another thirty-five years passed before the LM algorithm became the standard BA solver in computer vision. The delay came from the walls between fields, not from missing technology.
+Another thirty-five years passed before the LM algorithm became the standard BA solver in computer vision.
 
 ---
 
@@ -80,7 +80,7 @@ The acronym "SLAM" came into broad use through 1990s literature that included [D
 
 Lie groups and factor graphs replaced the matrix notation of 1999, and neural networks took over descriptor computation, but the common structure of minimizing observation residuals persists. Visual BA uses reprojection errors from multiple viewpoints to estimate camera poses and the map, while LiDAR systems use sensor-specific constraints such as distance or point-to-plane residuals. Pulfrich's glass plate has become a pixel array, and hand calculation has moved to the GPU. The underlying estimation problem remains the same.
 
-This continuity is both a strength and a weakness. The field inherits a hundred years of convergence proofs and practical validation. When BA's assumptions (static world, point features, Gaussian noise) fail in real environments, however, there is no ready alternative.
+This continuity is both a strength and a weakness. The field can draw on accumulated optimization theory and practical validation. When BA's assumptions (static world, point features, Gaussian noise) fail in real environments, the supporting theory and validation no longer apply without checking those changed conditions.
 
 ---
 

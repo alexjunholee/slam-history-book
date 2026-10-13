@@ -4,7 +4,7 @@
 
 풀린 것은 2003년의 문제다. 정적 장면, 안정된 조명, 제한된 공간, 단안 카메라의 기하학이라는 가정들 위에서 EKF가 작동했고, graph SLAM이 루프를 닫았으며, ORB-SLAM이 keyframe을 관리했다. 각 답은 진짜 답이고, 각 가정은 진지하게 선택된 단순화였다.
 
-그러나 각 계보가 풀었다고 선언한 자리 바로 옆에는 아직 열린 문제가 남아 있다. 앞선 장들에서 표시한 문제를 한곳에 모으면, 서로 다른 계보가 같은 제약과 마주치는 지점이 드러난다. 여기서 새 문제를 만드는 것이 아니라 이미 남아 있던 문제의 구조를 읽는다.
+그러나 각 계보가 해결했다고 선언한 영역 바로 곁에도 아직 풀리지 않은 문제가 남아 있다. 앞선 장들에서 짚은 문제들을 함께 살펴보면, 서로 다른 계보가 같은 제약에 부딪히는 지점이 드러난다. 살펴볼 것은 새로 만든 문제가 아니라 이미 남아 있던 문제들의 구조다.
 
 ---
 
@@ -40,7 +40,7 @@ Monocular scale은 1980년대 SfM 이론이 이미 밝힌 기하학적 모호성
 
 TSDF 계보에서 메모리 문제는 표현의 한계로 드러났다. [Voxblox](https://arxiv.org/abs/1611.03631)·[OctoMap](https://octomap.github.io/)이 비용을 줄였어도 dense 표현의 메모리는 지도 범위와 voxel 해상도에 따라 빠르게 늘고, 어느 영역에 어느 해상도를 둘지 자동 결정하는 범용 adaptive-resolution 방식은 확립되지 않았다(Ch.9 §🧭 참조). NeRF-SLAM도 같은 천장에 막혔다. 도시 규모는 개방형이다(Ch.14 §🧭 참조). Gaussian Splatting에서도 장면 범위와 세부도가 커지면 필요한 Gaussian 수가 늘며, [Compact 3DGS](https://arxiv.org/abs/2311.13681)(Lee et al. 2024) 계열이 압축을 탐색하지만 합의된 방법은 없다(Ch.15 §🧭 참조). Foundation 3D에서 이 문제는 transformer의 물리적 한계로 재정의된다. 모든 image token 사이의 attention은 token 수에 대해 quadratic한 메모리를 요구하므로 긴 시퀀스로 확장하기 어렵고, Spann3R의 incremental 방식은 부분 답이다(Ch.16 §🧭 참조). 표현이 바뀌어도 크기의 장벽은 같은 자리에 있다.
 
-크기 문제의 다른 얼굴은 **데이터 이동 비용**이다. 용량이 아니라 프로세서-메모리 사이 비트 이동의 물리적 비용이 전력을 먹는다. Davison은 Handbook Ch.18 §18.8에서 12번째 SLAM 지표로 "on-device data movement, measured in bits × millimetres"를 제안하며 metric을 하드웨어 공학의 언어로 재정의한다(p.547). Handbook Ch.16의 식도 표현별 복잡도를 구분한다. label별 flat voxel map은 $O(L\cdot V/\delta^3)$이고(Eq. 16.34), metric-semantic hierarchy는 $O(V/\delta^3+N_\text{objects}+N_\text{rooms}+\cdots)$이며(Eq. 16.35), topological 3D scene graph는 $O(N_\text{sub-sym}+N_\text{objects}+N_\text{rooms}+\cdots)$다(Eq. 16.36). Davison의 12번째 지표 재정의가 얼마나 받아들여질지는 결론이 없다.
+크기 문제의 다른 얼굴은 **데이터 이동 비용**이다. 용량이 아니라 프로세서-메모리 사이 비트 이동의 물리적 비용이 전력을 먹는다. Davison은 Handbook Ch.18 §18.8에서 12번째 SLAM 지표로 "on-device data movement, measured in bits × millimetres"를 제안하며 metric을 하드웨어 공학의 언어로 재정의한다(p.547). Handbook Ch.16의 식도 표현별 복잡도를 구분한다. label별 flat voxel map은 $O(L\cdot V/\delta^3)$이고(Eq. 16.34), metric-semantic hierarchy는 $O(V/\delta^3+N_\text{objects}+N_\text{rooms}+\cdots)$이며(Eq. 16.35), topological 3D scene graph처럼 기하 계층을 더 작게 표현하면 $O(N_\text{sub-sym}+N_\text{objects}+N_\text{rooms}+\cdots)$가 된다(Eq. 16.36). 마지막 감소에는 기하 표현의 변경이 따르며 원래 복셀 지도의 정보를 일부 잃을 수 있다. Davison의 12번째 지표 재정의가 얼마나 받아들여질지는 결론이 없다.
 
 ---
 
@@ -50,7 +50,7 @@ Julier와 Uhlmann이 Ch.4에서 EKF의 inconsistency를 증명한 이래, SLAM �
 
 비가우시안 불확실성은 EKF의 핵심 가정에 닿는다. 현실 센서 오류는 다중 모드·heavy-tail이 흔하고, Stein particle·normalizing flow·learned uncertainty가 시도되나 실시간 검증은 제한적이다(Ch.4 §4.8 참조). Graph SLAM에서 robust cost function 선택도 직관에 기댄다. Huber·Cauchy·Geman-McClure 중 환경·센서에 맞는 kernel을 사전 결정하는 원칙적 방법이 없다(Ch.6 §🧭 참조). [Ch.6b](chapter_06b_certifiable.md)의 tightness 경계도 같은 층위다. SE-Sync의 exact recovery는 노이즈 $\beta$ 이하라는 충분조건만 주고, 실제 인스턴스에서 $\beta$를 사전 계산하는 방법은 없다. Visual SLAM·VIO로 certifiable을 확장하는 문제, 새 측정이 들어올 때 SDP를 다시 풀어 certificate를 갱신하는 online certification도 열린 채 남는다.
 
-학습 기반 방법에서 문제는 더 날카롭다. Bayesian PoseNet 실패 이후에도 learned uncertainty가 OOD 입력에서 calibrated인지는 열려 있다(Ch.12 §🧭 참조). DROID-SLAM 계보에서 확인했듯 learned prior는 훈련 도메인 밖에서 성능이 저하되어도 그 정도가 겉으로 드러나지 않을 수 있다. learned 실패는 그럴듯한 모양으로 나타날 수 있다. geometric 방법에도 잘못된 지역해나 과도한 확신처럼 겉으로 드러나지 않는 실패가 있다. [TartanAir](https://arxiv.org/abs/2003.14338) 같은 합성 데이터로도 sim-to-real gap이 남는다(Ch.13 §🧭 참조).
+학습 기반 방법에서 문제는 더 날카롭다. Bayesian PoseNet의 불확실성 추정 시도 이후에도 learned uncertainty가 OOD 입력에서 calibrated인지는 열려 있다(Ch.12 §🧭 참조). DROID-SLAM 계보에서 확인했듯 learned prior는 훈련 도메인 밖에서 성능이 저하되어도 그 정도가 겉으로 드러나지 않을 수 있다. learned 실패는 그럴듯한 모양으로 나타날 수 있다. geometric 방법에도 잘못된 지역해나 과도한 확신처럼 겉으로 드러나지 않는 실패가 있다. [TartanAir](https://arxiv.org/abs/2003.14338) 같은 합성 데이터로도 sim-to-real gap이 남는다(Ch.13 §🧭 참조).
 
 Foundation 3D에서는 이 문제가 loop closure 재정의로 이어진다. DUSt3R 계열에서 pointmap 기반 교정 propagate는 MASt3R-SLAM이 기존 방식으로 처리하지만 원리적 해법인지는 불확실하다(Ch.16 §🧭 참조). 자율주행·의료 로봇에서 calibrated uncertainty가 필수인데 그 수준의 시스템은 드물다.
 
@@ -64,7 +64,7 @@ Visual SLAM과 LiDAR SLAM은 같은 시기에 같은 문제를 다른 언어로 
 
 LVI-SAM은 visual-inertial subsystem과 lidar-inertial subsystem을 factor graph로 결합했고, 저자들은 이를 tightly coupled 시스템으로 규정했다. 두 subsystem이 서로 정보를 주고받으면서도 필요하면 독립 동작하는 구조라는 점은 함께 구분해야 한다. 안개·강우 같은 자율주행 시나리오에서 다중 센서 융합의 알고리즘·캘리브레이션 난이도는 여전히 장벽이다(Ch.17 §🧭 참조). Solid-state LiDAR 보급이 가져온 알고리즘 공백도 같은 층위다. 원래 LOAM의 360° scan-line 가정과 달리 제한된 FoV와 비반복 pattern을 쓰는 센서는 다른 관측 조건을 만든다. FAST-LIO2와 Livox LOAM이 일부를 다루지만 센서 계열 전반에 대한 일반화는 미흡하다(Ch.17 §🧭 참조).
 
-융합 문제는 wide-baseline 매칭에서도 나타난다. 큰 시점 변화에서 Harris·ORB 같은 hand-crafted local feature의 성능이 저하되지만, 모든 데이터에 적용되는 45도 임계값은 확인되지 않는다. DUSt3R는 전통적인 sparse matching 단계를 두지 않지만 이것이 descriptor 문제의 종말인지 우회인지는 판단이 이르다(Ch.2 §2.7 참조). Place recognition과 metric localization의 통합도 파이프라인 수준의 단절이다. 두 과정을 하나의 표현으로 통합하는 2023-2025년 시도들이 있었지만 정밀도·속도를 동시에 달성한 방법은 없다(Ch.10 §10.7 참조).
+융합 문제는 wide-baseline 매칭에서도 나타난다. 큰 시점 변화에서 Harris·ORB 같은 hand-crafted local feature의 성능이 저하되지만, 모든 데이터에 적용되는 45도 임계값은 확인되지 않는다. DUSt3R는 전통적인 sparse matching 단계를 두지 않지만 이것이 descriptor 문제의 종말인지 다른 정식화로의 전환인지는 판단이 이르다(Ch.2 §2.7 참조). Place recognition과 metric localization의 통합도 파이프라인 수준의 단절이다. 두 과정을 하나의 표현으로 통합하려는 2023–2025년 연구에서도 위치 추정의 정밀도와 처리 속도를 함께 확보하는 문제가 남았다(Ch.10 §10.7 참조).
 
 Event camera는 모달리티가 새로울 때 알고리즘이 얼마나 뒤따르는지를 보여준다. 2022년 이후 상업 고해상도 event camera가 보급되었지만 frame 기반 pipeline과의 통합, event representation, real-world benchmark가 동시 진행 중이다(Ch.18 §🧭 참조). Kinect가 2010년 출시되고 1년 뒤 KinectFusion이 나왔던 순서와 같다.
 
@@ -112,7 +112,7 @@ Ch.0은 SLAM이 풀렸다고 여겨지는 시대를 묘사했다. 그 묘사는 
 
 ## 19.9 계보 약도
 
-연도는 논문이 처음 공개된 시점을 기준으로 적었다. 따라서 ORB-SLAM3은 arXiv 공개 연도인 2020년, MASt3R-SLAM은 첫 공개 연도인 2024년으로 표시한다.
+연도는 각 장에서 다룬 학회·저널 발표 또는 선공개 시점을 가리킨다. SE-Sync의 2019년, VINS-Mono의 2018년, FAST-LIO의 2021년은 저널 발표 연도다. ORB-SLAM3의 2020년과 MASt3R-SLAM의 2024년은 선공개 시점이다. 따라서 이 도식의 연도를 모두 최초 공개 연도로 비교해서는 안 된다.
 
 ```mermaid
 graph TD

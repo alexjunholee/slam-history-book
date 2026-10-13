@@ -2,9 +2,9 @@
 
 By 2026, AR layers remained fixed to walls, indoor delivery robots distinguished kitchens from conference rooms without a supplied map, and DUSt3R-family models recovered 3D structure from a few photographs in seconds. These systems solved many of the problems that defined SLAM in 2003, but only under particular assumptions.
 
-The 2003 formulation assumed a static scene, stable lighting, bounded space, and the geometry of a single camera. Under those conditions, the EKF tracked state, graph SLAM closed loops, and ORB-SLAM managed keyframes. The solutions remain valid within the simplifying assumptions on which they were built.
+The 2003 formulation assumed a static scene, stable lighting, bounded space, and the geometry of a single camera. Under those conditions, the EKF tracked state, graph SLAM closed loops, and ORB-SLAM managed keyframes. The solutions remain valid within the simplifying assumptions on which they were built. Each assumption was a carefully chosen simplification.
 
-Across the preceding chapters, the unresolved problems recur beside the conditions under which individual methods succeed. Collected together, they reveal where apparently separate lineages face the same constraints.
+Yet unresolved problems remain alongside what each lineage has claimed to solve. The problems identified in the preceding chapters reveal, when considered together, where different lineages face the same constraints. These are existing problems whose shared structure can be examined, not newly posed questions.
 
 ---
 
@@ -40,7 +40,7 @@ Monocular scale is a geometric ambiguity established in 1980s SfM theory. Withou
 
 In the TSDF lineage, memory became a limit of the representation. [Voxblox](https://arxiv.org/abs/1611.03631) and [OctoMap](https://octomap.github.io/) reduced the cost, but memory for a dense representation still rises rapidly with mapped volume and voxel resolution, and no general adaptive-resolution policy has been established (see Ch.9 §🧭). NeRF-SLAM also remains open at city scale (see Ch.14 §🧭). In Gaussian Splatting, the required number of Gaussians rises with scene extent and detail; the [Compact 3DGS](https://arxiv.org/abs/2311.13681) (Lee et al. 2024) family explores compression, but no approach has become standard (see Ch.15 §🧭). Foundation 3D moves the limit into the transformer: attention across all image tokens has quadratic memory cost in the token count, making long sequences difficult, and Spann3R provides only a partial incremental solution (see Ch.16 §🧭). The representations differ, but each reaches a scale-dependent memory limit.
 
-Scale also raises **data movement cost**, the energy needed to move bits between processor and memory rather than the capacity of the representation alone. In Handbook Ch.18 §18.8, Davison proposes "on-device data movement, measured in bits × millimetres" as the 12th SLAM performance metric. [Hughes et al.](https://doi.org/10.15607/RSS.2022.XVIII.050) likewise describe how a hierarchical scene graph reduces memory from $O(L \cdot V/\delta^3)$ to $O(N_\text{sub} + N_\text{obj} + N_\text{rooms})$ (Handbook Ch.16 Eq. 16.34-16.36). It remains unclear whether mainstream evaluations will adopt data movement as a metric.
+Scale also raises **data movement cost**, the energy needed to move bits between processor and memory rather than the capacity of the representation alone. In Handbook Ch.18 §18.8, Davison proposes "on-device data movement, measured in bits × millimetres" as the 12th SLAM performance metric. Handbook Ch.16 distinguishes three representation costs: a flat voxel map storing labels requires $O(L\cdot V/\delta^3)$ (Eq. 16.34); a metric-semantic hierarchy requires $O(V/\delta^3+N_\text{objects}+N_\text{rooms}+\cdots)$ (Eq. 16.35); and a representation with a more compact sub-symbolic layer, such as a topological 3D scene graph, requires $O(N_\text{sub-sym}+N_\text{objects}+N_\text{rooms}+\cdots)$ (Eq. 16.36). The last reduction changes the geometric representation and can be lossy. It remains unclear whether mainstream evaluations will adopt data movement as a metric.
 
 ---
 
@@ -62,9 +62,9 @@ Davison frames the issue with a question: *"If a network has built a 3D model fr
 
 Visual SLAM and LiDAR SLAM addressed localization and mapping with different measurements and algorithms. Their lineages have not yet merged into a common architecture.
 
-LVI-SAM coupled visual odometry with LIO-SAM, but largely at a loosely coupled level. Autonomous-driving systems need LiDAR to take over when cameras fail in fog or rain, yet tightly coupled fusion remains difficult both algorithmically and in calibration (see Ch.17 §🧭). Solid-state LiDAR poses a related problem. Limited fields of view and non-repetitive patterns differ from the original LOAM's 360° scan-line assumptions. FAST-LIO2 and Livox LOAM address parts of this setting, but generalization across sensor families remains limited (see Ch.17 §🧭).
+LVI-SAM combines visual-inertial and lidar-inertial subsystems through factor graphs; its authors describe it as tightly coupled. The subsystems exchange information while retaining the ability to operate independently when needed. Algorithm design and calibration remain difficult in autonomous-driving conditions such as fog and rain (see Ch.17 §🧭). Solid-state LiDAR poses a related problem. Limited fields of view and non-repetitive patterns differ from the original LOAM's 360° scan-line assumptions. FAST-LIO2 and Livox LOAM address parts of this setting, but generalization across sensor families remains limited (see Ch.17 §🧭).
 
-Wide-baseline matching presents a related integration problem. Beyond 45 degrees of viewpoint change, Harris- and ORB-based matching drops sharply. DUSt3R bypasses explicit matching, but it is too early to know whether this resolves the descriptor problem or avoids it temporarily (see Ch.2 §2.7). Place recognition and metric localization also remain separate pipeline stages. Attempts from 2023–2025 to unify them in one representation achieved neither the required precision nor speed (see Ch.10 §10.7).
+Wide-baseline matching presents a related integration problem. Large viewpoint changes can degrade hand-crafted local features such as Harris and ORB; the methods do not establish a universal 45-degree cutoff across datasets. DUSt3R bypasses a traditional sparse-matching stage, but it is too early to know whether this resolves the descriptor problem or changes the formulation (see Ch.2 §2.7). Place recognition and metric localization also remain separate pipeline stages. Work from 2023–2025 sought to unify them in one representation, while the trade-off between metric accuracy and processing speed remained a practical concern (see Ch.10 §10.7).
 
 Event cameras show the lag between new hardware and mature algorithms. Commercial high-resolution event cameras spread after 2022, while integration with frame-based pipelines, event representations, and real-world benchmarks all remained under development (see Ch.18 §🧭). Kinect followed a similar sequence: the sensor launched in 2010 and KinectFusion arrived a year later.
 
@@ -78,7 +78,7 @@ Davison's Handbook Ch.18 emphasizes a topic rarely covered in SLAM histories: ma
 
 Dennard scaling broke, and single-core CPU clock speed stalled near 4 GHz in the mid-2000s; *"this has stopped being true"* (Handbook Ch.18, p.528). Wearable Spatial AI still has to fit into glasses weighing 65 g and consuming less than 1 W. The gap favors heterogeneous, specialized, parallel hardware.
 
-Several hardware examples appeared by the mid-2020s. [Apple Vision Pro R1](https://www.apple.com/apple-vision-pro/specs/) (2023) is a dedicated chip for 12 ms sensor processing; [Meta ARIA Gen 2](https://www.projectaria.com/ariagen2/) (2024) carries custom silicon for "ultra low power and on-device machine perception." The [Graphcore IPU](https://www.graphcore.ai/products/ipu) has thousands of independent cores with local memory communicating by message passing. Manchester's [SCAMP5](https://personalpages.manchester.ac.uk/staff/p.dudek/papers/carey-iscas2013.pdf) implements 256×256 per-pixel in-plane processing at 1.2 W, while [SpiNNaker](https://apt.cs.manchester.ac.uk/projects/SpiNNaker/) connects up to one million ARM cores in a neuromorphic structure. Each supports a different graph topology, and no systematic theory maps Spatial AI algorithms to these architectures.
+Several hardware examples appeared by the mid-2020s. [Apple Vision Pro R1](https://www.apple.com/apple-vision-pro/specs/) (2023) is a dedicated chip for 12 ms sensor processing; [Meta Aria Gen 2](https://ai.meta.com/blog/aria-gen-2-research-glasses-under-the-hood-reality-labs/) (2025) carries custom silicon for "ultra low power and on-device machine perception." The [Graphcore IPU](https://www.graphcore.ai/products/ipu) has thousands of independent cores with local memory communicating by message passing. Manchester's [SCAMP5](https://personalpages.manchester.ac.uk/staff/p.dudek/papers/carey-iscas2013.pdf) implements 256×256 per-pixel in-plane processing at 1.2 W, while [SpiNNaker](https://apt.cs.manchester.ac.uk/projects/SpiNNaker/) connects up to one million ARM cores in a neuromorphic structure. Each supports a different graph topology, and no systematic theory maps Spatial AI algorithms to these architectures.
 
 Davison's later work on **Gaussian Belief Propagation** addresses this hardware structure. [Ortiz et al.](https://arxiv.org/abs/2203.11618) (2022) accelerated bundle adjustment on the IPU with GBP by 30× over a CPU, and [Murai et al. Robot Web](https://arxiv.org/abs/2306.04620) (2024) demonstrated multi-robot SLAM in which robots shared factor-graph fragments over Wi-Fi and converged through asynchronous message passing. The motivation was that *"we must get away from the idea that a 'god's eye view' of the whole structure of the graph will ever be available"* (Handbook Ch.18, p.541). The factor graph becomes the main representation, and local messages replace full-posterior computation. Whether this approach will combine with transformer-based systems such as MASt3R-SLAM remains unanswered.
 
@@ -114,9 +114,11 @@ Methods regarded as solved in 2026 remain conditional in the same way. Their nex
 
 ## 19.9 Lineage map
 
+Years refer to the conference or journal publication, or the earlier public release, discussed in each chapter. SE-Sync (2019), VINS-Mono (2018), and FAST-LIO (2021) use journal publication years; ORB-SLAM3 (2020) and MASt3R-SLAM (2024) use earlier release dates. The labels therefore do not provide a uniform comparison of first-publication dates.
+
 ```mermaid
 graph TD
-  PM[사진측량 1858]
+  PM[Photogrammetry 1858]
   BA[Bundle Adjustment<br/>Brown 1958]
   SfM[Photo Tourism 2006]
   COLMAP[COLMAP 2016]
@@ -165,6 +167,7 @@ graph TD
   VGGT[VGGT 2025]
   MASlam[MASt3R-SLAM 2024]
 
+  Kimera[Kimera 2020]
   Hydra[Hydra 2022]
   Clio[Clio 2024]
 
@@ -173,17 +176,20 @@ graph TD
   PTAM -.-> LSD --> DSO --> VIDSO
   LM --> FG --> iSAM --> iSAM2
   FG --> g2o
-  iSAM2 -.-> SESync --> TEASER
-  Forster --> VINS --> ORB3
-  VIDSO --> Forster
+  FG -.-> SESync
+  Forster --> VINS
+  Forster --> ORB3
+  Forster --> VIDSO
   Kinect --> Elastic
-  Elastic -.-> LOAM --> FAST
+  LOAM -.-> FAST
   NeRF --> iMAP --> NICE
-  NICE -.-> GS3D --> Spla --> MonoGS
-  PTAM -.-> DROID --> DPV
-  COLMAP -.-> DUSt3R --> MASt --> VGGT
+  GS3D --> Spla
+  GS3D --> MonoGS
+  DROID --> DPV
+  COLMAP -.-> DUSt3R --> MASt
+  DUSt3R -.-> VGGT
   MASt --> MASlam
-  ORB3 -.-> Hydra --> Clio
+  Kimera --> Hydra --> Clio
 
   click PM "#chapter-1" "Ch.1 Prehistory — Photogrammetry"
   click BA "#chapter-1" "Ch.1 Prehistory — Bundle Adjustment"
@@ -222,6 +228,7 @@ graph TD
   click MASt "#chapter-16" "Ch.16 — MASt3R"
   click VGGT "#chapter-16" "Ch.16 — VGGT"
   click MASlam "#chapter-16" "Ch.16 — MASt3R-SLAM"
+  click Kimera "#chapter-16" "Ch.16 — Kimera"
   click Hydra "#chapter-16" "Ch.16 §16.6 Semantic Foundation"
   click Clio "#chapter-16" "Ch.16 §16.6 — Clio"
 ```

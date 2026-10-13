@@ -8,13 +8,13 @@ At SIGGRAPH in August 2023, Bernhard Kerbl of INRIA, Georgios Kopanas, Thomas Le
 
 ## The structure of 3DGS
 
-Kerbl represented scenes as an explicit set of Gaussians. Each Gaussian has a position (mean) $\boldsymbol{\mu} \in \mathbb{R}^3$, a covariance matrix $\boldsymbol{\Sigma} \in \mathbb{R}^{3 \times 3}$, an opacity $\alpha \in (0,1]$, and a color expressed in spherical harmonics coefficients. For training stability the covariance is factored into a scale vector $\mathbf{s}$ and a unit quaternion $\mathbf{q}$:
+Kerbl represented scenes as an explicit set of Gaussians. Each Gaussian has a position (mean) $\boldsymbol{\mu} \in \mathbb{R}^3$, a covariance matrix $\boldsymbol{\Sigma} \in \mathbb{R}^{3 \times 3}$, a learnable opacity $o \in (0,1]$, and a color expressed in spherical harmonics coefficients. For training stability the covariance is factored into a scale vector $\mathbf{s}$ and a unit quaternion $\mathbf{q}$:
 
 $$\boldsymbol{\Sigma} = \mathbf{R}\mathbf{S}\mathbf{S}^\top\mathbf{R}^\top$$
 
-Rendering alpha-blends the projected 2D Gaussians in depth order. Each Gaussian's effective opacity $\alpha_i$ is the product of the learnable opacity $\sigma_i$ and the 2D Gaussian density $G_i(\mathbf{x})$ evaluated at the pixel location. The pixel color $C$ is
+Rendering alpha-blends the projected 2D Gaussians in depth order. Each Gaussian's effective opacity $\alpha_i$ is the product of the learnable opacity $o_i$ and the 2D Gaussian density $G_i(\mathbf{x})$ evaluated at the pixel location. The pixel color $C$ is
 
-$$C = \sum_{i \in N} c_i \alpha_i \prod_{j<i}(1 - \alpha_j), \quad \alpha_i = \sigma_i \cdot G_i(\mathbf{x})$$
+$$C = \sum_{i \in N} c_i \alpha_i \prod_{j<i}(1 - \alpha_j), \quad \alpha_i = o_i G_i(\mathbf{x})$$
 
 Unlike NeRF, which numerically approximates a volume-rendering integral, 3DGS runs directly through a GPU rasterization pipeline. Its tile-based rasterizer implements both forward and backward passes as custom CUDA kernels. On a single RTX 3090, it renders at more than 30 fps after training. This novel-view rendering rate cannot be compared directly as a speed ratio with NICE-SLAM's full tracking-and-mapping throughput.
 
@@ -70,19 +70,19 @@ In the Limitations & Future Work section of the 2024 CVPR paper, Keetha listed s
 
 [Matsuki et al. 2024. MonoGS (CVPR)](https://arxiv.org/abs/2312.06741), by Hidenobu Matsuki at Imperial College's Dyson Robotics Lab and his colleagues, removed the depth-sensor requirement. It performs 3DGS SLAM from a single monocular RGB camera.
 
-Scale is the central difficulty in the monocular setting because metric recovery without depth remains unsolved even in SfM. Matsuki optimized the Gaussian geometry directly and added a geometric-consistency loss between rendered depth and neighboring Gaussians.
+Scale is a central difficulty in the monocular setting: projective geometry alone does not determine absolute metric scale. Matsuki optimized Gaussian geometry directly and added an isotropy loss, but the monocular trajectory remains scale-free.
 
 $$\mathcal{L}_{iso} = \sum_k \| \mathbf{s}_k - \bar{s}_k \mathbf{1} \|_1$$
 
-Here $\mathbf{s}_k \in \mathbb{R}^3$ is the scale vector of the $k$-th Gaussian, and $\bar{s}_k = \frac{1}{3}\sum_j s_{k,j}$ is the mean scale across its three axes. This isotropy regularization prevents Gaussians from degenerating into excessively thin plates. Without depth supervision, monocular Gaussians tend to remain near the camera plane, and the regularizer suppresses that failure mode.
+Here $\mathbf{s}_k \in \mathbb{R}^3$ is the scale vector of the $k$-th Gaussian, and $\bar{s}_k = \frac{1}{3}\sum_j s_{k,j}$ is the mean scale across its three axes. Isotropy regularization discourages large differences between those axis lengths. It reduces elongation along the viewing direction when viewpoint constraints are insufficient, limiting artifacts that interfere with rendering and tracking.
 
-For tracking, Matsuki directly optimizes pose with the photometric loss from Gaussian rendering. During first-frame initialization, a monocular depth prior provides the initial Gaussian positions. Later frames begin from the previous pose and undergo rendering-based refinement. Without a depth sensor, isotropic regularization and geometry-consistency losses across keyframes jointly maintain scale.
+For tracking, Matsuki optimizes pose directly with the photometric loss between the Gaussian rendering and the observed image. New Gaussians at pixels with rendered depth are initialized around that depth with low variance; those without rendered depth are initialized around the rendered image's median depth with high variance. Multiview observations then refine these depth hypotheses. Neither initialization nor isotropy regularization recovers absolute metric scale.
 
-> 🔗 **Borrowed.** MonoGS's monocular depth prior follows the Godard MonoDepth2 lineage covered in Ch.11. MonoGS applies the premise that self-supervised monocular depth can recover structure without direct depth supervision to Gaussian initialization.
+> 🔗 **Distinction.** MonoGS uses neither a pretrained monocular depth predictor nor an external tracking module. The paper therefore does not support a direct MonoDepth2 lineage for its initialization.
 
 Matsuki worked at Imperial's Dyson Robotics Lab, as did Sucar on iMAP and Bloesch on CodeSLAM under Davison's supervision. MonoGS reflects the lab's transition from implicit MLPs to explicit Gaussian representations.
 
-On the TUM-RGBD dataset, MonoGS recorded an average ATE RMSE of 4.44 cm monocular and 1.58 cm RGB-D. Rendering quality in the RGB-D setting on Replica reached an average PSNR of 37.50 dB, comparable to other same-generation GS-SLAM systems.
+In [the first arXiv version of MonoGS, released in 2023](https://arxiv.org/abs/2312.06741v1), average ATE RMSE on TUM-RGBD was 4.44 cm monocular and 1.58 cm RGB-D. Monocular trajectories were aligned to ground truth with scale adjustment; RGB-D trajectories used rigid alignment only. Rendering quality in the RGB-D setting on Replica reached an average PSNR of 37.50 dB, comparable to other same-generation GS-SLAM systems.
 
 ---
 

@@ -14,7 +14,7 @@ PoseNet followed [AlexNet (Krizhevsky et al. 2012)](https://papers.nips.cc/paper
 
 On the Cambridge Landmarks dataset collected by Kendall, which included King's College Chapel, streets, a former hospital, and several other outdoor scenes, PoseNet achieved position errors of around 2 m and orientation errors of 5–8°, depending on the scene (§5 of the original paper). A single GPU produced a pose within 5 ms without feature extraction, RANSAC, or map lookup.
 
-The paper triggered immediate follow-ups. [Bayesian PoseNet (Kendall & Cipolla 2016)](https://arxiv.org/abs/1509.05909) tried to estimate pose uncertainty via Monte Carlo Dropout. LSTM PoseNet integrated sequence information. Variants with added geometric loss appeared. Kendall himself released a 2017 version combining a recurrent structure with photometric loss.
+Follow-up studies changed different parts of the method. [Bayesian PoseNet (Kendall & Cipolla 2016)](https://arxiv.org/abs/1509.05909) estimated pose uncertainty through Monte Carlo Dropout. [Walch et al.'s LSTM PoseNet](https://arxiv.org/abs/1611.07890), first released in 2016 and presented at ICCV 2017, used LSTMs to process spatial relationships among features from a single image, rather than a temporal image sequence. [Kendall and Cipolla's 2017 study](https://arxiv.org/abs/1704.00390) examined loss functions for pose regression. Its reprojection loss compared the image coordinates of 3D points projected with ground-truth and predicted poses; it was not a photometric loss based on brightness differences.
 
 As benchmark performance improved, however, the gap became visible. On the same scenes, [Active Search (Sattler et al. 2012)](https://www.graphics.rwth-aachen.de/media/papers/sattler_eccv12_preprint_1.pdf) and DenseVLAD achieved position errors of roughly 0.2 m. The PoseNet family rarely improved beyond errors of several meters, revealing a fundamental limitation of regressing an absolute pose from one image.
 
@@ -30,35 +30,35 @@ The LSTM was intended to use temporal context to suppress drift. DeepVO showed l
 
 [Zhou et al. 2017. SfMLearner](https://arxiv.org/abs/1704.07813), released the same year by Tinghui Zhou at UC Berkeley, took a different approach. It jointly estimated depth and ego-motion through self-supervised learning, using photometric reprojection loss as the training signal and requiring no labels.
 
-> 🔗 **Borrowed.** SfMLearner's photometric loss is mathematically identical to the intensity residual in classical direct SLAM. It placed the photometric principle of [DSO (Engel et al. 2018)](https://arxiv.org/abs/1607.02565) in a differentiable learning framework, and its self-supervision later appeared in MonoDepth2 and DROID-SLAM.
+> 🔗 **Borrowed.** SfMLearner and [DSO (Engel et al. 2018)](https://arxiv.org/abs/1607.02565) share the principle of comparing brightness at geometrically corresponding image locations. DSO uses these differences to optimize poses and a map directly; SfMLearner uses them to train networks that predict depth and camera motion. SfMLearner's self-supervised approach continued in monocular-depth methods such as MonoDepth2. DROID-SLAM also uses differentiable geometry, but its pose and optical-flow supervision distinguishes it from this self-supervised line.
 
 SfMLearner's evaluation on short VO snippets must be distinguished from ORB-SLAM's system performance over longer trajectories with loop closure.
 
 ---
 
-## 12.3 Three causes of failure
+## 12.3 Geometry, generalization, and uncertainty
 
-Between 2019 and 2020, researchers increasingly examined the limitations of this work. In a 2019 talk, Sudeep Pillai of MIT, later TRI, organized the structural problems of end-to-end methods into three categories.
+Geometric constraints, generalization beyond the training distribution, and uncertainty estimation raised distinct questions for end-to-end pose regression and learned odometry around 2019–2020. [Sattler et al. (2019)](https://arxiv.org/abs/1903.07504), for example, examined the limits of absolute pose regression; these results should be distinguished from the temporal estimation problem addressed by learned odometry.
 
 **First: absence of inductive bias.** Classical SLAM explicitly encoded geometric constraints accumulated over decades, including the epipolar constraint, rigid-body motion, scale invariance, and spatial continuity. A CNN had to infer them from data, while ImageNet classification offered little supervision for the metric geometry of 3D space. Even when a regression network estimated the correct pose, it was difficult to determine whether it had learned 3D structure or memorized combinations of lighting, color, and texture.
 
-**Second: generalization failure.** Performance collapsed outside the training distribution. A PoseNet trained on Cambridge Landmarks was unusable on Oxford streets, and a DeepVO trained on KITTI accumulated exponentially growing drift on other vehicle datasets without radar. Classical ORB-SLAM also failed when feature detection broke down or lighting changed drastically, but its failure was predictable and the system could reinitialize. End-to-end models could instead return an incorrect estimate without indicating the magnitude of the error.
+**Second: generalization beyond the training distribution.** A scene-specific PoseNet cannot directly supply absolute coordinates for an unseen scene. Learned odometry estimates relative motion, but deployment with a different camera, motion pattern, or image distribution requires its own validation. [TartanVO](https://proceedings.mlr.press/v155/wang21h.html), presented at CoRL 2020, treated cross-dataset generalization as a central design problem. Classical ORB-SLAM can also lose tracking when features or lighting change; recovery procedures and failure detection are necessary for both geometric and learned systems.
 
-**Third: absence of uncertainty quantification.** SLAM cannot function only as a pose estimator because downstream systems, including path planning and obstacle avoidance, require the covariance of the localization estimate. EKFs and factor graphs propagate covariance naturally. Bayesian PoseNet attempted to estimate variance through dropout, but the calibration between that variance and actual position error was difficult to verify. On inputs outside the training distribution, it could return a confident but incorrect estimate, which is more dangerous for a robotic system than a visible failure.
+**Third: validating uncertainty estimates.** Path planning and obstacle avoidance need information about localization error as well as the estimated pose. An EKF updates covariance, and a factor graph can provide uncertainty around an estimate, but both depend on modeling and approximation choices. Bayesian PoseNet used dropout to estimate uncertainty and evaluated it for localization-error estimation and detection of whether the input showed the learned scene. These results do not guarantee calibration for arbitrary inputs outside the training distribution.
 
 ---
 
 ## 12.4 Reassessment
 
-After completing his PhD in 2019, Kendall moved to Wayve and shifted toward imitation learning and world-model research for autonomous driving. He continued to study learning-based localization but rejected absolute pose regression from a single image as the appropriate problem formulation.
+Kendall received his PhD at Cambridge in 2017 and co-founded Wayve that year. [His later research](https://alexgkendall.com/) included imitation learning and world models for autonomous driving, expanding from camera pose estimation to scene understanding and learned driving behavior.
 
-Earlier, in 2017, Federico Tombari's group at TU Munich, later Google, developed [CNN-SLAM (Tateno et al. 2017)](https://arxiv.org/abs/1704.03489). It fused dense depth predicted by a CNN with the depth estimate from direct monocular SLAM. Because learning was confined to dense depth, the method was not fully end to end, but it tested whether a CNN could address scale ambiguity and low-texture regions in monocular SLAM. Results varied across scenes, and the method did not consistently improve accuracy.
+[CNN-SLAM (Tateno, Tombari, Laina, and Navab, 2017)](https://arxiv.org/abs/1704.03489) fused CNN-predicted dense depth with depth measurements from direct monocular SLAM. It relied more on predicted depth in low-texture regions and on SLAM measurements where geometric estimation was reliable. It also used predicted depth to estimate absolute scale. Evaluated on two benchmarks, the method was an early example of combining learning and geometry.
 
-> 📜 **Prediction vs. outcome.** In the PoseNet paper (2015), Kendall identified uncertainty estimation, temporal integration, and extension to larger scenes as the next tasks. Bayesian PoseNet (2016), LSTM PoseNet (2016), and multiple outdoor experiments pursued all three directions. Each encountered further limitations, and researchers ultimately abandoned the broader absolute-pose-regression approach. The proposed extensions could not overcome the weakness of the underlying formulation.
+> 📜 **Prediction vs. outcome.** The PoseNet paper (2015) proposed further work on training data obtained through multiview geometry, probabilistic extensions, and the limits on scene size that one model could learn. Bayesian PoseNet (2016) addressed probabilistic pose estimation and uncertainty evaluation. LSTM PoseNet's spatial feature processing does not demonstrate temporal integration, and these follow-up studies do not establish that all of the original tasks were resolved. Accuracy and generalization in absolute pose regression remained subjects of evaluation.
 
 Some components remained useful in other settings. SfMLearner's photometric self-supervision continued in monocular-depth methods such as MonoDepth2 (Godard 2019). DROID-SLAM (Teed & Deng 2021) also uses differentiable geometry, but trains with pose and optical-flow supervision. DeepVO's LSTM-based temporal modeling also reappeared in modified form in visual-inertial learning research. The methods changed even as their individual ideas persisted.
 
-> 📜 **Prediction vs. outcome.** In the SfMLearner paper (2017), Zhou identified dynamic-object handling and robustness to photometric noise as remaining tasks. Later self-supervised work, including [GeoNet (Yin & Shi 2018)](https://arxiv.org/abs/1803.02276), made partial progress. Self-supervised VO did not replace SLAM in the mainstream, but photometric self-supervision persisted after the field rejected end-to-end VO as the larger objective.
+> 📜 **Prediction vs. outcome.** In the SfMLearner paper (2017), Zhou identified dynamic-object handling and robustness to photometric noise as remaining tasks. Later self-supervised work, including [GeoNet (Yin & Shi 2018)](https://arxiv.org/abs/1803.02276), made partial progress. GeoNet jointly learned depth, optical flow, and camera motion while modeling static and dynamic regions separately.
 
 ---
 
@@ -68,9 +68,9 @@ Around 2020, a common design rule was to keep geometry explicit and use learning
 
 > 🔗 **Borrowed.** CodeSLAM (Bloesch 2018) and DROID-SLAM (Teed & Deng 2021) implement this principle. Both retain the geometric structure of a factor graph or bundle adjustment and use learning for depth representation in CodeSLAM and for dense correspondence and recurrent updates in DROID-SLAM, retaining constraints that PoseNet had removed.
 
-The classical pipeline was not uniformly superior to learning-based alternatives. ORB-SLAM also failed in textureless environments, at night, and in rain. The distinction was that errors from end-to-end models were less interpretable and predictable than failures in classical SLAM.
+The classical pipeline was not uniformly superior to learning-based alternatives. PoseNet demonstrated operation under some lighting changes and motion blur where feature-based registration failed. In contrast, Sattler et al. (2019) found that the absolute pose regression methods they evaluated did not match the accuracy of structure-based localization. The comparison depended on the input conditions and evaluation task.
 
-Neither a particular dataset nor a particular architecture fully explained the failure. A direct mapping from image to pose omitted the geometric constraints accumulated over thirty years.
+The important distinction was between directly regressing pose from an image and estimating pose from visual correspondences under geometric constraints. CodeSLAM and DROID-SLAM combined learned representations with the latter computation.
 
 ---
 
@@ -80,6 +80,6 @@ Neither a particular dataset nor a particular architecture fully explained the f
 
 **Calibration of learned uncertainty.** Bayesian PoseNet did not resolve this problem. Whether uncertainty estimates from deep learning remain calibrated to actual error, especially for out-of-distribution inputs, was still open as of 2026. Autonomous-driving applications make the question practically urgent.
 
-**Redefining "end-to-end."** PoseNet's definition of end to end, learning a direct image-to-pose mapping, failed. Since foundation models appeared in 2023, however, the term has begun to change. Researchers are again deciding which SLAM modules should be learned and which should remain explicit algorithms.
+**Redefining "end-to-end."** PoseNet implemented end to end as a learned direct mapping from image to pose. Since foundation models appeared in 2023, however, the term has begun to change. Researchers are again deciding which SLAM modules should be learned and which should remain explicit algorithms.
 
 CodeSLAM, released by Andrew Davison's lab at Imperial College London in 2018, embodied this division between explicit geometry and learned representation.

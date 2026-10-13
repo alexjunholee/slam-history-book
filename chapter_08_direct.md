@@ -48,7 +48,7 @@ LSD-SLAM은 실외 대규모 환경에서도 동작하는 장면을 공개했다
 
 [Engel, Koltun & Cremers 2018. DSO (PAMI)](https://doi.org/10.1109/TPAMI.2017.2658577)는 2016년 arXiv에 먼저 공개되었다. "Direct Sparse Odometry"는 LSD-SLAM보다 sparse하고 DTAM보다 훨씬 적은 픽셀을 쓰되, photometric calibration을 철저히 했다.
 
-시스템은 각 키프레임에서 gradient가 높은 픽셀 약 2,000개를 선택한다. ORB-SLAM2의 기본 설정(nFeatures=1000)에 비해 많고, LSD-SLAM의 semi-dense(gradient 있는 픽셀 전체)보다 훨씬 적다. 이 픽셀들에 대해 sliding window bundle adjustment를 수행하는데, 최적화 변수가 camera pose뿐 아니라 inverse depth, affine brightness 파라미터 $(a_i, b_i)$까지 포함한다. 윈도우를 벗어난 프레임은 marginalization으로 제거되며, Schur complement로 제거할 변수를 소거해 남은 창의 최적화 크기를 제한한다. 전체 계산량은 창 크기와 픽셀 수, 반복 횟수에 달려 있다.
+시스템은 각 키프레임에서 약 2,000개의 후보 픽셀을 고른 뒤, 여러 활성 프레임을 합쳐 약 2,000개의 점을 최적화에 유지한다. 후보 수와 실제 활성 점 수는 구별해야 한다. 픽셀 선택에는 영상 내 분포와 주변 대비 gradient 세기를 함께 쓴다. 이 점들에 대해 sliding window bundle adjustment를 수행하는데, 최적화 변수가 camera pose뿐 아니라 inverse depth, affine brightness 파라미터 $(a_i, b_i)$까지 포함한다. 윈도우를 벗어난 프레임은 marginalization으로 제거되며, Schur complement로 제거할 변수를 소거해 남은 창의 최적화 크기를 제한한다. 전체 계산량은 창 크기와 픽셀 수, 반복 횟수에 달려 있다.
 
 DSO는 카메라 photometric 모델을 세 층으로 분리한다. 첫째, vignetting(렌즈 주변부로 갈수록 밝기가 감소하는 효과)은 사전 캘리브레이션으로 보정한다. 둘째, camera response function(gamma curve, 센서가 빛을 비선형으로 기록하는 특성)도 사전에 역함수를 추정해 linear intensity domain으로 변환한다. 셋째, 프레임의 노출 시간 $t_i$는 입력 메타데이터로 사용하고, 남은 affine brightness 변화 $(a_i, b_i)$를 실시간으로 추정한다:
 
@@ -80,7 +80,7 @@ Cremers 그룹의 후속 작업들, [Basalt](https://arxiv.org/abs/1904.06504)(2
 
 ## 5. direct method의 한계
 
-Direct method는 descriptor로 요약한 특징점 대신 영상 밝기 자체를 잔차에 넣는다. 그렇다고 모든 픽셀이나 gradient가 거의 없는 픽셀까지 유효한 것은 아니다. DTAM은 dense한 광도 정보를 사용했고 LSD-SLAM은 semi-dense 영역을, DSO는 영상 전역에 고르게 퍼진 **충분한 intensity gradient**의 픽셀을 골랐다. 차이는 낮은 gradient를 무조건 쓰는 데 있지 않고, 별도의 descriptor 없이 밝기 변화가 주는 미분 가능한 잔차를 직접 최적화하는 데 있다.
+Direct method는 descriptor로 요약한 특징점 대신 영상 밝기 자체를 잔차에 넣는다. 픽셀을 고르는 범위는 방법마다 다르다. DTAM은 dense한 광도 정보를, LSD-SLAM은 gradient가 있는 semi-dense 영역을 썼다. DSO는 주변에 비해 gradient가 충분한 픽셀을 영상 전역에서 고르게 고르되, 강한 gradient가 없는 영역에서는 임계값을 낮춰 약한 밝기 변화도 활용했다. 이 때문에 코너가 드문 곳에서도 정보를 얻을 수 있지만, 밝기가 거의 일정한 면에서는 자세 변화에 대한 잔차의 민감도가 낮다.
 
 그럼에도 2026년 기준 대다수 배포 시스템은 feature-based다.
 

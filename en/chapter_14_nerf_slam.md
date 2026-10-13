@@ -2,7 +2,7 @@
 
 In 2021, Edgar Sucar at Imperial College used a learned representation not for tracking but for *the map itself*. His iMAP system adapted NeRF, a method developed outside SLAM.
 
-In March 2020, Ben Mildenhall and his colleagues posted [Mildenhall et al. 2020. NeRF](https://arxiv.org/abs/2003.08934) to arXiv. The paper synthesized photorealistic novel views from calibrated images, and the SLAM community initially treated it as a rendering method rather than a map-building technique. Fourteen months later, Sucar's ICCV 2021 presentation of iMAP demonstrated that NeRF could serve as the map representation itself. Extending the KinectFusion lineage from Ch.9, iMAP was an early system testing whether an implicit neural field could replace a TSDF voxel grid.
+In March 2020, Ben Mildenhall and his colleagues posted [Mildenhall et al. 2020. NeRF](https://arxiv.org/abs/2003.08934) to arXiv. It optimized a continuous volumetric scene function from images with known poses to synthesize unseen views. NeRF was initially presented as a solution to novel-view synthesis. At ICCV 2021, Sucar presented iMAP, showing how an implicit neural field could support joint estimation of the map and camera pose. iMAP was an early attempt to recast the dense-mapping problem of KinectFusion (Ch.9) in this representation.
 
 NeRF followed several coordinate-based MLP representations of 3D introduced around 2019. [Park et al.'s DeepSDF](https://arxiv.org/abs/1901.05103) represented object surfaces with an MLP that mapped coordinates to signed distance. [Mescheder et al.'s Occupancy Networks](https://arxiv.org/abs/1812.03828) mapped the same input to occupancy probability. [Sitzmann et al.'s SRN](https://arxiv.org/abs/1906.01618) stored a scene feature vector at each coordinate and formed images through differentiable ray marching. All three mapped coordinates to a field value. Mildenhall et al.'s 2020 NeRF added volume-rendering integration and positional encoding, applying the formulation to view synthesis. iMAP inherited this entire one-year lineage rather than one paper alone.
 
@@ -58,7 +58,7 @@ Like iMAP, NICE-SLAM froze the MLP and grid features while optimizing pose durin
 
 The grid introduced its own limitations because memory grew with the cube of resolution. The system could handle one or two indoor rooms but did not scale to multi-story buildings or outdoor environments. It also remained far from real-time operation.
 
-At SIGGRAPH 2022, Thomas Müller's [Müller et al. 2022. Instant-NGP](https://nvlabs.github.io/instant-ngp/) addressed this bottleneck with a hash-table-based feature encoding. The representation reduced the memory growth of voxel grids and cut training time from minutes to seconds. Although Instant-NGP was not a SLAM paper, most subsequent NeRF-SLAM systems adopted hash encoding.
+At SIGGRAPH 2022, Thomas Müller's [Müller et al. 2022. Instant-NGP](https://nvlabs.github.io/instant-ngp/) combined multi-resolution hash encoding with a GPU implementation to accelerate training. Its public implementation demonstrated training in seconds on some demo scenes using supported NVIDIA GPUs. Instant-NGP was not a SLAM paper, but several later NeRF-SLAM systems adopted its hash encoding.
 
 > 🔗 **Borrowed.** NICE-SLAM's multi-resolution feature grid was designed independently at roughly the same time as Instant-NGP's hash encoding, but Instant-NGP's hash grid soon replaced it in many NeRF-SLAM implementations. The feature grid also extends the grid-based representation of KinectFusion (Ch.9), replacing stored TSDF values with learned features.
 
@@ -72,11 +72,11 @@ UCL's [Wang et al. (2023) **Co-SLAM**](https://arxiv.org/abs/2304.14377) followe
 
 At the same CVPR, [Johari et al.'s **ESLAM**](https://arxiv.org/abs/2211.11704) from Idiap and EPFL addressed the same problem differently. It replaced the 3D feature grid with multi-scale axis-aligned feature planes, reducing memory growth from $O(n^3)$ to $O(n^2)$, and decoded TSDF rather than volume density to accelerate convergence.
 
-Antoni Rosinol at MIT released [**NeRF-SLAM**](https://arxiv.org/abs/2210.13641) in 2023. It retained classical SLAM tracking and factor-graph optimization while replacing only the map representation with NeRF. A DROID-SLAM frontend supplied poses and dense depth; NeRF-SLAM used those poses, depths, and uncertainties to construct an Instant-NGP-based map in parallel.
+Antoni Rosinol at MIT released [**NeRF-SLAM**](https://arxiv.org/abs/2210.13641) in 2022. It used DROID-SLAM to estimate poses and dense depth, then computed marginal covariances from the optimization Hessian. A separate Instant-NGP-based mapping module used these estimates and uncertainties to learn a radiance field.
 
-> 🔗 **Borrowed.** The NeRF-SLAM backend uses Dellaert's factor-graph optimization (Ch.6). NeRF changed the map representation while leaving the graph-based mathematics of pose estimation established after 2005 intact.
+> 🔗 **Borrowed.** NeRF-SLAM takes the pose and depth estimates produced by DROID-SLAM's recurrent updates and Dense Bundle Adjustment, and combines them with an Instant-NGP map. The radiance field does not replace the pose estimator; it builds a real-time dense map from that estimator's outputs.
 
-Rosinol used a modular design, replacing only the map representation rather than introducing NeRF throughout the pipeline. Classical SLAM functions such as loop closure remained in place.
+NeRF-SLAM separates dense monocular estimation from neural mapping. Tracking does not depend on optimizing the current pose against the radiance field; the mapping module receives the poses, depth maps, and uncertainty produced by the SLAM module. This modular structure allows improvements to the estimator and map representation separately.
 
 ---
 
