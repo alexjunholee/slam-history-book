@@ -1,103 +1,95 @@
 # Ch.18 — 실패 사례와 사라진 계보
 
-LOAM과 FAST-LIO2가 성숙해 가던 같은 시간, 로보틱스 커뮤니티 안에는 카메라 계보도 LiDAR 계보도 아닌 다른 방향으로 걷던 사람들이 있었다. 그 접근들이 주류가 되지 못했다고 해서 역사에 없던 것은 아니다.
+카메라 기반 SLAM과 LiDAR 기반 SLAM이 자리를 잡아 가는 동안, 로보틱스 연구자 가운데 일부는 두 방식 어느 쪽에도 속하지 않는 방법을 시도했다. 생체 모방 지도, event camera, 사물 단위 semantic 지도, 구조적 prior를 쓰는 방법이었다.
 
-각 계보의 출발점은 분명했다. Milford와 Wyeth의 RatSLAM(2004)은 O'Keefe와 Dostrovsky가 1971년에 보고한 place cell 연구를 cognitive map 이론을 거쳐 받아들였다. Event SLAM은 ETH Zürich INI의 Lichtsteiner·Posch·Delbruck가 2006년 ISSCC에서 공개하고 2008년 JSSC 논문으로 확장한 DVS와 silicon retina 계보를 이었다. Salas-Moreno 등의 SLAM++(2013)은 1990년대 object-level scene understanding을 SLAM state 안으로 옮겼다. 이들 유산이 어떤 공학적 벽을 만났는지를 되짚어 보면 기술의 성패를 가른 제약 조건이 뚜렷해진다.
-
-SLAM의 역사는 성공한 계보만으로 이루어지지 않는다. 매 10년마다 충분한 논문과 초기 결과를 갖추고도 주류로 진입하지 못한 접근들이 있었다. 공학적 확장이 막히거나, 더 실용적인 대안이 먼저 자리를 잡은 경우였다. 기술적 실패와는 다른 문제였다.
+논문과 초기 결과를 충분히 내고도 주류가 되지 못한 방법들이다.
 
 ---
 
 ## 18.1 RatSLAM — place cell 기반 위상 지도
 
-2004년 ICRA에서 [Milford et al. 2004](https://doi.org/10.1109/ROBOT.2004.1302555)가 발표한 RatSLAM은 장소 인식 문제에 전혀 다른 방식으로 접근했다. 쥐의 해마 안에 있는 **place cell**과 **head direction cell**의 발화 패턴을 모방해, 로봇이 환경을 탐색하면서 자연스럽게 장소 표현을 형성하게 했다. 계산 모델의 이름은 **Continuous Attractor Network(CAN)**이었다. 뉴런들의 활성화 상태가 2D 격자 위에서 연속적인 활성화 'bump'를 형성하고, 로봇의 속도·회전 입력(path integration)에 따라 그 bump가 격자를 따라 이동하는 구조다. 시각 입력이 들어오면 저장된 장소 표현과 비교해 bump 위치를 보정(correction)한다. 이 loop(이동으로 인한 bump 전파, 시각 매칭으로 인한 보정)이 RatSLAM의 핵심 동작 원리다.
+RatSLAM은 Michael Milford, Gordon Wyeth, David Prasser가 2004년 ICRA에서 발표했다([Milford et al. 2004](https://doi.org/10.1109/ROBOT.2004.1307183)). 세 사람은 University of Queensland에 있었다. RatSLAM은 쥐의 해마에 있는 **place cell**과 **head direction cell**을 본뜬 모델로 로봇의 위치를 추정했다. 중심은 **pose cell**이라 부르는 신경망이다. pose cell은 (x, y, θ) 세 축으로 배열된 competitive attractor network(경쟁 끌개 신경망)이고, 활성이 한곳에 모인 덩어리(activity packet)가 로봇의 위치와 방향을 나타낸다. 바퀴 엔코더로 잰 이동량(path integration)에 따라 이 덩어리가 옮겨 간다. 로봇이 전에 본 장면(local view)을 다시 보면, 그 장면과 연결된 pose cell에 활성이 더해져 덩어리의 위치가 바로잡힌다.
 
-> 🔗 **차용.** [O'Keefe와 Dostrovsky(1971)](https://pubmed.ncbi.nlm.nih.gov/5124915/)의 place cell 발견은 신경과학에서 시작해 인지 지도(cognitive map) 이론으로 이어졌다. RatSLAM은 그 생물학적 메커니즘을 공학 시스템으로 옮긴 초기의 완성도 높은 시도였다. 다만 이 공학적 계보는 크게 확장되지 않았다.
+> 🔗 **차용.** [O'Keefe와 Dostrovsky(1971)](https://pubmed.ncbi.nlm.nih.gov/5124915/)가 발견한 place cell은 신경과학 연구에서 인지 지도 이론으로 이어졌다. RatSLAM은 이 생물학적 기제를 공학 시스템으로 옮긴 초기 시도였다.
 
-Milford와 Gordon Wyeth는 Queensland University of Technology(QUT) 로보틱스 연구실을 거점으로, 2004년부터 2008년 사이에 브리즈번 교외 도로에서 실외 주행 실험을 반복했다. 실험 차량은 지붕에 카메라를 달고 교외 주택가를 달렸다. RatSLAM은 그 이미지 스트림을 받아 이미 지나온 길을 알아보고 loop를 닫았다. [Milford & Wyeth 2008](https://doi.org/10.1109/TRO.2008.2004520) IEEE T-RO 논문에는 66km 경로에서 수만 장의 이미지를 처리한 결과가 실렸다. 같은 시기 기하학적 SLAM 시스템들이 몇 백 미터 단위에서 고전하던 때였으니, 숫자만 보면 RatSLAM이 앞서 있었다.
+2008년 IEEE TRO 논문 [Milford & Wyeth 2008](https://doi.org/10.1109/TRO.2008.2004520)에서는 RatSLAM을 실외에서 시험했다. 차 지붕에 노트북 내장 웹캠 하나를 달고 브리즈번 St Lucia 교외를 100분 동안 66 km 달렸다. RatSLAM은 10 Hz로 들어오는 영상을 실시간으로 처리했고, 길이가 최대 5 km인 루프를 51개 넘게 닫았다. 결과로 나온 지도는 semi-metric topological map(반계량 위상 지도)이었다. 논문은 이 지도가 덮은 면적이 다른 연구진의 지도보다 다섯 배 넘게 넓다고 보고했다. 그 연구진은 자기 지도가 2007년까지 레이저 센서 하나로 만든 지도 가운데 가장 크다고 밝혔다.
 
-그러나 공학적 확장은 거기서 멈췄다. CAN은 장소 수가 늘수록 계산 복잡도가 올랐다. 더 깊은 문제는 정밀도였다. RatSLAM이 만드는 위상 지도(topological map)는 "여기 왔던 적 있다"는 판단은 했지만, 미터 단위의 metric 위치 추정은 안정적으로 내놓지 못했다. 자율주행과 조작(manipulation)이 요구하는 것은 정확한 좌표였다. 인지 지도는 그 요구에 맞지 않았다.
+RatSLAM을 공학적으로 더 키운 연구는 있었지만 SLAM의 주류가 되지 못했다. 장소가 늘수록 계산량이 커졌고, 정밀도가 더 큰 문제였다. RatSLAM의 위상 지도(topological map)로는 "여기 와 본 적이 있다"는 것까지 알 수 있었지만, 미터 단위의 metric 위치는 안정적으로 내지 못했다. 자율주행과 조작(manipulation)에는 정확한 좌표가 필요했다.
 
-> 📜 **예언 vs 실제.** Milford·Wyeth는 2008년 T-RO 논문 Conclusion에서 RatSLAM이 "vision-only SLAM의 대안적 접근"이며, 기존 state-of-the-art SLAM에게는 도전이 될 만한 환경(장거리 경로, 큰 누적 오차, 시각적 모호성)에서 반복적이고 신뢰도 높은 loop closure를 수행한다고 주장했다. 대체가 아니라 대안이라는 주장이었다. 실제로 이 주장은 부분적으로 맞았다. RatSLAM은 특정 benchmark에서 경쟁력을 보였다. 그러나 이후 분야 전체의 흐름에서는 2012년 이후 graph-based SLAM과 visual odometry가 정확도·속도 모두에서 앞서 나갔고, 위상 지도는 지금도 일부 place recognition 연구에 등장하지만, metric-topological 통합이라는 RatSLAM의 원래 야망은 다른 방식으로 이어지지 않았다.
+> 📜 **예언 vs 실제.** Milford와 Wyeth는 2008년 TRO 논문 결론에서 RatSLAM을 "vision-only SLAM의 대안적 접근"이라고 불렀다. 기존 state-of-the-art SLAM이 다루기 어려운 환경을 지도로 만들었고, odometry 오차가 크고 환경이 모호해도 큰 루프를 반복해서 믿을 만하게 닫았다고 주장했다. 이 주장은 부분적으로 맞았다. 위상 지도는 지금도 일부 place recognition 연구에 나온다.
 
-RatSLAM이 남긴 것은 "장소 표현이 기하학 없이도 가능하다"는 아이디어였다. 그 아이디어는 place recognition 문헌에 스며들었다. 2012년 [SeqSLAM](https://doi.org/10.1109/ICRA.2012.6224623)이 같은 Milford 그룹에서 나왔고, 이미지 시퀀스 비교 기반 장소 인식은 visual place recognition 벤치마크의 한 축이 됐다. 계보 자체는 살아남았고, 다만 형태가 달라졌다.
+RatSLAM은 기하 없이도 장소를 표현할 수 있다는 생각을 남겼다. 이 생각은 place recognition 연구로 퍼졌다. 2012년 Milford와 Wyeth가 [SeqSLAM](https://doi.org/10.1109/ICRA.2012.6224623)을 발표했다. 이미지 하나 대신 이미지 시퀀스를 비교해 장소를 알아보는 방식은 visual place recognition 연구의 한 갈래가 됐다.
 
 ---
 
 ## 18.2 biologically-inspired SLAM의 공학적 한계
 
-RatSLAM은 biologically-inspired SLAM의 가장 완성된 사례였지만 혼자가 아니었다. 2000년대 중반부터 2010년대 초반까지 인지 지도, entorhinal grid cell, hippocampal replay를 모방한 SLAM 변형들이 꾸준히 나왔다. 모두 비슷한 문제를 안고 있었다.
+RatSLAM은 biologically-inspired SLAM(생물 모방 SLAM) 가운데 가장 완성된 사례였다. 2000년대 중반부터 2010년대 초반까지 인지 지도, entorhinal grid cell, hippocampal replay를 본뜬 SLAM 변형도 꾸준히 나왔다. 이들 모두 비슷한 문제를 안고 있었다.
 
-생물학적 모델은 뇌가 *어떻게* 공간을 표현하는지 기술한다. 그것이 *왜* 그 방식인지, 그 방식이 공학적 목적에도 맞는지는 다른 질문이다. 쥐의 해마가 작동하는 생물학적 조건과 로봇이 평가받는 센서·계산·정확도 조건은 서로 다르다.
+생물학적 모델은 뇌가 공간을 *어떻게* 표현하는지 설명한다. 뇌가 *왜* 그렇게 표현하는지, 그 방식이 공학적 목적에도 맞는지는 별개의 질문이다. 쥐의 해마가 일하는 조건과 로봇을 평가하는 센서·계산·정확도 조건은 서로 다르다.
 
-공학적 SLAM은 미터 이하의 위치 추정 정확도, 실시간 처리, 새로운 환경에 대한 빠른 적응, 검증 가능한 오류 경계를 요구한다. 인지 모델은 이 조건들을 보장하기 어려웠다. 신경과학과 로봇공학은 서로에게서 영감을 얻을 수 있지만, 그 간격은 짧지 않았다.
-
-2020년대 들어 이 논의는 다시 열릴 여지가 생겼다. Foundation model이 스스로 형성한 representation은 인지 지도와 비교할 만한 질문을 던졌지만, 그 닮음을 같은 기제로 설명할 수 있는지 아니면 비유에 그치는지는 아직 모른다.
+공학적 SLAM에는 미터 이하의 위치 정확도, 실시간 처리, 새 환경에 빨리 적응하는 능력, 검증할 수 있는 오차 범위가 필요하다. 인지 모델로는 이 조건을 보장하기 어려웠다.
 
 ---
 
 ## 18.3 Event SLAM — 하드웨어와 알고리즘 성숙 격차
 
-Patrick Lichtsteiner, Christoph Posch, Tobi Delbruck가 ETH Zürich Institute of Neuroinformatics(INI)에서 개발한 Dynamic Vision Sensor(DVS)는 [ISSCC 2006 논문](https://tilde.ini.uzh.ch/users/tobi/public_html/papers/lichtsteiner_ISSCC2006_D27_09.pdf)에서 처음 공개됐고, [JSSC 2008 논문](https://doi.org/10.1109/JSSC.2007.914337)으로 확장됐다. 각 픽셀이 독립적으로 대수(log) 광도 변화를 임계값과 비교해 양(ON) 또는 음(OFF) 극성의 이벤트를 비동기(asynchronous)로 출력하는 구조다. 전역 셔터 없이 픽셀별로 발화 시점을 마이크로초 단위로 기록한다. 프레임이 없는 카메라였다.
+Patrick Lichtsteiner, Christoph Posch, Tobi Delbruck는 [ISSCC 2006 논문](https://tilde.ini.uzh.ch/users/tobi/public_html/papers/lichtsteiner_ISSCC2006_D27_09.pdf)에서 Dynamic Vision Sensor(DVS)를 공개했고, [JSSC 2008 논문](https://doi.org/10.1109/JSSC.2007.914337)으로 확장했다. 논문에 적힌 소속은 Lichtsteiner와 Delbruck가 ETH Zürich(취리히의 Institute of Neuroinformatics, INI), Posch가 빈의 ARC Seibersdorf Research다. DVS의 각 픽셀은 밝기의 로그값이 얼마나 바뀌었는지를 혼자서 임계값과 비교한다. 바뀐 양이 임계값을 넘으면 밝아졌는지(ON) 어두워졌는지(OFF)를 담은 이벤트를 다른 픽셀과 상관없이 비동기(asynchronous)로 내보낸다. 셔터로 모든 픽셀을 한꺼번에 읽지 않고, 픽셀마다 이벤트가 난 시각을 마이크로초 단위로 기록한다. 프레임이 없는 카메라였다.
 
-> 🔗 **차용.** DVS event sensor는 생물학적 망막의 변화 감지 메커니즘에서 착안한 하드웨어였다. Event SLAM은 이 센서를 손에 쥐고 시작했다. 센서 공개 뒤 event 기반 3D SLAM과 odometry가 이어졌지만, 그 간격을 하나의 정확한 기간으로 단정하기는 어렵다.
+> 🔗 **차용.** DVS는 생물의 망막이 변화를 감지하는 방식에서 착안한 센서였다. Event SLAM은 이 센서에서 출발했다.
 
-이벤트 카메라의 장점은 명확했다. μs 단위의 시간 해상도, 고속 운동에서 블러 없음, 고동적 범위(HDR)로 터널과 햇빛 직사 환경 모두 대응, 전력 소비는 기존 카메라의 수십 분의 일.
+이벤트 카메라의 장점은 분명했다. 시간 해상도가 마이크로초 단위이고, 빠르게 움직여도 영상이 번지지 않는다. 동적 범위(dynamic range)가 넓어(HDR) 터널 안과 직사광선 아래를 모두 다룰 수 있다. 전력도 적게 쓴다. [Gallego 등의 서베이](https://arxiv.org/abs/1904.08405)에 따르면 칩 수준에서 대부분 약 10 mW를 쓴다.
 
-2014년 ICRA에서 [Weikersdorfer et al. 2014](https://doi.org/10.1109/ICRA.2014.6906882)는 event 기반 3D SLAM을 발표했다. 같은 해 다른 그룹에서도 event-based optical flow와 depth 추정이 나왔다. 2016-2018년 사이에 Henri Rebecq(Davide Scaramuzza 그룹, University of Zurich RPG 연구실)가 [EVO](https://doi.org/10.1109/LRA.2016.2645143)(RA-L 2017)와 [ESIM](https://proceedings.mlr.press/v87/rebecq18a.html)(CoRL 2018) 등을 발표하면서 event SLAM 파이프라인이 구체화됐다.
+2014년 ICRA에서 [Weikersdorfer et al. 2014](https://doi.org/10.1109/ICRA.2014.6906882)가 DVS에 depth 센서를 더한 event 기반 3D SLAM을 발표했다. 같은 해 다른 그룹들도 event 기반 optical flow와 depth 추정을 내놓았다. 2016년부터 2018년 사이 University of Zurich의 Davide Scaramuzza 연구실(RPG)에서 Henri Rebecq 등이 [EVO](https://doi.org/10.1109/LRA.2016.2645143)(RA-L 2017)와 [ESIM](https://proceedings.mlr.press/v87/rebecq18a.html)(CoRL 2018)을 발표하면서 event SLAM 파이프라인이 구체적인 모양을 갖췄다.
 
-현실 환경에서는 제약이 컸다. 문제는 두 곳에 있었다. 첫째는 해상도였다. 초기 DVS 센서는 128×128 픽셀이었다. 기존 VGA 카메라와 비교할 수 없는 수준이었고, feature matching과 map building이 해상도에 직접 의존하는 SLAM에서 이 제약은 컸다. 둘째는 알고리즘 패러다임 자체였다. 기존 프레임 기반 알고리즘을 이벤트 스트림에 그대로 쓸 수 없었다. 새로운 방식이 필요했고, 그 개발에 시간이 걸렸다.
+실제 환경에서는 제약이 컸다. 해상도가 문제였다. JSSC 2008 논문의 DVS는 128×128 픽셀로, VGA(640×480) 카메라의 약 19분의 1이었다. feature matching과 지도 작성이 해상도에 직접 좌우되는 SLAM에서 이 차이는 컸다. 알고리즘도 문제였다. 프레임을 전제로 만든 알고리즘을 이벤트 스트림에 맞게 다시 설계해야 했고, 그 작업에 시간이 걸렸다.
 
-2014년부터 2018년까지 event SLAM 논문들은 controlled 환경과 각 논문이 정한 데이터에서 결과를 보고했다. 이들 실험은 기존 visual-inertial odometry와 동일한 센서·환경·평가 조건을 공유하지 않으므로, 분야 전체의 보편적 우열을 뒷받침하지는 않는다.
-
-그 사이 event 접근의 적용 범위는 odometry 밖으로도 넓어졌다. [EventVLAD](https://ieeexplore.ieee.org/document/9635907/)(Lee & Kim, IROS 2021)는 event stream에서 복원한 edge 이미지를 NetVLAD descriptor로 묶어, 급격한 조명 변화와 모션 블러 조건에서도 장소 재인식이 가능함을 보였다. frame 기반 VPR이 취약한 환경에 event를 적용한 시도였다.
+event를 쓰는 연구는 이후 장소 인식으로도 넓어졌다. [EventVLAD](https://ieeexplore.ieee.org/document/9635907/)(Lee & Kim, IROS 2021)는 event stream에서 잡음을 걷어 낸 edge 이미지를 복원하고, 이 이미지에서 NetVLAD descriptor를 뽑아 장소를 알아봤다. 조명이 크게 바뀌는 조건처럼 frame 기반 VPR(visual place recognition)이 약한 환경에 event를 써 본 시도였다.
 
 ---
 
-## 18.4 Semantic SLAM — object-as-landmark 경로의 축소
+## 18.4 Semantic SLAM — 사물을 landmark로 쓰는 방식
 
-2017년부터 2019년까지 CVPR, ECCV, IROS에서 "semantic"을 다룬 연구가 빠르게 늘었다. 딥러닝이 instance segmentation과 object detection에서 연속으로 돌파구를 열던 시기였다. 이 semantic 이해를 SLAM에 통합하려는 연구가 이어졌지만, 실행은 담론을 따라가지 못했다.
+2017년부터 2019년까지 CVPR, ECCV, IROS에서 "semantic"을 다룬 연구가 빠르게 늘었다. 딥러닝으로 instance segmentation과 object detection 성능이 빠르게 오르던 때였다. 이런 semantic 이해를 SLAM에 넣으려는 연구도 이어졌다.
 
-[Salas-Moreno et al. 2013](https://doi.org/10.1109/CVPR.2013.178)의 **SLAM++**가 그 계보의 첫 대형 선언이었다. Imperial College의 Salas-Moreno와 지도교수 Andrew Davison 그룹은 기존의 포인트나 패치 대신 *사물(object)*을 지도의 기본 단위로 삼았다. 의자, 책상, 모니터 같은 사전 정의된 3D 객체 모델을 데이터베이스에 저장하고, SLAM 실행 중 RGB-D 입력에서 ICP(Iterative Closest Point) 기반 정합으로 그 객체들을 인식해 지도에 올렸다. 포인트 수천 개 대신 객체 수십 개로 지도를 표현하면, 맵 크기가 줄고 장소 인식과 loop closure가 더 의미론적으로 이루어질 수 있었다.
+그보다 앞선 2013년 CVPR에서 Imperial College London의 Renato Salas-Moreno, Richard Newcombe, Hauke Strasdat, Paul Kelly, Andrew Davison이 **SLAM++**를 발표했다([Salas-Moreno et al. 2013](https://doi.org/10.1109/CVPR.2013.178)). SLAM++는 점이나 패치 대신 *사물(object)*을 지도의 기본 단위로 삼았다. 미리 만들어 둔 사물의 3D 모델을 데이터베이스에 넣어 두고, 손에 든 RGB-D 카메라 영상에서 그 사물을 실시간으로 인식했다. 인식에는 point pair feature로 투표하는 방법을 GPU에서 병렬로 돌렸고, 자세는 ICP(Iterative Closest Point)로 다듬었다. 인식한 사물은 카메라와 함께 pose graph에 넣어 계속 최적화했다. 실험에서는 의자 두 종류와 둥근 탁자 두 종류를 인식해 방 하나를 지도로 만들었다. 논문은 다른 방 하나의 지도 메모리를 같은 부피의 KinectFusion 지도와 견주어 약 70분의 1로 추산했다. 점 수천 개 대신 사물 수십 개로 지도를 나타내면 지도가 작아지고, 장소 인식과 loop closure도 사물을 단위로 할 수 있었다.
 
-> 🔗 **차용.** SLAM++의 object-level representation은 그래픽스의 scene graph 표현과 컴퓨터 비전의 model-based recognition을 결합한 것이었다. 2020년대 LERF와 LangSplat도 지도 표현에 의미 정보를 결합했지만, 두 논문이 SLAM++를 직접 계승했다는 인용 계보는 확인되지 않는다.
+> 🔗 **차용.** SLAM++의 사물 인식은 컴퓨터 비전의 model-based recognition에서 왔다. 투표 방식은 Drost 등이 제안한 point pair feature 방법을 가져다 썼다.
 
-SLAM++ 이후 [SemanticFusion](https://arxiv.org/abs/1609.05130)(McCormac et al., 2017, ICRA)과 [MaskFusion](https://arxiv.org/abs/1804.09194)(Rünz et al., 2018, ISMAR)이 semantic 정보를 지도와 동적 객체 분리에 사용했다. 같은 시기 [SuperPoint](https://arxiv.org/abs/1712.07629)(DeTone et al., 2018) 기반 시스템도 등장했지만, SuperPoint는 semantic feature가 아니라 keypoint detector와 local descriptor를 함께 학습하는 방법이다. 두 흐름은 모두 학습을 썼지만 문제와 표현 단위가 달랐다. Semantic SLAM 쪽의 주장은 semantic 이해를 기하 파이프라인에 통합하면 환경 변화에 더 강건한 지도를 만들 수 있다는 것이었다.
+SLAM++ 뒤로 [SemanticFusion](https://arxiv.org/abs/1609.05130)(McCormac et al., ICRA 2017)은 dense 지도에 semantic label을 붙였고, [MaskFusion](https://arxiv.org/abs/1804.09194)(Rünz et al., ISMAR 2018)은 움직이는 사물을 인식해 따로 추적했다. 같은 무렵 나온 [SuperPoint](https://arxiv.org/abs/1712.07629)(DeTone et al., CVPRW 2018)도 학습을 썼다. SuperPoint는 keypoint detector와 local descriptor를 함께 학습하는 방법이어서 점 단위로 동작한다. Semantic SLAM 연구자들은 semantic 이해를 기하 파이프라인에 넣으면 환경이 바뀌어도 지도가 더 강건해진다고 주장했다.
 
-실제 전개는 달랐다. 2019년까지 널리 비교되던 geometric 파이프라인에는 ORB-SLAM2와 VINS-Mono가 있었고, LIO-SAM은 2020년에 발표됐다. 당시 semantic 시스템들은 서로 다른 실내·객체·데이터셋 설정에서 평가돼 보편적 우열을 직접 비교하기 어려웠다. 다만 고정된 segmentation model과 class vocabulary에 의존한다는 한계는 각 논문에서 반복됐다.
+2019년까지 널리 비교되던 geometric 파이프라인은 ORB-SLAM2와 VINS-Mono였다. LIO-SAM은 2020년에 나왔다. 당시 semantic 시스템들은 저마다 다른 실내 환경, 사물, 데이터셋에서 평가돼 서로 직접 비교하기 어려웠다. 미리 정한 segmentation model과 class 목록에 기대야 한다는 한계는 여러 논문에 되풀이해 나왔다.
 
-> 📜 **예언 vs 실제.** Salas-Moreno는 SLAM++ 논문 Conclusion에서 자신들의 방식이 "보다 일반적(generic) SLAM 방법으로 가는 첫 걸음"이라며, 낮은 차원의 형상 변이를 갖는 객체, 나아가 장기적으로는 스스로 객체 클래스를 분할·정의하는 시스템으로 확장되기를 기대했다. 논문 도입부는 이에 더해 객체 단위 표현이 "맵 저장량의 큰 압축"과 "효율성·견고성 이득"을 준다고 주장했다. 실제 전개는 일부만 적중했다. Object-level map은 AR과 특정 manipulation 응용에서 자리를 찾았고, 압축·효율 측면의 이점은 실내 반복 객체 환경에서 재확인됐다. 그러나 주류 geometric SLAM은 2026년 기준에도 sparse point와 keyframe 기반 graph를 유지하고 있고, 객체를 스스로 segmentation·정의하는 단계는 도달하지 못했다. Object-as-landmark의 확산은 제한적이었지만, semantic은 SLAM 내부의 동적 영역 분리와 하류 태스크인 semantic mapping·task planning에서 다른 역할을 찾았다.
+semantic을 먼저 세운 SLAM이 주류가 되지 못한 데는 의존성 문제가 있었다. Semantic SLAM은 segmentation이 정확해야 했다. segmentation이 틀리면 지도 전체가 오염됐다. 기하 파이프라인은 feature matching이 일부 실패해도 robust estimation으로 버텼다. 일반화도 문제였다. 특정 사물 class로 학습한 semantic prior는 그 class 밖에서 쓸모가 없었다.
 
-semantic-first SLAM이 주류가 되지 못한 원인은 두 곳에 있었다. 하나는 의존성이었다. Semantic SLAM은 segmentation이 정확해야 했는데, segmentation이 틀리면 지도 전체가 오염됐다. 기하학적 파이프라인은 feature matching이 부분적으로 실패해도 robust estimation으로 버텼다. 다른 하나는 일반화였다. 특정 객체 클래스로 훈련한 semantic prior는 그 클래스 밖에서 쓸모가 없었다. SLAM이 들어가야 할 환경은 그 prior가 상정한 세계보다 훨씬 넓었다.
+> 📜 **예언 vs 실제.** Salas-Moreno 등은 SLAM++ 논문 결론에서 자신들의 방법을 "보다 일반적인(generic) SLAM 방법으로 가는 첫걸음"이라고 불렀다. 모양이 조금씩 다른 사물까지 다루고, 장기적으로는 시스템이 스스로 사물 class를 나누고 정의하게 되기를 기대했다. 초록에서는 사물 단위 표현으로 지도를 크게 압축할 수 있다고 했다. 이 기대는 일부만 맞았다. 사물 단위 지도는 AR과 일부 manipulation 응용에 쓰였다. 같은 사물이 되풀이되는 실내 환경에서는 압축과 효율 면의 이점이 다시 확인됐다. 주류 geometric SLAM은 2026년에도 sparse point와 keyframe graph를 쓴다. 시스템이 사물을 스스로 나누고 정의하는 단계에는 이르지 못했다. 사물을 landmark로 쓰는 방식은 널리 퍼지지 않았다. semantic은 SLAM 안에서 움직이는 영역을 가려내는 데, 그리고 SLAM 뒤의 semantic mapping과 task planning에 쓰이게 됐다.
 
-축소된 것은 object-as-landmark 경로였다. 같은 시기 다른 경로가 살아남았다. [SuMa++](https://doi.org/10.1109/IROS40897.2019.8967704)(Chen et al., IROS 2019)가 LiDAR point cloud에 semantic class를 덧씌워 동적 물체를 걸러냈고, [Kimera](https://doi.org/10.1109/ICRA40945.2020.9196885)(Rosinol et al., ICRA 2020)가 metric-semantic mesh와 3D scene graph를 묶었다. [Hydra](https://doi.org/10.15607/RSS.2022.XVIII.050)(Hughes et al., RSS 2022)는 그 scene graph를 실시간·계층적으로 확장했고, [ConceptGraphs](https://doi.org/10.1109/ICRA57147.2024.10610243)(Gu et al., ICRA 2024)와 [Clio](https://doi.org/10.1109/LRA.2024.3451395)(Maggio et al., RA-L 2024)에 이르러 open-vocabulary foundation feature가 그 위에 얹혔다. Semantic은 지도의 상위 layer로 올라가 살아남았다. 이 계보는 2026년까지 진행 중이고, [Ch.15b](chapter_15b_dynamic.md)(Dynamic·static 분리의 semantic 귀환), [Ch.16](chapter_16_foundation_3d.md)(foundation 3D·metric-semantic 본체), [Ch.19 §19.7](chapter_19_open_problems.md#197-semantic-표현의-귀환과-open-world)(Semantic의 귀환)에서 이어 다룬다.
-
----
-
-## 18.5 Manhattan-World 가정 — 적용 범위와 보조 제약으로의 존속
-
-비슷한 시기에는 Manhattan-world assumption을 이용한 SLAM도 시도됐지만, 이후 연구 범위가 축소됐다.
-
-가정 자체는 단순했다. [Coughlan & Yuille 1999](https://doi.org/10.1109/ICCV.1999.790349)의 Manhattan world 개념을 이어받아, 실내 환경은 대부분 세계 좌표계의 세 직교 축(x, y, z)에 정렬된 구조라고 봤다. 벽, 바닥, 천장이 그 방향을 만든다. 이미지 속 평행선 묶음은 소실점(vanishing point)으로 수렴하며, 각 소실점은 카메라의 회전 행렬 R과 방향 벡터 d의 관계 `v = K R d`로 기술된다(K: 카메라 내부 행렬). 세 직교 소실점을 찾으면 R의 세 열을 직접 복원할 수 있다. IMU나 feature matching 없이 기하학적 제약만으로 drift를 억제할 수 있다는 말이다. 이 아이디어를 visual odometry와 결합하려는 시도들이 이 시기에 등장했다.
-
-긴 복도와 직사각형 방에서는 구조적 prior가 drift를 줄일 수 있었다. 문제는 그 밖이었다. 야외로 나가거나, 둥근 구조물이 있거나, 불규칙한 산업 환경에 들어서면 Manhattan-world 가정 자체가 성립하지 않았다. 그래서 이 가정은 적용 가능한 환경에서 선택적으로 쓰는 보조 제약으로 남았다. 조사한 논문만으로는 general-purpose visual-inertial odometry의 성숙이 이 계보를 쇠퇴시켰다거나 독립 연구 계보가 사라졌다는 인과를 뒷받침할 수 없다.
+semantic을 다른 자리에 쓴 연구는 계속 나왔다. [SuMa++](https://doi.org/10.1109/IROS40897.2019.8967704)(Chen et al., IROS 2019)는 LiDAR 스캔에 semantic class를 붙여 움직이는 물체를 걸러 냈다. [Kimera](https://doi.org/10.1109/ICRA40945.2020.9196885)(Rosinol et al., ICRA 2020)는 metric-semantic 3D mesh를 실시간으로 만들었고, 같은 그룹의 [3D Dynamic Scene Graphs](https://doi.org/10.15607/RSS.2020.XVI.079)(Rosinol et al., RSS 2020)가 3D scene graph를 내놓았다. [Hydra](https://doi.org/10.15607/RSS.2022.XVIII.050)(Hughes et al., RSS 2022)는 scene graph를 실시간으로, 계층을 나누어 만들었다. [ConceptGraphs](https://doi.org/10.1109/ICRA57147.2024.10610243)(Gu et al., ICRA 2024)와 [Clio](https://doi.org/10.1109/LRA.2024.3451395)(Maggio et al., RA-L 2024)는 그 위에 open-vocabulary foundation feature를 얹었다. semantic은 지도의 위층으로 자리를 옮겼다. 이 흐름은 2026년에도 이어지고 있고, [Ch.15b](chapter_15b_dynamic.md)(Dynamic·static 분리의 semantic 귀환), [Ch.16](chapter_16_foundation_3d.md)(foundation 3D·metric-semantic 본체), [Ch.19 §19.7](chapter_19_open_problems.md#197-semantic-표현과-open-world)(Semantic의 귀환)에서 이어 다룬다.
 
 ---
 
-## 18.6 소멸 계보의 재발견 패턴
+## 18.5 Manhattan-World 가정 — 좁아진 적용 범위와 보조 제약으로 남은 쓰임
 
-계보가 죽는다는 것이 무엇을 뜻하는지는 사례마다 다르다. RatSLAM의 topological map 아이디어는 SeqSLAM으로 이어졌고, 그 후예가 visual place recognition 분야에서 살아 있다. SLAM++와 [LERF](https://arxiv.org/abs/2303.09553)(Kerr et al., 2023)·[LangSplat](https://arxiv.org/abs/2312.16084)(Qin et al., 2023)은 모두 지도 표현에 의미 정보를 결합하지만, 직접 인용 계보라기보다 서로 다른 표현에서 나타난 공통 목표로 보는 편이 정확하다.
+Manhattan-world 가정을 쓴 SLAM도 같은 무렵 나왔다. 이 방식이 쓰이는 범위는 나중에 좁아졌다.
 
-Event camera SLAM은 경로가 달랐다. 초기에는 하드웨어의 제약이 컸다. 2022년 이후 640×480 이상의 event camera가 시장에 나왔고, 고속 드론과 HDR 환경에서의 필요가 분명해졌다. [Guillermo Gallego](https://arxiv.org/abs/1904.08405)(TU Berlin)를 중심으로 한 event vision 커뮤니티는 2020-2024년 사이에 event-based depth estimation과 ego-motion 추정에서 경쟁력 있는 결과를 냈다.
+가정은 단순했다. [Coughlan & Yuille 1999](https://doi.org/10.1109/ICCV.1999.790349)의 Manhattan world 개념에 따라, 실내 구조는 대부분 세계 좌표계의 세 직교 축(x, y, z)에 맞춰 있다고 봤다. 벽, 바닥, 천장이 이 방향을 만든다. 이미지 속 평행선 묶음은 소실점(vanishing point)으로 모인다. 각 소실점은 카메라 회전 행렬 R과 방향 벡터 d로 `v = K R d`처럼 쓸 수 있다(K: 카메라 내부 행렬). 서로 직교하는 소실점 세 개를 찾으면 R의 세 열을 바로 구할 수 있다. IMU나 feature matching 없이 기하 제약만으로 회전의 drift를 누를 수 있다는 뜻이다. 이 아이디어를 visual odometry와 합치려는 시도가 이 무렵 나왔다.
 
-영감이 좋아도 공학이 따라오는 데 시간이 걸리고, 센서가 새로워도 알고리즘은 따로 만들어야 한다. 그 간격을 메우는 데 얼마나 걸리느냐는 알고리즘의 성숙도와 하드웨어의 실용화 속도에 달렸다. 그 사이에 더 나은 대안이 먼저 자리를 잡느냐도 변수였다.
+긴 복도와 직사각형 방에서는 이 구조적 prior로 drift를 줄일 수 있었다. 그 밖의 환경이 문제였다. 야외로 나가거나, 둥근 구조물이 있거나, 구조가 불규칙한 산업 현장에 들어가면 Manhattan-world 가정 자체가 맞지 않았다. 그래서 이 가정은 맞는 환경에서만 골라 쓰는 보조 제약으로 남았다.
+
+---
+
+## 18.6 사라진 방법의 그 뒤
+
+사라졌다는 말이 뜻하는 바는 사례마다 다르다. RatSLAM의 topological map 아이디어는 SeqSLAM으로 이어졌고, 그 뒤를 이은 방법들이 visual place recognition 분야에 남아 있다. SLAM++와 [LERF](https://arxiv.org/abs/2303.09553)(Kerr et al., ICCV 2023), [LangSplat](https://arxiv.org/abs/2312.16084)(Qin et al., CVPR 2024)은 모두 지도에 의미 정보를 붙인다. LERF와 LangSplat이 SLAM++를 직접 이었다고 볼 인용 근거는 없다. 서로 다른 표현에서 같은 목표가 나타난 경우로 보는 편이 정확하다.
+
+Event camera SLAM은 다르게 흘러갔다. 처음에는 하드웨어 제약이 컸다. 2017년 ISSCC에서 Samsung이 640×480 해상도의 DVS를 발표했고([Son et al. 2017](https://doi.org/10.1109/ISSCC.2017.7870263)), 2021년에는 Sony와 Prophesee가 1280×720 해상도의 IMX636을 [발표](https://www.sony-semicon.com/en/news/2021/2021090901.html)했다. 고속 드론과 HDR 환경에서 쓰임새도 분명해졌다. Guillermo Gallego(TU Berlin) 등 event vision 연구자들은 [서베이](https://arxiv.org/abs/1904.08405)에서 event 기반 depth 추정과 ego-motion 추정 연구를 정리했다.
 
 ---
 
 ## 🧭 아직 열린 것
 
-**Biologically-inspired SLAM.** Foundation model이 대규모 비지도 학습으로 공간 표현을 형성하는 방식은 인지 지도와 구조적으로 닮은 특성이 있다. 그러나 transformer 내부 표현을 place cell과 같은 기제로 볼 수 있는지는 아직 검증되지 않았다. RatSLAM류의 계보가 foundation model 패러다임 안에서 다른 이름으로 돌아올 가능성은 가설로 남아 있다.
+**Biologically-inspired SLAM.** foundation model이 대규모 비지도 학습으로 얻는 공간 표현을 인지 지도와 견주는 시각이 있다. transformer 내부 표현을 place cell과 같은 기제로 볼 수 있는지 검증하는 일은 남은 과제다. RatSLAM 같은 방법이 foundation model 안에서 다른 이름으로 돌아올지도 가설로 남아 있다.
 
-**Event camera SLAM의 주류화.** 2022년 이후 상업용 고해상도 event camera가 보급되면서 연구 기반이 넓어졌다. 그러나 event 데이터를 효과적으로 처리하는 알고리즘 패러다임은 아직 안정적인 공통 프레임워크를 갖추지 못했다. Frame 기반 pipeline과의 통합과 새로운 event representation, 그리고 real-world benchmark의 다양화와 평가 기준 정립이 동시에 진행 중이다. 주류화 여부는 2026년 기준에도 판단이 이르다.
+**Event camera SLAM의 주류화.** 해상도가 높은 상용 event camera가 나오면서(§18.6) 연구 기반이 넓어졌다. frame 기반 pipeline과 합치는 문제, 새로운 event 표현, 실제 환경 benchmark를 늘리고 평가 기준을 세우는 일이 함께 진행 중이다.
 
-**"Semantic map" 개념의 향방.** 2017년 semantic SLAM의 빠른 증가세가 둔화한 뒤, semantic 표현은 동적 영역 분리와 downstream task 등으로 역할을 넓혔다. 2023년부터 LERF와 언어 기반 Gaussian splatting이 언어 feature를 밀도 있는 scene representation과 결합하면서 다른 형태가 나왔다. 내부화로 이어질지, 다시 downstream으로 남을지는 모른다. geometry가 먼저 옳아야 semantic이 쓸모 있다는 패턴이 이번에도 반복될지, 아니면 representation 자체의 변화가 그 순서를 바꿀지가 관건이다. 2026년 기준으로도 다음 주류 형태는 아직 정해지지 않았다.
+**"Semantic map" 개념의 향방.** 2017년 무렵 빠르게 늘던 semantic SLAM 연구가 주춤한 뒤, semantic 표현은 움직이는 영역을 가려내는 일과 downstream task로 쓰임을 넓혔다. 2023년부터 LERF와 언어 기반 Gaussian splatting이 언어 feature를 dense scene representation에 붙이면서 다른 형태가 나왔다. Ch.15 🧭에서 본 것처럼 semantic Gaussian을 SLAM에 넣은 연구도 나왔다. 지금까지는 geometry가 먼저 갖춰진 뒤에 semantic이 쓰였다. representation이 바뀌면서 이 순서도 바뀔지는 아직 알 수 없다.

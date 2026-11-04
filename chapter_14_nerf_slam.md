@@ -1,103 +1,99 @@
-# Ch.14 — NeRF 충격과 SLAM 접목: iMAP→NICE-SLAM
+# Ch.14 — NeRF를 SLAM 지도로: iMAP→NICE-SLAM
 
-DROID-SLAM은 learned representation을 SLAM의 tracking에 직접 넣었다. MLP나 recurrent network가 feature를 만들고, 그 feature 위에서 포즈를 최적화했다. Imperial College의 Edgar Sucar는 2021년 iMAP에서 learned representation을 *지도 자체*에 사용했고, 그 재료를 SLAM 바깥의 NeRF에서 가져왔다.
+DROID-SLAM은 학습한 표현을 SLAM의 tracking에 넣었다. CNN과 GRU가 feature와 대응을 만들고, 그 결과로 자세를 최적화했다. Imperial College의 Edgar Sucar와 동료들은 2021년 iMAP에서 학습한 표현을 *지도*로 썼다. 그 표현은 SLAM 밖의 NeRF에서 왔다.
 
-2020년 3월, Ben Mildenhall과 동료들이 arXiv에 올린 [Mildenhall et al. 2020. NeRF](https://arxiv.org/abs/2003.08934)는 pose를 아는 여러 입력 영상으로 연속 volumetric scene function을 최적화하고, 보지 않은 시점의 영상을 합성했다. NeRF는 처음에는 novel-view synthesis 문제의 해법으로 제시됐다. 2021년 ICCV에서 Sucar가 iMAP을 발표하면서, 이 표현을 렌더링뿐 아니라 지도와 pose를 함께 추정하는 데 쓸 수 있다는 점이 드러났다. iMAP은 KinectFusion(Ch.9)의 dense mapping 문제를 implicit neural field로 다시 풀어 본 초기 시스템이었다.
+2020년 3월, Ben Mildenhall과 동료들이 arXiv에 올린 [Mildenhall et al. 2020. NeRF](https://arxiv.org/abs/2003.08934)는 자세를 아는 여러 입력 영상으로 연속 volumetric scene function을 최적화해, 보지 않은 시점의 영상을 합성하는(novel-view synthesis) 방법이었다. 2021년 ICCV에 나온 iMAP은 이런 표현으로 지도와 자세를 함께 추정했다. KinectFusion(Ch.9)이 풀던 dense mapping을 implicit neural field(신경망으로 표현한 연속 함수)로 다시 푼 초기 시스템이다.
 
-NeRF가 허공에서 나온 것은 아니었다. 2019년 한 해 동안 coordinate-based MLP로 3D를 표현하는 세 갈래가 거의 동시에 나왔다. [Park et al.의 DeepSDF](https://arxiv.org/abs/1901.05103)는 좌표를 넣으면 signed distance를 출력하는 MLP로 물체 표면을 암묵적으로 기술했고, [Mescheder et al.의 Occupancy Networks](https://arxiv.org/abs/1812.03828)는 같은 좌표 입력에서 occupancy 확률을 출력하게 만들었으며, [Sitzmann et al.의 SRN](https://arxiv.org/abs/1906.01618)은 좌표마다 scene feature vector를 저장해 differentiable ray marching으로 이미지를 합성했다. 세 연구는 좌표를 넣으면 field 값을 출력하는 같은 수학적 틀을 공유했다. Mildenhall et al. 2020 NeRF는 이 틀에 volume rendering 적분과 positional encoding을 더해 view synthesis까지 완성했다. iMAP이 이어받은 것은 그 1년짜리 계보 전체였다.
+NeRF 이전인 2019년에도 좌표를 입력받는 MLP(coordinate-based MLP)로 3D를 표현하는 연구가 잇달아 나왔다. [Park et al.의 DeepSDF](https://arxiv.org/abs/1901.05103)는 좌표를 넣으면 signed distance를 출력하는 MLP로 물체 표면을 암묵적으로 기술했다. [Mescheder et al.의 Occupancy Networks](https://arxiv.org/abs/1812.03828)는 같은 좌표 입력에서 occupancy 확률을 출력하게 했다. [Sitzmann et al.의 SRN](https://arxiv.org/abs/1906.01618)은 좌표를 넣으면 scene feature vector를 내는 MLP를 두고, 미분 가능한 ray marching으로 이미지를 합성했다. 이 연구들은 모두 좌표를 넣으면 field 값이 나오는 함수를 학습했다. NeRF는 여기에 volume rendering 적분과 positional encoding을 더해 view synthesis에 썼다. iMAP 논문은 DeepSDF와 Occupancy Networks를 참고문헌으로 인용한다.
 
 ---
 
 ## NeRF: MLP 기반 공간 표현
 
-NeRF는 하나의 MLP로 3D 공간을 암묵적으로 표현한다. 공간 좌표 $(x, y, z)$와 시선 방향 $(\theta, \phi)$을 입력하면 그 위치의 색상 $(r, g, b)$과 밀도 $\sigma$를 출력한다. 이 출력을 광선마다 적분해 장면을 렌더링한다.
+NeRF는 MLP 하나로 3D 공간을 표현한다. 공간 좌표 $(x, y, z)$와 시선 방향 $(\theta, \phi)$를 넣으면 그 위치의 색상 $(r, g, b)$와 밀도 $\sigma$를 출력한다. 이 출력을 광선마다 적분해 장면을 렌더링한다.
 
 렌더링은 volume rendering 방정식으로 이루어진다. 카메라 원점 $\mathbf{o}$에서 방향 $\mathbf{d}$로 나간 광선을 $t$ 매개변수로 샘플링한다:
 
 $$\hat{C}(\mathbf{r}) = \int_{t_n}^{t_f} T(t)\,\sigma\!\left(\mathbf{r}(t)\right) \mathbf{c}\!\left(\mathbf{r}(t), \mathbf{d}\right)\, dt$$
 
-여기서 $T(t) = \exp\!\left(-\int_{t_n}^{t} \sigma(\mathbf{r}(s))\, ds\right)$는 광선이 거기까지 막히지 않고 도달할 누적 투과율이다. 실제로는 이 적분을 구간별 리만 합으로 근사한다.
+여기서 $T(t) = \exp\!\left(-\int_{t_n}^{t} \sigma(\mathbf{r}(s))\, ds\right)$는 광선이 $t$까지 도달할 확률, 즉 누적 투과율이다. 실제로는 광선 위 샘플들로 이 적분을 구간별 합으로 근사한다.
 
-> 🔗 **차용.** Volume rendering 방정식은 [Kajiya & Von Herzen(1984)](https://courses.cs.duke.edu/cps296.8/spring03/papers/RayTracingVolumeDensities.pdf)의 고전 그래픽스 논문에서 왔다. 40년 가까이 오프라인 렌더링의 물리 기반 도구였던 것을 Mildenhall은 역방향 최적화의 손실 함수로 전환했다.
+> 🔗 **차용.** Volume rendering 방정식은 [Kajiya & Von Herzen(1984)](https://courses.cs.duke.edu/cps296.8/spring03/papers/RayTracingVolumeDensities.pdf)의 그래픽스 논문에서 왔다. NeRF 논문은 이 식을 미분 가능하게 계산해, 렌더링한 색과 실제 픽셀의 차이로 MLP를 학습했다.
 
-MLP가 고주파 공간 신호를 학습하지 못하는 문제를 Mildenhall et al.(2020) NeRF 논문은 positional encoding으로 풀었다. 좌표 $(x, y, z)$를 사인·코사인 함수로 여러 주파수에 걸쳐 투영하면, 네트워크가 세밀한 텍스처와 날카로운 경계를 학습할 수 있다:
+좌표를 그대로 넣은 MLP는 저주파 성분에 치우쳐 학습한다. NeRF 논문은 positional encoding으로 이 문제를 다뤘다. 좌표 $(x, y, z)$를 여러 주파수의 사인·코사인 값으로 바꿔 넣으면 네트워크가 세밀한 텍스처와 날카로운 경계까지 학습한다:
 
 $$\gamma(p) = \left(\sin(2^0 \pi p),\, \cos(2^0 \pi p),\, \ldots,\, \sin(2^{L-1} \pi p),\, \cos(2^{L-1} \pi p)\right)$$
 
-> 🔗 **차용.** NeRF의 positional encoding은 Mildenhall et al.(2020) 원 논문에 포함된 것이다. 같은 해 [Tancik et al.(2020)](https://arxiv.org/abs/2006.10739) "Fourier Features Let Networks Learn High Frequency Functions"가 NTK(neural tangent kernel) 이론으로 이 기법의 작동 원리를 설명했다.
+> 🔗 **차용.** positional encoding은 NeRF 원 논문에 이미 있었다. 같은 해 [Tancik et al.(2020)](https://arxiv.org/abs/2006.10739) "Fourier Features Let Networks Learn High Frequency Functions"가 NTK(neural tangent kernel) 이론으로 이 기법의 작동 원리를 설명했다.
 
-NeRF의 학습은 렌더링 과정의 역방향 최적화로 이뤄진다. 알고 있는 카메라 포즈에서 찍은 이미지들과 렌더링 결과를 비교해 픽셀 단위 L2 손실을 최소화한다. 최적화가 끝나면 MLP 가중치 자체가 장면의 geometry와 appearance를 저장한다. 복셀도, 메시도, 포인트클라우드도 쓰지 않는다. 공간은 네트워크 파라미터 안에 있다.
+NeRF는 자세를 아는 이미지와 같은 시점에서 렌더링한 결과를 비교해 픽셀 색의 제곱 오차 합을 줄인다. 최적화가 끝나면 장면의 geometry와 appearance가 MLP 가중치에 담긴다.
 
-그러나 원래 NeRF에는 뚜렷한 약점이 있었다. 학습에 수 시간이 걸렸고, 한 장면에 특화되었으며, 카메라 포즈는 COLMAP 같은 외부 SfM으로 미리 구해야 했다. 이것을 SLAM에 이식하려면 포즈 추정과 지도 학습을 실시간에 가깝게 동시에 수행해야 한다.
+원래 NeRF는 장면 하나를 학습하는 데 V100 GPU 한 장으로 1~2일이 걸렸다. 장면마다 따로 학습해야 했고, 카메라 자세는 COLMAP 같은 SfM으로 미리 구해야 했다. SLAM에 쓰려면 자세 추정과 지도 학습을 실시간에 가깝게 함께 해야 한다.
 
 ---
 
 ## iMAP: 초기 neural implicit SLAM
 
-Imperial College Dyson Robot Learning Lab의 Edgar Sucar가 2021년 ICCV에 발표한 [Sucar et al. 2021. iMAP](https://doi.org/10.1109/ICCV48922.2021.00612)은 그 시도였다. **iMAP**(Implicit MAP)은 RGB-D 카메라의 입력을 받아 단일 MLP를 지도로 쓰면서 포즈를 동시에 최적화했다.
+Imperial College Dyson Robotics Lab의 Edgar Sucar는 2021년 ICCV에 [Sucar et al. 2021. iMAP](https://doi.org/10.1109/ICCV48922.2021.00617)을 발표했다. **iMAP**(Implicit MAP)은 손에 든 RGB-D 카메라 입력으로 MLP 하나를 실시간에 지도로 학습하면서 자세를 함께 최적화했다. 논문 저자는 Sucar, Shikun Liu, Joseph Ortiz, Andrew Davison이다.
 
-두 개의 교번 최적화 루프가 동작한다. *mapping* 루프는 현재 키프레임과 과거 랜덤 샘플 키프레임에서 광선을 샘플링해 MLP를 업데이트한다. *tracking* 루프는 MLP를 고정하고 현재 프레임의 포즈를 렌더링 손실로 최적화한다. 두 루프는 공유된 단일 MLP 위에서 동작한다.
+최적화 루프 두 개가 병렬로 돈다. *mapping* 루프는 MLP와 keyframe 몇 장의 자세를 함께 업데이트한다. 라이브 시스템은 매 반복마다 과거 keyframe 3장을 손실 분포에 비례해 뽑고, 마지막 keyframe과 현재 프레임을 더해 5장으로 최적화했다. 픽셀도 이미지당 200개만 뽑아, 손실이 큰 영역에 더 많이 배정했다. *tracking* 루프는 MLP를 고정하고 현재 프레임의 자세를 렌더링 손실로 최적화한다. 두 루프는 같은 MLP를 쓴다. 논문은 tracking 10 Hz, 전역 지도 갱신 2 Hz를 보고했다.
 
-손실 함수는 두 가지다. 색상 손실 $\mathcal{L}_{\text{color}} = \|\hat{C} - C\|_2^2$과 깊이 손실 $\mathcal{L}_{\text{depth}} = \|\hat{D} - D\|_2^2$. RGB-D를 쓰므로 depth supervision이 있어 geometry 학습이 안정적이었다.
+손실 함수는 색상 손실 $\mathcal{L}_{\text{color}} = \|\hat{C} - C\|_1$과 깊이 손실 $\mathcal{L}_{\text{depth}} = \|\hat{D} - D\|_1$로 이루어진다. 깊이 손실은 광선을 따라 계산한 depth 분산으로 정규화해, 물체 경계처럼 불확실한 영역의 비중을 낮춘다.
 
-iMAP은 개념 증명이었다. 소규모 실내 장면에서 동작했지만 두 가지 구조적 문제가 있었다. 첫째, 단일 MLP는 새로운 영역을 학습할 때 공유 가중치 전체가 바뀌므로 이전 영역의 표현이 훼손될 수 있었다. Sucar는 keyframe replay로 이를 완화했으나 지역별로 독립된 메모리를 제공하지는 않았다. 둘째, 장면이 커질수록 하나의 MLP가 더 많은 공간 변화를 같은 파라미터 집합에 담아야 했다. 각 점의 질의 비용이 파라미터 수와 무관한 것은 아니며, 핵심 제약은 표현과 업데이트에 공간적 지역성이 없다는 데 있었다.
+iMAP은 MLP 하나를 실시간 SLAM의 유일한 장면 표현으로 썼다. 논문은 keyframe 10~20장과 1 MB 정도의 MLP로 방 하나를 지도화했다고 적었다. 새 영역을 학습하면 이전 영역의 표현이 망가질 수 있어서, 선택한 keyframe을 기억 저장소처럼 계속 다시 학습(replay)했다.
 
-> 📜 **예언 vs 실제.** Sucar는 iMAP 논문 Conclusion에서 "future directions for iMAP include how to make more structured and compositional representations that reason explicitly about the self similarity in scenes"라고 적었다. 구조화·합성적 표현 방향은 실제로 후속 연구의 중심 줄기가 되었다. 5개월 뒤 ETH 취리히의 NICE-SLAM 사전공개는 multi-resolution voxel feature grid로 공간을 계층적으로 쪼갰고, Wang et al.의 Co-SLAM(2023)은 hash grid와 coordinate encoding을 합성해 RTX 3090 Ti에서 초당 10-17프레임을 보고했다. 다만 "self-similarity를 명시적으로 추론하는" 쪽은 NeRF-SLAM 본류에서 크게 발전하지 않았고, 단일 MLP를 정교화하는 계보 역시 중심에서 밀려났다.
+> 📜 **예언 vs 실제.** Sucar는 iMAP 논문 Conclusion에서 "future directions for iMAP include how to make more structured and compositional representations that reason explicitly about the self similarity in scenes"라고 적었다. iMAP이 arXiv에 올라온 지 9개월 뒤(2021년 12월) 나온 NICE-SLAM은 multi-resolution voxel feature grid로 공간을 계층적으로 나눴다. 2023년 Wang et al.의 Co-SLAM은 hash grid와 coordinate encoding을 함께 썼다.
 
 ---
 
 ## NICE-SLAM: 계층 격자와 scalability
 
-iMAP의 단일 MLP 문제에 대한 직접적인 답은 ETH 취리히의 Zihan Zhu·Songyou Peng이 2022년 CVPR에서 발표한 [Zhu et al. 2022. NICE-SLAM](https://arxiv.org/abs/2112.12130)에서 나왔다. **NICE-SLAM**(Neural Implicit Scalable Coding for SLAM)은 단일 MLP 대신 multi-resolution voxel feature grid와 작은 MLP decoder를 결합했다.
+iMAP의 단일 MLP 문제를 직접 다룬 연구는 ETH Zurich의 Zihan Zhu와 Songyou Peng이 2022년 CVPR에서 발표한 [Zhu et al. 2022. NICE-SLAM](https://arxiv.org/abs/2112.12130)이다. **NICE-SLAM**(Neural Implicit Scalable Encoding for SLAM)은 단일 MLP 대신 multi-resolution voxel feature grid와 작은 MLP decoder를 결합했다.
 
-공간을 명시적 복셀 격자로 나누고 각 복셀에 학습 가능한 feature vector를 둔다. 렌더링 시 샘플 좌표 주변 복셀들의 feature를 trilinear interpolation으로 결합한 뒤 작은 MLP에 통과시켜 색상과 occupancy를 얻는다. MLP는 크지 않아도 된다. 공간 정보의 대부분은 격자에 담겨 있기 때문이다.
+공간을 명시적 복셀 격자로 나누고 각 복셀에 학습 가능한 feature vector를 둔다. 렌더링 시 샘플 좌표 주변 복셀들의 feature를 trilinear interpolation으로 결합한 뒤 작은 MLP에 통과시켜 색상과 occupancy를 얻는다. 공간 정보 대부분이 격자에 담기므로 MLP는 작아도 된다.
 
-NICE-SLAM은 세 단계 해상도 격자를 계층적으로 쌓았다. 거친 격자부터 세밀한 격자까지 geometry를 여러 수준으로 표현하고, 색상은 별도의 color feature grid와 decoder로 표현한다. 새로운 영역이 추가되면 해당 복셀의 feature만 업데이트하면 되므로 다른 영역의 catastrophic forgetting이 크게 줄어든다.
+NICE-SLAM은 세 단계 해상도 격자를 계층적으로 쌓았다. 거친 격자부터 세밀한 격자까지 geometry를 여러 수준으로 표현하고, 색상은 별도의 color feature grid와 decoder로 표현한다. 논문은 시야 안에 든 격자 feature만 최적화하는 이런 지역 갱신 덕분에 iMAP과 같은 forgetting 문제를 겪지 않는다고 적었다. geometry decoder 세 개는 ConvONet 방식으로 미리 학습해 고정했다.
 
-tracking에서 NICE-SLAM은 iMAP과 유사하게 MLP와 격자 feature를 고정하고 포즈를 최적화했다. mapping에서는 격자 feature를 업데이트했다. Replica·ScanNet 데이터셋에서 iMAP보다 넓은 공간을 다뤘고 세부 표현 품질도 높았다.
+tracking에서는 격자와 decoder를 고정하고 자세만 최적화했다. mapping에서는 격자 feature를 업데이트했다. 논문은 여러 방으로 된 아파트를 직접 촬영해 재구성했다. 같은 픽셀 수로 속도를 재면 tracking은 iMAP보다 2배 넘게, mapping은 3배 넘게 빨랐다(101→47 ms, 448→130 ms).
 
-그러나 한계가 있었다. 격자 자체의 메모리가 해상도의 세제곱으로 증가했다. 실내 방 한두 개는 다룰 수 있었지만 복층 건물이나 야외로의 확장은 여전히 미해결이었다. 속도도 실시간과 거리가 있었다.
+다만 3D 격자의 메모리는 장면 한 변 길이의 세제곱으로 늘었다. 이 점은 ESLAM 논문이 짚었다. 전체 시스템 속도는 Co-SLAM 논문 측정으로 Replica에서 0.91 Hz였다.
 
-Thomas Müller의 [Müller et al. 2022. Instant-NGP](https://nvlabs.github.io/instant-ngp/)는 2022년 SIGGRAPH에서 이 병목을 다른 각도에서 공략했다. Multi-resolution hash encoding과 GPU 구현을 결합해 학습을 크게 가속했고, 공개 구현은 지원되는 NVIDIA GPU의 일부 데모 장면에서 수 초 훈련을 시연했다. Instant-NGP는 SLAM 논문이 아니었지만, 이후 여러 NeRF-SLAM 시스템이 이 hash encoding을 채용했다.
+Thomas Müller와 동료들의 [Müller et al. 2022. Instant-NGP](https://nvlabs.github.io/instant-ngp/)는 2022년 SIGGRAPH에서 발표됐다. multi-resolution hash encoding과 GPU에 맞춘 구현으로 학습 시간을 크게 줄였고, 공개 구현은 지원되는 NVIDIA GPU의 일부 데모 장면에서 수 초 훈련을 시연했다. SLAM 논문은 아니지만 이후 여러 NeRF-SLAM 시스템이 이 hash encoding을 썼다.
 
-> 🔗 **차용.** NICE-SLAM의 multi-resolution feature grid는 Instant-NGP의 hash encoding과 시기적으로 겹치며 독립적으로 설계되었지만, 실제 NeRF-SLAM 구현에서는 Instant-NGP의 hash grid가 NICE-SLAM 격자를 빠르게 대체했다. TSDF를 격자에 저장하던 KinectFusion(Ch.9)의 논리적 후계가 feature를 격자에 저장하는 방식으로 이어진 계보이기도 하다.
-
----
-
-## Co-SLAM과 NeRF-SLAM: 두 가지 통합 방향
-
-iMAP·NICE-SLAM 이후 2022년 말부터 여러 시스템이 두 갈래로 나뉘었다. 한 방향은 implicit representation을 더 효율적으로 만드는 것, 다른 방향은 전통 SLAM의 강건한 backend를 NeRF map과 결합하는 것이었다.
-
-UCL의 [Wang et al.(2023) **Co-SLAM**](https://arxiv.org/abs/2304.14377)은 전자에 속한다. joint coordinate·parametric encoding을 써서 multi-resolution hash grid와 one-blob 인코딩을 결합했다. 두 표현이 서로 보완하도록 설계해 빠른 수렴과 surface completeness를 함께 노렸다. hash grid가 관측된 dense 영역을 빠르게 채우고, coordinate encoding이 미관측 영역에 smooth prior를 제공하는 방식이었다. 논문은 Replica 데이터셋과 RTX 3090 Ti 환경에서 초당 15-17프레임의 처리량을 보고했다. NeRF 기반 SLAM이 준실시간 영역에 닿은 사례였다.
-
-같은 해 같은 CVPR에서 Idiap/EPFL의 [Johari et al.의 **ESLAM**](https://arxiv.org/abs/2211.11704)은 비슷한 문제를 다른 각도에서 풀었다. 3D feature grid 대신 multi-scale axis-aligned feature plane을 써 메모리 증가를 $O(n^3)$에서 $O(n^2)$로 낮추고, volume density 대신 TSDF를 decoding 목표로 삼아 수렴을 가속했다.
-
-Antoni Rosinol(MIT)이 2022년에 공개한 [**NeRF-SLAM**](https://arxiv.org/abs/2210.13641)은 다른 접근이었다. DROID-SLAM으로 포즈와 dense depth를 추정하고, 그 최적화의 Hessian에서 주변 공분산을 추가로 계산했다. 별도의 Instant-NGP 기반 mapping 모듈은 이 추정값과 불확실성을 받아 radiance field를 학습했다.
-
-> 🔗 **차용.** NeRF-SLAM은 DROID-SLAM의 recurrent update와 Dense Bundle Adjustment가 만든 pose·depth 추정을 가져오고, 지도 표현에 Instant-NGP를 결합했다. Neural radiance field가 기존 pose 추정기를 대체한 것이 아니라, 그 출력 위에 실시간 dense map을 쌓는 구성이었다.
-
-NeRF-SLAM은 모듈성을 택했다. Radiance field가 tracking을 직접 맡게 하지 않고, dense monocular SLAM이 내놓은 pose·depth·불확실성과 neural mapping을 분리했다. 이 구성의 장점은 추정기와 지도 표현을 각각 개선할 수 있다는 데 있었다.
+> 🔗 **차용.** NICE-SLAM의 multi-resolution feature grid와 Instant-NGP의 hash encoding은 비슷한 시기에 따로 나왔다(arXiv 2021년 12월, 2022년 1월). Co-SLAM은 hash grid를 썼다. 격자에 TSDF 값 대신 feature를 저장한다는 점에서 KinectFusion(Ch.9)의 voxel 격자와도 이어진다.
 
 ---
 
-## iMAP의 구조적 한계와 그 의미
+## Co-SLAM과 NeRF-SLAM
 
-iMAP은 단일 MLP가 전체 장면을 기억하고, 그 MLP를 실시간에 가깝게 업데이트하면서 포즈까지 최적화하는 초기 neural implicit SLAM 시스템이었다.
+2022년 말부터 나온 시스템 가운데 일부는 implicit 표현 자체를 더 효율적으로 만들었다. 다른 일부는 기존 SLAM의 추정기를 NeRF 지도와 결합했다.
 
-단일 MLP의 근본 문제는 지역성(locality)의 부재다. 공간의 어떤 부분을 렌더링하든 MLP 전체를 통과한다. 결과가 두 가지다. 첫째, 새 영역을 학습하면 가중치 전체가 바뀌어 기존 영역의 표현이 훼손된다(catastrophic forgetting). 둘째, 장면이 커질수록 단일 MLP가 담아야 할 공간 다양성이 늘어나 더 큰 네트워크, 더 많은 이터레이션이 필요해진다. 표현 용량은 파라미터 수에 선형으로 묶여 있는데 장면 복잡도는 공간 부피에 따라 커진다. 지역성 없는 표현은 규모가 커질수록 불리하다.
+UCL의 Wang et al.이 낸 [**Co-SLAM**](https://arxiv.org/abs/2304.14377)(CVPR 2023)은 표현을 효율화했다. multi-resolution hash grid(parametric encoding)와 one-blob coordinate encoding을 함께 썼다. hash grid는 빠르게 수렴하고 국소 세부를 담는다. one-blob encoding은 표면을 매끄럽게 잇고 관측하지 않은 영역을 채우게 돕는다. 논문은 10~17 Hz를 보고했다(Replica 15~17 Hz, ScanNet·TUM 12~13 Hz).
 
-NICE-SLAM의 격자, Instant-NGP의 hash encoding, Co-SLAM의 이중 인코딩은 모두 이 지역성 문제의 답이었다. 공간을 국소적으로 나눠 각 부분이 자신의 영역만 기억하게 하면, 새 정보 추가가 기존 기억을 덜 침범하고, 특정 영역 렌더링 비용이 전체 장면 크기와 분리된다.
+같은 해 같은 CVPR에서 Idiap/EPFL의 Johari et al.의 [**ESLAM**](https://arxiv.org/abs/2211.11704)은 3D feature grid 대신 multi-scale axis-aligned feature plane을 써 메모리 증가를 $O(n^3)$에서 $O(n^2)$로 낮췄다. volume density 대신 TSDF를 decoding 목표로 삼았고, NICE-SLAM보다 최대 10배 빠르면서 사전 학습도 필요 없다고 보고했다.
+
+MIT의 Antoni Rosinol, John Leonard, Luca Carlone이 2022년에 공개한 [**NeRF-SLAM**](https://arxiv.org/abs/2210.13641)(IROS 2023)은 기존 추정기를 썼다. 단안 영상만 받아 DROID-SLAM 방식으로 자세와 dense depth를 추정하고, 그 최적화에서 주변 공분산(marginal covariance)을 추가로 계산했다. 별도의 Instant-NGP 기반 mapping 모듈은 이 추정값과 불확실성을 받아 radiance field를 학습했다.
+
+> 🔗 **차용.** NeRF-SLAM은 DROID-SLAM의 recurrent update와 Dense Bundle Adjustment가 만든 pose·depth 추정을 가져오고, 지도 표현에 Instant-NGP를 결합했다. radiance field는 자세 추정에 쓰이지 않는다. 기존 추정기의 출력을 받아 실시간으로 dense 지도를 만든다.
+
+---
+
+## iMAP의 구조적 한계
+
+단일 MLP에는 지역성(locality)이 없다. 공간의 어느 부분을 렌더링하든 MLP 전체를 거친다. 그래서 새 영역을 학습하면 가중치 전체가 바뀌어 기존 영역의 표현이 망가질 수 있다(catastrophic forgetting). NICE-SLAM 논문은 장면이 커질 때 단일 MLP의 용량 한계 때문에 파라미터와 연산량이 더 늘어날 수 있다고 적었다.
+
+NICE-SLAM 논문은 자기 방식에서 점 하나를 질의하는 연산량이 장면이 아주 커져도 같다고 적었다.
 
 ---
 
 ## 🧭 아직 열린 것
 
-**실시간 NeRF-SLAM.** 2023년 기준 iMAP·NICE-SLAM은 실시간과 거리가 있었고, Co-SLAM이 RTX 3090 Ti에서 초당 10-17프레임의 준실시간 처리량을 보고했지만 모바일·로봇 임베디드 환경의 실시간에는 여전히 미치지 못했다. Gaussian Splatting(Ch.15)이 명시적 표현으로의 복귀를 통해 속도 문제를 다른 방식으로 해결했지만, implicit neural field 자체의 고전적 실시간 SLAM(30fps 이상, 소비자 GPU 없이)은 미완으로 남아 있다. Instant-NGP가 렌더링 속도를 극적으로 높였음에도 동시 추적·지도 구축 루프의 전체 처리량은 여전히 제약이 있다.
+**실시간 NeRF-SLAM.** 앞에서 본 Co-SLAM의 10~17 Hz는 데스크톱 GPU에서 잰 값이다. 모바일·임베디드 로봇에서 같은 속도를 내는 문제는 남아 있다. Gaussian Splatting(Ch.15)은 명시적 표현으로 렌더링 속도를 높였다.
 
-**대규모 야외 환경.** [Block-NeRF](https://arxiv.org/abs/2202.05263)(2022, Tancik et al.)처럼 공간을 여러 국소 NeRF로 분할하는 시도는 있었지만, SLAM의 루프 클로저·전역 일관성 요구와 매끄럽게 맞물리지 못했다. 도시 규모 NeRF-SLAM은 개방형 문제다.
+**대규모 야외 환경.** [Block-NeRF](https://arxiv.org/abs/2202.05263)(Tancik et al., CVPR 2022)는 도시 구역을 여러 국소 NeRF로 나눠 재구성했다. 다만 이미 모은 영상으로 학습하는 오프라인 방법이어서, loop closure와 전역 일관성을 실시간으로 다루는 SLAM과는 문제 설정이 다르다.
 
-**semantic·편집 가능한 implicit 지도.** NeRF map은 렌더링에 최적화되어 있어 semantic label 삽입이나 사후 편집이 어렵다. "이 물체를 지도에서 지워라"나 "이 영역을 다른 용도로 분류하라"는 조작이 TSDF나 포인트클라우드 대비 훨씬 불편하다. [LERF](https://arxiv.org/abs/2303.09553)는 언어 feature를 공간에 정렬해 의미 질의를 가능하게 한 사례이며, 그 자체가 물체 삭제·편집 방법은 아니다. [Nerfstudio](https://arxiv.org/abs/2302.04264) 같은 도구 위에서 의미 표현과 편집 연구가 진행되지만 SLAM 파이프라인과의 실시간 통합은 2026년 현재 연구 단계다.
+**semantic·편집 가능한 implicit 지도.** NeRF 지도는 MLP 가중치나 feature에 장면을 담는다. 그래서 물체를 지도에서 지우거나 영역의 분류를 바꿀 때, TSDF나 point cloud처럼 해당 원소를 직접 고칠 수 없다. [LERF](https://arxiv.org/abs/2303.09553)는 언어 feature를 공간에 정렬해 의미로 질의할 수 있게 했지만 물체 삭제나 편집을 다루지는 않는다. [Nerfstudio](https://arxiv.org/abs/2302.04264) 같은 도구 위에서 의미 표현과 편집 연구가 이어지고 있고, SLAM 파이프라인과 실시간으로 묶는 일은 아직 풀리지 않았다.
 
 ---
 
-iMAP·NICE-SLAM이 implicit field를 극한까지 밀어붙이는 동안, 명시적 표현으로 되돌아가는 다른 방향도 등장했다. 지도를 MLP 가중치나 feature grid 안에 암묵적으로 가두는 대신, 공간에 명시적으로 배치된 수백만 개의 작은 타원체로 흩뿌리면 렌더링은 빠르고 편집은 직관적일 수 있었다. Splatting 자체에는 2001년 EWA splatting 같은 선행 기법이 있었다. Bernhard Kerbl의 SIGGRAPH 2023 논문은 학습 가능한 3D Gaussian과 빠른 미분 가능 렌더러를 결합해 이 방향의 성과를 보였다.
+implicit field 연구와 함께 명시적 표현으로 돌아가는 연구도 나왔다. 장면을 MLP 가중치나 feature grid 대신 공간에 놓인 작은 타원체 수백만 개로 표현하는 방법이다. splatting에는 2001년 EWA splatting 같은 선행 기법이 있었다. Bernhard Kerbl 등의 SIGGRAPH 2023 논문은 학습 가능한 3D Gaussian과 빠른 미분 가능 렌더러를 결합했다.

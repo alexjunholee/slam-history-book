@@ -1,119 +1,107 @@
 # Ch.16 — Foundation 3D: DUSt3R에서 VGGT까지
 
-Naver Labs Europe의 Philippe Weinzaepfel과 Jerome Revaud는 2022년 CroCo를 발표하면서, 두 이미지가 같은 장면을 찍었다는 사실을 단서 삼아 visual representation을 학습하는 cross-view self-supervised pretraining 방식을 제안했다. CroCo는 feature learning 연구로 발표됐다. 1년 뒤 같은 팀이 CroCo의 구조 위에서 calibration 없이 pointmap을 직접 출력하는 시스템을 만들었고, DUSt3R는 multi-view geometry 전체를 재정의했다. Naver Labs Europe에서 시작한 계보가 Oxford의 VGG 그룹으로 이어지며, 2026년 현재 "SfM이 무엇인가"라는 질문 자체를 다시 쓰고 있다.
+Naver Labs Europe의 Philippe Weinzaepfel과 Jérôme Revaud 등은 2022년 CroCo를 발표했다. 같은 장면을 찍은 두 이미지를 단서로 visual representation을 학습하는 cross-view self-supervised pretraining(두 시점 영상을 이용한 자기지도 사전학습) 방법이었다. CroCo는 feature learning 연구였다. 1년 남짓 뒤 같은 연구소가 CroCo의 구조를 바탕으로, calibration 없이 pointmap을 바로 출력하는 DUSt3R를 내놓았다. 2025년에는 Oxford VGG 그룹과 Meta AI의 VGGT가 나왔다.
 
 ---
 
 ## 16.1 DUSt3R — learned pointmap
 
-2013년부터 10년간 3D 재건은 동일한 절차를 따랐다. 특징점을 찾고, 매칭하고, 카메라 내부 파라미터와 외부 파라미터를 추정하고, triangulation으로 점군을 만들고, bundle adjustment로 전체를 정제한다. [COLMAP(Schönberger & Frahm, 2016)](https://openaccess.thecvf.com/content_cvpr_2016/html/Schonberger_Structure-From-Motion_Revisited_CVPR_2016_paper.html)이 이 파이프라인의 가장 완성된 형태였다. 오차는 줄었지만 절차의 구조는 바뀌지 않았다.
+2010년대 내내 3D 재구성은 같은 절차를 따랐다. 특징점을 찾아 매칭하고, 카메라 내부·외부 파라미터를 추정하고, triangulation으로 점군을 만들고, bundle adjustment로 전체를 다듬는다. [COLMAP(Schönberger & Frahm, CVPR 2016)](https://openaccess.thecvf.com/content_cvpr_2016/html/Schonberger_Structure-From-Motion_Revisited_CVPR_2016_paper.html)은 이 파이프라인을 구현한 대표적인 공개 소프트웨어다.
 
-[Shuzhe Wang et al. 2023. DUSt3R: Geometric 3D Vision Made Easy](https://arxiv.org/abs/2312.14132)는 이 절차를 우회한다. 두 이미지를 입력으로 받아 각 픽셀에 대한 3D 좌표를 직접 출력한다. 내부 파라미터(focal length, principal point)를 요구하지 않는다. pointmap이라 불리는 이 출력은, 이미지 좌표계가 아닌 공통된 3D 공간에서의 좌표다. 카메라가 어떤 렌즈를 달고 있는지 몰라도 된다.
+[Shuzhe Wang et al. 2024. DUSt3R: Geometric 3D Vision Made Easy (CVPR)](https://arxiv.org/abs/2312.14132)는 이 절차를 거치지 않는다. 이미지 두 장을 받아 각 픽셀의 3D 좌표를 바로 출력하고, 내부 파라미터(focal length, principal point)를 입력으로 받지 않는다. pointmap이라 부르는 이 출력은 두 이미지의 픽셀을 모두 첫 번째 카메라 좌표계로 나타낸 3D 좌표다.
 
-DUSt3R의 transformer는 CroCo에서 물려받은 encoder-decoder 구조를 쓴다. 각 이미지는 독립적으로 encoding된 뒤, decoder에서 cross-attention을 통해 다른 이미지의 encoder 출력을 참조한다. self-attention이 단일 이미지 내 픽셀 관계를 처리한다면, cross-attention은 두 이미지 사이의 대응을 암묵적으로 학습한다. 어느 픽셀이 어느 픽셀과 같은 3D 점을 보는지, 이 대응 관계를 대규모 데이터에서 패턴으로 흡수한다. 논문은 Habitat·MegaDepth·ARKitScenes·Static Scenes 3D·BlendedMVS·ScanNet++·CO3D-v2·Waymo에서 850만 이미지 쌍을 구성했다. 정답 표시는 합성 데이터, SfM 소프트웨어의 재건 결과, 전용 센서 측정에서 왔다. 따라서 고전 SfM은 학습 시대의 ground truth 전부가 아니라 그 일부를 공급했다.
+DUSt3R의 transformer는 CroCo에서 물려받은 encoder-decoder 구조를 쓴다. 각 이미지는 따로 encoding되고, 두 decoder가 정보를 주고받는다. decoder 블록마다 먼저 self-attention으로 같은 이미지의 token끼리 참조하고, 이어서 cross-attention으로 다른 이미지의 token을 모두 참조한다. 어느 픽셀이 다른 이미지의 어느 픽셀과 같은 3D 점을 보는지는 이 cross-attention이 대규모 데이터에서 암묵적으로 배운다. 논문은 Habitat, MegaDepth, ARKitScenes, Static Scenes 3D, BlendedMVS, ScanNet++, CO3D-v2, Waymo 등 여덟 개 데이터셋에서 이미지 쌍 850만 개를 뽑았다. 정답은 합성 데이터, SfM 소프트웨어의 재구성 결과, 센서 측정에서 얻었으므로, 정답의 일부는 고전 SfM이 만들었다.
 
-> 🔗 **차용.** DUSt3R의 backbone은 ViT([Dosovitskiy et al. 2020](https://arxiv.org/abs/2010.11929))에서 가져온다. 그러나 결정적 발판은 Naver Labs Europe 내부의 선행 작업인 CroCo([Weinzaepfel et al. 2022](https://arxiv.org/abs/2210.10716))다. CroCo는 두 이미지에서 한 쪽의 masking된 영역을 다른 이미지의 정보로 복원하는 cross-view self-supervised pretraining을 제안했다. DUSt3R는 CroCo의 encoder-decoder 구조를 그대로 물려받아 태스크만 "pointmap 예측"으로 바꿨다.
+> 🔗 **차용.** DUSt3R의 backbone은 ViT([Dosovitskiy et al., ICLR 2021](https://arxiv.org/abs/2010.11929))에서 가져왔다. 더 직접적인 선행 연구는 Naver Labs Europe의 CroCo([Weinzaepfel et al. 2022](https://arxiv.org/abs/2210.10716))다. CroCo는 한 이미지에서 가린 영역을 다른 이미지의 정보로 복원하는 cross-view completion으로 사전학습을 했다. DUSt3R는 CroCo의 encoder-decoder 구조를 그대로 쓰고 과제만 pointmap 예측으로 바꿨다.
 
-두 이미지의 pointmap은 이미 첫 카메라의 공통 좌표계에 있다. 상대 카메라 포즈는 예측한 3D 점과 두 번째 이미지의 픽셀 대응으로 PnP-RANSAC을 풀어 구할 수 있다. 여러 이미지 쌍에서는 별도의 global alignment로 pointmap과 카메라들을 조정한다. pose estimation이 pointmap의 파생물이 된다.
+두 이미지의 pointmap은 이미 첫 카메라의 좌표계에 함께 놓여 있다. 그래서 상대 카메라 자세는 pointmap에서 바로 구할 수 있다. 논문은 두 pointmap을 Procrustes alignment로 맞추는 방법을 먼저 들고, 잡음과 outlier에 더 강한 방법으로 PnP-RANSAC을 쓴다.
 
-세 장, 열 장의 이미지로 확장할 때 DUSt3R는 global alignment를 푼다. 모든 이미지 쌍의 pointmap을 하나의 공통 좌표계로 정합하는 최적화 문제다. 이때 비로소 bundle adjustment와 유사한 무언가가 등장하지만, 피처 매칭이나 카메라 모델 없이 진행된다.
+이미지가 세 장 이상이면 DUSt3R는 global alignment를 푼다. 모든 이미지 쌍의 pointmap을 하나의 좌표계로 정합하는 최적화다. bundle adjustment와 비슷하지만 feature matching이나 카메라 모델 없이 진행한다.
 
 ---
 
-## 16.2 매칭을 삼킨다: MASt3R
+## 16.2 매칭까지 하는 MASt3R
 
-DUSt3R의 결과는 novel view synthesis보다 reconstruction에 가깝다. 그런데 재건에서 중요한 서브태스크(두 이미지 사이의 정밀한 픽셀 대응 찾기, 즉 feature matching)를 DUSt3R는 암묵적으로만 처리한다. SuperPoint+SuperGlue, LightGlue가 수행하는 명시적 매칭을 대체하려면 추가 장치가 필요했다.
+DUSt3R는 재구성의 핵심 단계인 픽셀 대응(feature matching)을 암묵적으로만 다룬다. SuperPoint+SuperGlue나 LightGlue 같은 명시적 매칭을 대신하기에는 부족했다.
 
-[Vincent Leroy et al. 2024. Grounding Image Matching in 3D with MASt3R (ECCV)](https://arxiv.org/abs/2406.09756)는 DUSt3R에 matching head를 추가한다. pointmap과 함께 각 픽셀의 feature descriptor를 출력하도록 훈련하되, 3D 위치와 feature가 일관되도록 joint learning한다. 이렇게 나온 feature는 3D 공간에 anchored되어 있다. 매칭은 이 feature descriptor를 nearest neighbor 검색하는 것으로 단순화된다.
+[Vincent Leroy et al. 2024. Grounding Image Matching in 3D with MASt3R (ECCV)](https://arxiv.org/abs/2406.09756)는 DUSt3R에 matching head를 더한다. pointmap과 함께 픽셀마다 서술자(descriptor)를 출력하고, 3D 위치와 서술자를 함께 학습한다. 매칭은 두 이미지에서 서로가 서로의 nearest neighbor인 짝을 찾는 reciprocal matching으로 하며, 논문은 이를 빠르게 하는 알고리즘도 함께 냈다.
 
-> 🔗 **차용.** MASt3R의 3D-anchored matching은 SuperGlue([Sarlin et al. 2020](https://arxiv.org/abs/1911.11763))가 풀려던 문제(2D descriptor의 모호성을 context로 해소)를 다른 방향에서 공략한다. SuperGlue는 그래프 신경망으로 2D 매칭의 모호성을 줄였다. MASt3R는 3D 구조를 직접 학습함으로써 3D에 근거한 대응으로 매칭의 모호성을 줄인다.
+> 🔗 **차용.** MASt3R의 3D-anchored matching은 SuperGlue([Sarlin et al. 2020](https://arxiv.org/abs/1911.11763))가 풀려던 2D 서술자의 모호성 문제를 다른 방법으로 다룬다. SuperGlue는 그래프 신경망으로 주변 맥락을 써서 모호성을 줄였다. MASt3R는 3D 구조를 함께 학습해서 줄인다.
 
-MASt3R 공개 이후 수개월 내에 SLAM 커뮤니티에서 SuperPoint+SuperGlue 조합을 MASt3R로 교체하는 실험이 여러 그룹에서 보고되었다. 2024년 말 [Riku Murai, Eric Dexheimer, Andrew Davison](https://arxiv.org/abs/2412.12392)(Imperial College London의 Davison 그룹)이 MASt3R-SLAM을 공개했을 때, 이 시스템은 MASt3R의 매칭을 frontend로, 그래프 기반 global optimization을 backend로 사용했다. 고전적 SLAM 아키텍처의 모양은 유지한 채 내부 부품이 거의 전부 교체된 형태다.
+2024년 12월 Imperial College London Davison 그룹의 Riku Murai, Eric Dexheimer, Andrew Davison이 [MASt3R-SLAM](https://arxiv.org/abs/2412.12392)을 공개했다(CVPR 2025). 이 시스템은 MASt3R의 매칭을 frontend로, 그래프 기반 global optimization을 backend로 쓰고, 논문 실험에서는 RTX 4090 한 장으로 약 15 fps를 냈다.
 
-MASt3R의 강점은 ground-truth calibration 없이도 dense 매칭이 가능하다는 점이다. 2026년 현재 연구자들은 COLMAP 기반 SfM 파이프라인의 초기화나 매칭 단계에 DUSt3R·MASt3R를 삽입하는 구성을 시험하고 있다.
+MASt3R는 정확한 calibration 없이도 dense 매칭을 한다. foundation 모델의 출력을 COLMAP 형식의 SfM 파이프라인에 잇는 구성도 나왔다. 2025년 6월, §16.4에서 다룰 VGGT의 공개 저장소에 예측을 COLMAP 형식으로 저장하고 bundle adjustment를 선택해 돌리는 스크립트가 들어갔다.
 
-> 📜 **예언 vs 실제.** DUSt3R 논문 자체는 별도의 "Future Work" 절을 두지 않았지만, pair-wise + global alignment라는 구조 자체가 sequence 처리와 실시간 구동을 다음 과제로 암시한다. Spann3R는 2024년 8월, MASt3R-SLAM은 2024년 말 나왔다. 두 후속 작업이 각각 sequential extension과 SLAM 통합 문제에 6-12개월 내에 응답했다. 후속 작업이 나온 간격은 짧았다.
+> 📜 **예언 vs 실제.** DUSt3R는 이미지 쌍을 처리한 뒤 global alignment로 묶는 구조여서, 순차 처리와 실시간 동작은 후속 연구가 맡았다. DUSt3R 공개 후 8개월 만인 2024년 8월에 Spann3R가 global alignment 없이 이미지를 차례로 처리했고, 2024년 12월에 MASt3R-SLAM이 SLAM 시스템으로 묶었다.
 
 ---
 
 ## 16.3 Spann3R — sequential 처리
 
-그런데 batch 처리에는 근본적인 제약이 있다. SLAM은 이미지가 미리 다 갖춰지지 않는다.
+DUSt3R와 MASt3R는 이미지 집합을 한꺼번에 받아 처리한다. SLAM에서는 이미지가 시간 순서로 한 장씩 들어오고, 프레임마다 지도를 갱신해야 한다.
 
-DUSt3R와 MASt3R는 이미지 집합을 입력받아 일괄 처리한다. 가방 속 이미지들을 한 번에 펼쳐 놓고 정합하는 방식이다. SLAM은 다르다. 이미지가 시간 순서로 들어오고, 시스템은 각 프레임마다 지도를 갱신해야 한다.
+[Hengyi Wang & Lourdes Agapito 2025. 3D Reconstruction with Spatial Memory (Spann3R, 3DV)](https://arxiv.org/abs/2408.16061)는 DUSt3R의 구조를 sequential 처리에 맞게 고쳤다. 이미 처리한 프레임의 정보를 외부 spatial memory에 저장하고, 새 프레임이 들어오면 이 memory를 조회해 공통 좌표계의 pointmap을 바로 예측한다. global alignment 최적화가 필요 없다.
 
-[Hengyi Wang & Lourdes Agapito 2024. 3D Reconstruction with Spatial Memory (Spann3R)](https://arxiv.org/abs/2408.16061)는 DUSt3R의 구조를 sequential 처리에 맞게 고쳤다. 이미 처리한 프레임의 정보를 spatial memory에 저장하고, 새 프레임이 들어오면 이 memory bank에 cross-attention을 수행한다. 새 이미지의 각 픽셀이 과거 프레임의 어떤 정보와 연관되는지는 attention이 결정한다.
+> 🔗 **차용.** Spann3R는 DUSt3R의 ViT encoder와 두 decoder 구조를 그대로 쓴다. 이전에 예측한 pointmap과 decoder의 기하 feature를 가벼운 memory encoder로 memory key와 value로 만들고, decoder의 기하 feature로 query를 만들어 memory를 조회한다. memory 관리 방식은 사람의 기억 모델을 본뜬 X-Mem을 참고했다.
 
-> 🔗 **차용.** Spann3R의 spatial memory 메커니즘은 개념적으로 cross-attention memory와 유사하다. 구조적으로 DUSt3R의 사전학습된 ViT encoder-decoder를 그대로 물려받되, 디코더 출력(geometric feature)과 이미지 feature를 결합한 memory key를 두어 appearance와 distance를 동시에 반영한 메모리 조회를 구현한다. DUSt3R가 학습한 기하 표현이 그대로 sequential 메모리의 색인으로 재활용되는 경로다.
-
-Spann3R는 calibrated 카메라 없이도 작동하는 DUSt3R의 특성을 그대로 가져간다. 순차 이미지가 들어올 때마다 현재까지의 지도를 점진적으로 갱신한다. 완전한 실시간은 아니지만, DUSt3R의 일괄 처리 방식보다 SLAM 적용에 한 발 더 가깝다.
+Spann3R도 DUSt3R처럼 calibration 없이 동작하고, 이미지가 들어올 때마다 지도를 갱신한다. 논문은 RTX 4090 한 장에서 test-time 최적화 없이 50 fps 넘게 점진적으로 재구성했다고 보고했다.
 
 ---
 
 ## 16.4 VGGT — multi-view joint inference
 
-Spann3R는 sequential 처리를 가능하게 했다. 그러나 pair-wise pointmap + global alignment라는 DUSt3R의 기본 골격은 그대로였다. 이 골격은 Oxford VGG 그룹의 후속 연구에서 바뀌었다. Jianyuan Wang, Minghao Chen, Nikita Karaev, Andrea Vedaldi, Christian Rupprecht, David Novotny는 2025년 초 임의의 다중 이미지를 동시에 입력받아 카메라 포즈와 깊이, 점군을 한 번의 forward pass로 출력하는 방식을 제시했다.
+Spann3R는 프레임을 하나씩 처리하면서 memory로 과거 프레임을 참조한다. Oxford VGG 그룹과 Meta AI의 Jianyuan Wang, Minghao Chen, Nikita Karaev, Andrea Vedaldi, Christian Rupprecht, David Novotny는 2025년 초 새 방법을 내놓았다. 여러 이미지를 한꺼번에 받아 카메라 파라미터, depth map, point map, 3D point track을 forward pass 한 번으로 출력한다.
 
-[Jianyuan Wang et al. 2025. VGGT: Visual Geometry Grounded Transformer](https://arxiv.org/abs/2503.11651)는 DUSt3R의 pair-wise 처리를 진정한 multi-view joint inference로 바꿨다. DUSt3R에서 N장의 이미지를 전수 조합하면 N(N-1)/2쌍의 pointmap을 구한 뒤 global alignment를 풀어야 한다. VGGT는 N장을 한꺼번에 transformer에 통과시킨다. attention이 모든 이미지 쌍 사이의 관계를 동시에 처리한다.
+[Jianyuan Wang et al. 2025. VGGT: Visual Geometry Grounded Transformer (CVPR)](https://arxiv.org/abs/2503.11651)는 DUSt3R의 쌍 단위 처리를 여러 시점 동시 추론으로 바꿨다. DUSt3R로 N장을 다루려면 이미지 쌍마다 pointmap을 구하고(최대 N(N-1)/2쌍) global alignment를 풀어야 한다. VGGT는 N장을 한꺼번에 transformer에 넣고 attention으로 모든 이미지 사이의 관계를 함께 처리한다. 논문은 수백 장까지 한꺼번에 입력으로 받는다고 적었다. 논문이 H100 한 장에서 잰 feature backbone 처리 시간은 20장에 0.31초, 100장에 3.12초였다.
 
-> 🔗 **차용.** DUSt3R 훈련 정답의 일부를 SfM 재건이 공급했다는 점에는 역전이 있다. 고전 SfM이 명시적 알고리즘으로 나누었던 pair-wise geometry estimation·graph construction·global optimization의 기능을, VGGT는 한 모델의 추론 안에서 함께 수행한다. 고전 파이프라인의 단계가 foundation model 안에 다른 형태로 흡수된 셈이다.
-
-DUSt3R와의 정량 비교에서 VGGT는 카메라 포즈 추정 정확도와 점군 품질 면에서 일관된 우위를 보였다. 처리 속도도 global alignment 최적화가 없으므로 더 빠르다.
+논문의 정량 비교에서 VGGT는 후처리 없이도 카메라 자세 정확도와 점군 품질에서 DUSt3R보다 나았고, global alignment 최적화가 없어 더 빨랐다.
 
 ---
 
-## 16.5 pose estimation과 reconstruction의 경계 소멸
+## 16.5 pose estimation과 reconstruction의 경계
 
-전통 컴퓨터 비전은 두 문제를 구분했다. 지도 기반 localization은 이미 알려진 지도에서 현재 위치를 찾는 것이고, 3D 재건은 알려지지 않은 환경의 기하를 복원하는 것이다. SLAM은 이 둘을 동시에 풀기 때문에 어려웠다.
+컴퓨터 비전은 지도 기반 localization(알려진 지도에서 현재 위치 찾기)과 3D 재구성(처음 보는 환경의 기하 복원)을 따로 다뤘다. SLAM은 둘을 동시에 풀어야 해서 어려웠다.
 
-DUSt3R부터 VGGT까지의 시스템은 기하와 카메라 추정에 공통 학습 표현을 쓴다. DUSt3R는 pointmap에서 별도 연산으로 pose를 복원하고 여러 뷰를 global alignment로 묶는다. VGGT는 한 번의 forward pass에서 카메라와 기하를 함께 출력한다. 같은 방향에 서 있지만, 추론에 필요한 후처리까지 같지는 않다.
+DUSt3R부터 VGGT까지의 시스템은 기하와 카메라를 추정할 때 같은 학습 표현을 쓴다. DUSt3R는 pointmap에서 따로 계산해 pose를 구하고, 여러 뷰를 global alignment로 묶는다. VGGT는 forward pass 한 번으로 카메라와 기하를 함께 출력하므로 그런 후처리가 없다.
 
-Multi-view geometry는 폐기되지 않는다. DUSt3R·MASt3R·VGGT는 SfM 재건과 센서 데이터에서 얻은 정답을 포함한 기하 감독으로 pose·depth·pointmap 같은 출력을 학습했고, 그 결과 다중 시점의 기하적 규칙성을 활용한다. 다만 epipolar constraint, triangulation, bundle adjustment라는 특정 알고리즘이 transformer weight 안에 그대로 학습됐다고 논문이 입증한 것은 아니다. 폐기된 것은 명시적 파이프라인의 일부다.
+multi-view geometry는 학습 신호로 남아 있다. DUSt3R, MASt3R, VGGT는 SfM 재구성과 센서 데이터에서 얻은 정답으로 자세, depth, pointmap을 학습하면서 여러 시점의 기하 규칙을 이용한다. 다만 epipolar constraint, triangulation, bundle adjustment 같은 알고리즘이 transformer 가중치 안에 그대로 학습됐는지는 어느 논문도 보이지 않았다. 없어진 것은 명시적 파이프라인의 일부다. DUSt3R가 실패하면 그 원인이 네트워크 가중치 안에 있어서, 어느 단계에서 틀렸는지 짚기 어렵다.
 
-연구자는 Schönberger의 COLMAP 코드를 디버깅하던 방식으로 DUSt3R를 디버깅할 수 없다. 어디서 실패했는지, 왜 실패했는지가 attention weight 안에 묻혀 있어 해석 가능성 문제가 새로운 형태로 등장한다.
-
-> 📜 **예언 vs 실제.** MASt3R 논문은 결론부를 짧게 맺으며 ground-truth calibration이 없는 매칭이 여러 downstream 태스크에 열려 있다고 시사했다. 명시적 파이프라인 재편 예언은 아니었다. 2026년 현재 여러 photogrammetry 소프트웨어가 DUSt3R/MASt3R를 initialization 단계로 채택하는 것을 평가 중이며, hybrid 삽입의 형태로 자리 잡고 있다.
-
-Naver Labs Europe은 CroCo(2022) → DUSt3R(2023) → MASt3R(2024)의 단계를 2년 내에 밟았다. 한 팀이 pretraining 방법론부터 매칭 시스템까지의 스택을 연속해서 발표했다. 이 계보의 출발점은 Google Brain, DeepMind, Meta AI가 아니라 Weinzaepfel·Revaud·Leroy가 속한 Naver Labs Europe이었다. SLAM 단계로 옮기는 일은 Imperial College London의 Davison 그룹(MASt3R-SLAM)이 이어받았다.
+> 📜 **예언 vs 실제.** MASt3R 논문의 결론은 여러 벤치마크에서 카메라 자세와 localization 성능을 끌어올렸다는 점과, 이미지가 적을 때도 동작하므로 localization의 쓰임새를 크게 넓힐 것이라는 기대를 적었다. 같은 해 MASt3R의 매칭은 MASt3R-SLAM의 frontend로 쓰였다(§16.2).
 
 ---
 
-## 16.6 다른 갈래 — semantic foundation이 지도로 들어온다
+## 16.6 Semantic foundation model을 지도에 쓰기
 
-DUSt3R·MASt3R·VGGT는 pointmap·카메라 포즈·기하 구조를 다루는 geometric foundation 계보다. 2022년 전후로 "foundation 3D"라는 단어는 SLAM 문헌에서 두 갈래로 쓰이기 시작했다. 한쪽은 Naver Labs Europe에서 출발한 geometric 계보고, 다른 쪽은 CLIP·DINO·SAM을 지도 안으로 끌어들이는 semantic 계보다. 전자는 calibration을 없앴고, 후자는 dictionary를 없앴다.
+DUSt3R, MASt3R, VGGT는 pointmap, 카메라 자세, 기하 구조를 다루는 geometric foundation model이다. 같은 시기 SLAM 연구에서는 CLIP, DINO, SAM 같은 모델을 지도에 넣는 semantic 연구도 늘었다. semantic 모델을 쓰면 미리 정한 class 목록(dictionary) 밖의 개념도 지도에 담을 수 있다.
 
-semantic 갈래의 시작은 MIT의 Luca Carlone 그룹에서 나왔다. [Nathan Hughes et al. 2022. Hydra: A Real-time Spatial Perception System for 3D Scene Graph Construction and Optimization](https://arxiv.org/abs/2201.13360)는 Kimera(Rosinol 2020)의 metric-semantic mesh 위에 objects → places → rooms → buildings의 hierarchical scene graph를 online으로 얹었다. closed-set 분류기를 쓰는 한 handbook이 "100-1000 labels predefined dictionary"라고 못 박은 제약 안이었지만, Hydra는 hierarchical map이 실시간으로 굴러간다는 것을 처음 보여줬다.
+계층적 semantic 지도를 실시간으로 만든 예로는 MIT Luca Carlone 그룹의 연구가 있다. [Nathan Hughes et al. 2022. Hydra: A Real-time Spatial Perception System for 3D Scene Graph Construction and Optimization (RSS)](https://arxiv.org/abs/2201.13360)는 Kimera(Rosinol et al., ICRA 2020)의 metric-semantic mesh 위에 objects → places → rooms → buildings의 계층적 scene graph를 online으로 만들었다. 정해진 class만 아는 분류기(closed-set)를 썼으므로, Handbook 16장이 말하는 "relatively small (e.g., 100-1000 labels) and predefined dictionary"의 제약 안에 있었다. 논문은 Hydra를 처음으로 실시간 동작하는 spatial perception system이라고 소개했다.
 
-dictionary의 벽은 foundation model이 허물었다. [Songyou Peng et al. 2023. OpenScene: 3D Scene Understanding with Open Vocabularies (CVPR)](https://arxiv.org/abs/2211.15654)가 ETH/Pollefeys 그룹에서, 곧이어 [Qiao Gu et al. 2024. ConceptGraphs: Open-Vocabulary 3D Scene Graphs for Perception and Planning (ICRA)](https://arxiv.org/abs/2309.16650)가 Montréal-MIT 협업으로 발표됐다. OpenScene은 CLIP feature를 3D 점군에 distillation해서 "이 점은 의자와 얼마나 가까운가"를 자연어 질의로 풀 수 있게 했다. ConceptGraphs는 한 걸음 더 나아갔다. class label 대신 VLM이 생성한 language description을 node attribute로 달고, object 사이 관계를 LLM이 서술한다. 이들 연구는 고정된 class 사전 밖의 개념을 3D 표현에 연결하는 길을 열었다. ConceptGraphs는 Hydra의 계층 구조를 직접 확장한 방법과는 구별된다.
+이 제약은 foundation model을 쓰는 연구가 다뤘다. ETH Zurich와 Google의 Songyou Peng, Marc Pollefeys 등이 [Songyou Peng et al. 2023. OpenScene: 3D Scene Understanding with Open Vocabularies (CVPR)](https://arxiv.org/abs/2211.15654)를 냈다. 이어 Toronto, Montréal, MIT 등의 공동 연구로 [Qiao Gu et al. 2024. ConceptGraphs: Open-Vocabulary 3D Scene Graphs for Perception and Planning (ICRA)](https://arxiv.org/abs/2309.16650)가 발표됐다. OpenScene은 CLIP feature를 3D 점군에 distillation해, 사용자가 넣은 임의의 단어와 장면의 각 점이 얼마나 맞는지 보여 주게 했다. ConceptGraphs는 class label 대신 VLM이 만든 설명문을 노드 속성으로 달고, 객체 사이의 관계를 LLM이 서술하게 했다. 두 연구로 미리 정한 class 밖의 개념도 3D 표현에 연결할 수 있게 됐다.
 
-[Dominic Maggio et al. 2024. Clio: Real-time Task-Driven Open-Set 3D Scene Graphs](https://arxiv.org/abs/2404.13696)는 이 계보를 task 쪽으로 돌렸다. 로봇이 받은 자연어 task를 information bottleneck으로 해석해서, 그 task에 필요한 추상화 수준만 scene graph에 남긴다. "커피 머신 근처 청소"라는 지시에서 커피 머신과 그 주변 객체는 보존되고, 무관한 디테일은 묶인다. hierarchical graph의 어느 층을 노출할지가 task에 따라 달라지는 것이다.
+[Dominic Maggio et al. 2024. Clio: Real-time Task-Driven Open-Set 3D Scene Graphs (RA-L)](https://arxiv.org/abs/2404.13696)는 로봇이 받은 자연어 과제(task)를 기준으로 scene graph를 만든다. information bottleneck 원리로 과제에 필요한 추상화 수준만 남기고, 과제와 상관없는 세부는 묶는다.
 
-> 🔗 **차용.** Clio는 Hydra를 바탕으로 task-driven abstraction을 추가한 Carlone 그룹의 직접 후속 계보다. ConceptGraphs는 open-vocabulary object graph를 만든 별도 계열이며, Hydra의 objects-places-rooms 계층을 그대로 물려받았다고 단정할 근거는 확인되지 않는다.
+> 🔗 **차용.** Clio는 Carlone 그룹이 Hydra에 과제 기반 추상화를 더한 후속 연구다. ConceptGraphs는 open-vocabulary 객체 그래프를 따로 만든 연구다.
 
-지도에 semantic을 싣는 문제는 Ch.18 §18.4가 2017-2019년 object-as-landmark 계보의 축소를 짚은 뒤 이어지는 별개 궤적이다. semantic SLAM은 hierarchical scene graph라는 형태로 귀환했지만, geometric foundation(DUSt3R 계보)과 semantic foundation(Hydra → Clio와 별도의 ConceptGraphs 계열)은 2026년 현재 아직 본격적으로 만나지 않았다. VGGT의 pointmap에 CLIP feature를 붙인 end-to-end 시스템, 또는 Clio의 scene graph에 DUSt3R의 calibration-free 기하를 결합한 구성은 아직 보고되지 않았다. 두 계보의 합류는 아직 열린 문제다.
+Ch.18 §18.4는 2017–2019년 object-as-landmark 연구가 줄어든 과정을 다룬다. semantic SLAM은 그 뒤 계층적 scene graph의 형태로 돌아왔다. DUSt3R 같은 geometric foundation model이 예측한 기하에 semantic feature를 함께 싣는 연구도 나왔다. UT Austin·NVIDIA 등의 [Fan et al. 2024. Large Spatial Model (LSM, NeurIPS)](https://arxiv.org/abs/2410.18956)은 DUSt3R로 초기화한 pointmap 예측에 LSeg feature를 더해, pose를 모르는 이미지 두 장에서 기하·외관·open-vocabulary semantic을 forward pass 한 번으로 출력했다.
 
 ---
 
 ## 16.7 SLAM에서 무엇이 남는가
 
-MASt3R-SLAM은 고전 SLAM의 아키텍처를 빌려 쓴다. keyframe 선택과 loop closure, map management는 새 표현 위에서도 그대로 필요했다. DUSt3R 계열이 feature matching과 reconstruction의 내부를 교체했지만, SLAM 시스템 수준의 판단들은 고전 방법이 해결한 방식 그대로 재사용한다.
+MASt3R-SLAM은 고전 SLAM의 구조를 빌려 쓴다. keyframe 선택, loop closure, 지도 관리는 새 표현에서도 그대로 필요했다. DUSt3R 계열이 feature matching과 재구성의 내부를 바꿨어도 시스템 수준의 결정은 고전 방법을 따른다.
 
-이 관찰은 5부 전체에 걸쳐 반복되는 패턴과 일치한다. NeRF-SLAM이 NeRF를 map 표현으로 채택하면서도 keyframe 기반 tracking을 유지했다. 반면 초기 3DGS-SLAM 시스템인 MonoGS는 명시적 loop closure를 구현하지 않았고 논문의 future work로 남겼다(Ch.15). 표현(representation)을 바꾼다고 시스템 수준의 기능이 자동으로 따라오는 것은 아니다.
+5부의 다른 시스템도 마찬가지다. NeRF-SLAM은 NeRF를 지도 표현으로 쓰면서 keyframe 기반 tracking을 유지했다. 초기 3DGS-SLAM 시스템인 MonoGS는 명시적 loop closure를 논문의 future work로 남겼다(Ch.15).
 
-Foundation 3D의 경우에도 이 패턴이 반복된다. 2025년 MIT의 Dominic Maggio·Hyungtae Lim·Luca Carlone이 [VGGT-SLAM](https://arxiv.org/abs/2505.12549)을 공개했다. VGGT가 local submap을 재건하면, 시스템은 순차 submap 사이의 15자유도 projective transform을 \(\mathrm{SL}(4)\) 위에서 최적화하고 loop-closure 제약까지 함께 반영한다. transformer가 local 기하를 만들지만 global graph 최적화는 남는다. Revaud도 *The SLAM Handbook* Ch.13에서 대규모 재건에는 결국 "a form of factor graph is still necessary"라고 적었다(p.386). 전개는 빨랐지만 최종 형태는 여전히 열려 있다. 실시간 대규모 sequence를 foundation 3D가 어디까지 감당할지, 그리고 16.6에서 언급한 semantic 갈래와 어디서 합류할지는 2026-2027년의 관찰 대상이다.
+2025년 MIT의 Dominic Maggio·Hyungtae Lim·Luca Carlone이 [VGGT-SLAM](https://arxiv.org/abs/2505.12549)을 공개했다(NeurIPS 2025). VGGT가 local submap을 재구성하면, 시스템은 이어지는 submap 사이의 15자유도 projective transform을 \(\mathrm{SL}(4)\) 위에서 최적화하고 loop-closure 제약까지 함께 반영한다. transformer가 local 기하를 만들어도 global graph 최적화는 필요하다. *The SLAM Handbook* 13장(Teed, Deng, Chidlovskii, Revaud, Wimbauer, Cremers)도 DUSt3R를 다룬 절에서 "a form of factor graph is still necessary"라고 적었다(p.386).
 
 ---
 
 ## 🧭 아직 열린 것
 
-**대규모 sequence 처리의 벽.** DUSt3R와 VGGT의 transformer는 이미지 수에 quadratic하게 메모리를 요구한다. 100장까지는 현실적이지만 1,000장, 10,000장은 다른 문제다. Spann3R의 incremental 방식이 partial answer지만, 대규모 outdoor 환경의 매끄러운 처리는 미해결이다. 여러 그룹이 sparse attention, hierarchical global alignment를 탐색하고 있으나 합의된 방법이 없다.
+**대규모 sequence 처리.** DUSt3R는 이미지 쌍마다 pointmap을 구하므로 쌍의 수가 이미지 수의 제곱으로 늘어난다. VGGT 논문의 비교에서 DUSt3R는 32장을 넘기면 GPU 메모리가 모자랐다. VGGT의 feature backbone은 H100 한 장에서 200장을 8.75초, 최대 메모리 40.63 GB로 처리했지만, 1,000장이나 10,000장은 그대로 넣기 어렵다. Spann3R는 점진적 방식으로 이 문제의 일부를 다뤘다. sparse attention, 계층적 global alignment 등이 시도되고 있고, 대규모 실외 환경을 처리하는 일은 남은 과제다.
 
-**Loop closure를 이 프레임에서 어떻게 정의하는가.** 고전 SLAM에서 loop closure는 이전에 방문한 장소를 인식하고 누적 오차를 교정하는 메커니즘이다. DUSt3R 계열에서 "이전에 방문한 장소"를 어떻게 표현하고, pointmap 기반 지도에서 교정을 어떻게 propagate하는가. MASt3R-SLAM이 기존 방식으로 처리하지만, 이것이 최선인지 원리적 해법인지 알 수 없다.
+**loop closure의 정의.** 고전 SLAM에서 loop closure는 전에 방문한 장소를 알아보고 누적 오차를 고치는 일이다. DUSt3R 계열에서 방문한 장소를 어떻게 표현하고, pointmap 기반 지도에 교정을 어떻게 퍼뜨릴지는 아직 정해지지 않았다. MASt3R-SLAM은 이미지 검색으로 loop closure 후보를 찾는 기존 방식을 그대로 썼다.
 
-**Metric scale의 일반화.** DUSt3R의 pointmap은 relative scale이다. 두 이미지 사이의 깊이 비율은 복원하지만 절대 스케일은 모른다. Metric3D나 Depth Anything v2가 metric depth를 목표로 했듯, foundation 3D에서도 metric scale을 일반화하는 문제가 남는다. 카메라 독립적 metric은 foundation 규모에서도 쉽지 않다. GPS나 IMU 없이 absolute scale을 결정하는 물리적 제약은 데이터 규모와 무관하게 존재한다.
+**metric scale의 일반화.** DUSt3R의 pointmap은 상대 scale이어서, 깊이 비율은 복원해도 절대 scale은 모른다. Metric3D나 Depth Anything v2가 metric depth를 목표로 했듯, foundation 3D에서도 여러 환경에서 metric scale을 맞히는 문제가 남는다. 이미지만으로는 절대 scale이 기하적으로 정해지지 않으므로, GPS나 IMU 없이 얻는 scale은 학습한 prior에 기댄 추정이다.
 
-**이 흐름이 SLAM의 미래인가, 별개 갈래인가.** 15장의 3DGS처럼 foundation 3D도 SLAM 커뮤니티가 흡수하는 중이다. MASt3R-SLAM과 VGGT-SLAM이 2024-2025년에 연달아 등장하며 흡수의 경로는 윤곽이 잡혔다. 그러나 실시간 대규모 sequence 구동, 그리고 §16.6이 짚은 semantic 갈래(Hydra → Clio와 별도의 ConceptGraphs 계열)와의 합류 지점은 여전히 불분명하다. geometric foundation과 semantic foundation이 한 시스템에서 만나는 형태는 Ch.19 열린 문제의 핵심 축이다.
-
----
-
-NeRF든 foundation model이든 표현을 바꾸면 reconstruction과 localization의 내부가 바뀐다. 그러나 SLAM 시스템 수준의 구조(keyframe, loop closure, map management)는 새 표현 위에서도 살아남는다. 같은 시기에 LiDAR 연구자들은 같은 문제를 다른 센서와 다른 문화로 풀고 있었다.
+**SLAM에 쓰기.** Ch.15의 3DGS처럼 foundation 3D도 SLAM 연구에 들어오고 있다. 2024–2025년 MASt3R-SLAM과 VGGT-SLAM은 모두 foundation 모델의 출력을 그래프 최적화로 묶었다. 긴 sequence를 실시간으로 처리하는 방법과 §16.6의 semantic 연구(Hydra, Clio, ConceptGraphs)와 결합하는 방법은 남은 과제다. Ch.19에서 다시 다룬다.

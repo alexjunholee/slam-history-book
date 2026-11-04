@@ -1,129 +1,117 @@
 # Ch.17 — LiDAR 평행 우주: LOAM에서 FAST-LIO까지
 
-사진측량에서 Foundation 3D에 이르는 계보는 센서가 카메라라는 공통 전제 위에 서 있다. MonoSLAM·PTAM·ORB-SLAM·DSO·DUSt3R는 모두 픽셀로 세계를 읽는 전통 안에 있다. 같은 시간, 같은 로봇공학 커뮤니티 안에서 전혀 다른 계보가 자라고 있었다. LiDAR 계보는 카메라 진영의 keypoint·photometric consistency·feature descriptor와 무관하게, ICP의 뼈대 위에서 자체적인 문법을 만들어냈다. 두 계보는 인용 관계가 드물었고, 주로 쓰는 벤치마크와 발표 무대도 달랐다.
+앞 장들에서 다룬 사진측량부터 Foundation 3D까지의 연구는 모두 카메라로 찍은 영상을 입력으로 받는다. MonoSLAM, PTAM, ORB-SLAM, DSO, DUSt3R가 다 그렇다. 같은 시기에 LiDAR를 쓰던 연구자들은 [ICP (Besl·McKay, 1992)](https://graphics.stanford.edu/courses/cs164-09-spring/Handouts/paper_icp.pdf)와 Lu–Milios의 pose network를 바탕으로 따로 방법을 쌓아 왔다. 두 쪽은 서로의 논문을 거의 인용하지 않았고, 벤치마크와 학회도 달랐다.
 
-Ji Zhang은 2014년 RSS에서 LOAM을 발표했다. 그해 Visual 진영에서는 LSD-SLAM 계열이 전개되고 있었고, ElasticFusion은 이듬해인 2015년에 발표됐다. LOAM은 카메라 기반 방법론이나 코드와 직접 연결되지 않았고, 연구 커뮤니티의 겹침도 적었다. 두 계보는 같은 로보틱스라는 이름 아래에서 접점이 드문 채 10년을 달렸다. LOAM은 [ICP (Besl·McKay, 1992)](https://graphics.stanford.edu/courses/cs164-09-spring/Handouts/paper_icp.pdf)의 오래된 뼈대 위에 섰다. 다만 graph SLAM에는 Lu–Milios의 laser pose network처럼 LiDAR 쪽의 오래된 계보도 있었다. 평행 우주는 제한된 교류 속에서 성숙했다.
-
----
-
-## 17.1 LOAM: edge와 plane, 그리고 KITTI의 점령
-
-2014년, Google의 Waymo 전신 프로그램이 도로 위를 달리고 있었고, DARPA Urban Challenge의 여파가 채 가시지 않은 때였다. Velodyne HDL-64E는 한 대에 75,000달러였다. 당시 LiDAR 연구는 이 장비를 감당할 수 있는 대형·고예산 연구 그룹에 주로 한정됐다. CMU Robotics Institute의 Autonomous Mobile Robot Lab(Sanjiv Singh 교수 연구실)이 그중 하나였다.
-
-LOAM 이전에도 LiDAR로 지도를 쌓는 시도는 있었다. [Lu & Milios 1997. "Globally Consistent Range Scan Alignment for Environment Mapping" (Autonomous Robots)](https://doi.org/10.1023/A:1008854305733)은 2D 레인지 스캔을 노드로 두고 스캔 간 상대 제약을 edge로 묶어 전체 궤적을 동시 최적화하는 방식을 제안했고, 이 "network of poses" 발상은 훗날 pose-graph SLAM의 원형이 된다(Ch.6 참조). 매칭 자체는 Besl·McKay의 ICP 외에도 [Biber·Straßer 2003. "The Normal Distributions Transform" (IROS)](https://doi.org/10.1109/IROS.2003.1249285)가 제안한 NDT(셀 단위 가우시안 분포에 정렬하는 분포 기반 매칭)와 이후 Magnusson의 3D 확장이 ICP 대안으로 공존했다. 이 모두가 2D 또는 오프라인 3D였다. LOAM의 몫은 실시간 3D였다.
-
-Ji Zhang은 Singh의 지도 아래 [Zhang & Singh 2014. "LOAM: Lidar Odometry and Mapping in Real-time" (RSS)](https://www.roboticsproceedings.org/rss10/p07.pdf)를 냈다. LiDAR 포인트를 두 종류의 feature로 분류했다. **edge point**는 smoothness $c$가 높은 지점(곡률 높음), **planar point**는 $c$가 낮은 지점(곡률 낮음). ICP처럼 포인트 전체를 등록하지 않고 이 두 feature 집합만 매칭한다. edge point는 이웃 scan의 edge line에, planar point는 이웃 scan의 local plane에 point-to-line·point-to-plane 거리로 제약을 건다. 계산 비용이 낮아진다. 실시간 가능성이 열린다.
-
-알고리즘 구조는 두 단계로 나뉜다. Lidar Odometry는 스캔 간 6-DoF 변환을 10Hz에서 추정한다. Lidar Mapping은 더 낮은 주파수(1Hz)에서 전체 맵과 정합해 오차를 보정한다. 고주파 odometry와 저주파 mapping을 분리해 drift를 억제하면서도 실시간성을 유지한다. 이 two-tier 구조는 이후 LiDAR SLAM의 기본 문법이 된다.
-
-KITTI 공개 비교표에서 LOAM은 발표 뒤 선두권에 들었다. 시퀀스 00의 relative translation error로 널리 인용되는 값은 0.78%이고, 전체 시퀀스 평균은 0.84%다. 이는 당시의 경쟁력을 보여주지만, 센서와 평가 조건이 다른 visual odometry에 대한 보편적 우위를 뜻하지는 않는다.
-
-> 🔗 **차용.** LOAM의 feature-based 포인트 등록은 Besl·McKay(1992)의 ICP에서 출발한다. 차이는 edge와 planar feature만 선택적으로 매칭한다는 점이다. 고전 등록을 선별적으로 재사용함으로써 속도와 정밀도 모두를 얻었다.
+Ji Zhang이 RSS에서 LOAM을 발표한 2014년에 카메라 쪽에서는 LSD-SLAM이 나왔고, 이듬해에는 ElasticFusion이 나왔다. LOAM은 이 방법들과 거의 관계없이 만들어졌고, 그 뒤 10년 동안에도 두 쪽이 서로 주고받은 것은 많지 않았다.
 
 ---
 
-## 17.2 LeGO-LOAM: 땅을 먼저 잘라낸다
+## 17.1 LOAM: edge와 plane으로 실시간 3D 정합
 
-LOAM의 문제는 지면(ground plane)을 명시적으로 다루지 않는다는 점이었다. 실외 자율주행 환경에서 포인트 클라우드의 상당 비율은 도로면이 차지한다. 이를 edge/planar feature로 한데 처리하면 매칭 노이즈가 생긴다.
+LOAM 전에도 레이저 스캔으로 지도를 만드는 방법은 있었다. [Lu & Milios 1997. "Globally Consistent Range Scan Alignment for Environment Mapping" (Autonomous Robots)](https://doi.org/10.1023/A:1008854305733)은 2D 레인지 스캔 하나하나를 노드로, 스캔 사이의 상대 제약을 edge로 두고 궤적 전체를 한꺼번에 최적화했다. 이 "network of poses"는 뒤에 pose-graph SLAM의 원형이 된다(Ch.6 참조). 스캔끼리 맞추는 방법으로는 ICP 말고도 [Biber·Straßer 2003. "The Normal Distributions Transform" (IROS)](https://doi.org/10.1109/IROS.2003.1249285)의 NDT가 있었다. NDT는 공간을 셀로 나누고 셀마다 포인트를 가우시안 분포 하나로 요약한 다음, 새 스캔을 그 분포에 맞춘다. 뒤에 Magnusson이 이를 3D로 확장했다.
 
-Stevens Institute of Technology의 Robust Field Autonomy Lab에서 Tixiao Shan과 지도교수 Brendan Englot은 [Shan & Englot 2018. LeGO-LOAM](https://doi.org/10.1109/IROS.2018.8594299)에서 ground segmentation을 첫 단계로 분리했다. 포인트 클라우드를 range image로 투영한 뒤, 지면 포인트를 먼저 분리하고 비지면 포인트를 다시 클러스터링한다. Ground는 roll·pitch 추정에, 클러스터는 yaw·translation 추정에 각각 사용된다. 두 단계 최적화다.
+움직이면서 3D 스캔을 모으는 일은 더 까다로웠다. 포인트마다 측정 시각이 달라서, 그동안 센서가 움직인 양을 잘못 추정하면 포인트 클라우드가 어긋나게 쌓인다. LOAM 논문에 따르면 그때까지 일관된 3D 지도는 오프라인 일괄 처리로 만들었고, drift는 흔히 loop closure로 바로잡았다. LOAM은 같은 수준의 정확도를 실시간으로 내겠다고 나섰다.
 
-결과는 LOAM 대비 연산 절감이었다. 원래 LOAM이 Velodyne VLP-16에서 실시간 동작이 버거웠다면, LeGO-LOAM은 동일 센서에서 임베디드 플랫폼(NVIDIA Jetson)에서도 돌아간다. 경량화의 대가는 있다. 포인트 희소 환경이나 지면 구조가 불규칙한 환경(레이저가 가리는 구간, 울퉁불퉁한 야지, 건물 내부)에서는 segmentation이 실패하고 odometry가 흔들린다.
+당시 3D LiDAR는 비쌌다(가격은 §17.5). LOAM 저자들도 이 센서를 쓰지 않았다. 논문의 자체 실험에는 Hokuyo UTM-30LX 2D 레이저 스캐너를 모터로 돌려 만든 2축 LiDAR를 썼고, Velodyne 데이터는 KITTI 벤치마크로만 다뤘다.
 
-LeGO-LOAM은 "센서 입력을 구조화된 모듈로 전처리한 뒤 odometry를 돌린다"는 설계 원칙을 남겼다. FAST-LIO와 LIO-SAM이 뒤에 이 원칙을 받아들인다.
+Ji Zhang은 Carnegie Mellon 대학 Robotics Institute에서 Sanjiv Singh의 지도를 받아 [Zhang & Singh 2014. "LOAM: Lidar Odometry and Mapping in Real-time" (RSS)](https://www.roboticsproceedings.org/rss10/p07.pdf)를 냈다. LOAM은 포인트마다 smoothness $c$를 계산한다. $c$는 같은 scan line에서 양옆 포인트들과의 위치 차이를 더해 구한 값으로, 그 자리의 표면이 얼마나 매끄러운지를 나타낸다. $c$가 가장 큰 포인트들은 **edge point**로, 가장 작은 포인트들은 **planar point**로 고르고, 매칭에는 이 두 집합만 쓴다. edge point는 직전 sweep에서 찾은 edge line까지의 거리로, planar point는 직전 sweep에서 찾은 평면까지의 거리로 제약을 건다. 전체 포인트 대신 적은 수의 feature만 맞추므로 실시간으로 돌릴 만큼 계산량이 줄어든다.
 
-LeGO-LOAM과 같은 시기, Bonn 대학의 Jens Behley와 Cyrill Stachniss는 edge/plane feature가 아니라 **surfel**(surface element)을 outdoor LiDAR에 가져왔다. [Behley & Stachniss 2018. "Efficient Surfel-Based SLAM using 3D Laser Range Data in Urban Environments" (RSS)](http://www.roboticsproceedings.org/rss14/p16.pdf)의 **SuMa**는 각 포인트 이웃을 원반 모양 surfel로 요약해 scan-to-model 등록을 수행했고, 후속 [Chen et al. 2019. "SuMa++" (IROS)](https://doi.org/10.1109/IROS40897.2019.8967704)는 semantic segmentation을 결합해 움직이는 물체를 surfel 수준에서 걸러냈다. Kinect 실내 RGB-D 계보(Ch.9)에서 ElasticFusion이 쓰던 surfel representation이 outdoor Velodyne으로 건너온 순간이다. feature 선택(LOAM), segmentation 선행(LeGO-LOAM), surfel 누적(SuMa)의 세 갈래가 2018년 전후로 동시에 경쟁하고 있었다.
+LOAM은 알고리즘 두 개를 함께 돌린다. Lidar Odometry는 약 10 Hz로 스캔 사이의 6-DoF 움직임을 거칠게 추정하고, Lidar Mapping은 1 Hz로 왜곡을 보정한 스캔을 지도에 정밀하게 맞춘다. 두 결과를 합친 위치는 약 10 Hz로 나온다. 이렇게 빠르고 거친 계산과 느리고 정밀한 계산을 나눠 실시간으로 돌면서도 drift(누적 위치 오차)를 줄였다. 이 구조는 뒤에 나온 LeGO-LOAM이 그대로 이어받았다.
+
+2026년 10월 현재 KITTI odometry 공개 순위표에 올라 있는 LOAM의 평균 translation error는 0.55%다.
+
+> 🔗 **차용.** LOAM의 포인트 정합은 Besl·McKay(1992)의 ICP에서 출발한다.
 
 ---
 
-## 17.3 FAST-LIO — tightly coupled LiDAR-IMU
+## 17.2 LeGO-LOAM: 지면을 먼저 분리하다
 
-LiDAR의 스캔 주파수는 10-20Hz다. 그 사이사이에서 빠른 움직임이 있으면 포인트 클라우드에 motion distortion이 생긴다. 스캔이 끝나는 순간의 센서 위치와 시작 순간의 위치가 다르기 때문이다. 고속 이동체에서 LOAM 계열이 흔들리는 주된 이유가 여기에 있다.
+LOAM은 지면 포인트를 다른 포인트와 섞어서 처리했다.
 
-IMU는 100-400Hz로 동작한다. LiDAR의 틈을 채우기에 충분하다. 그런데 LiDAR와 IMU를 어떻게 결합하느냐에 따라 성능이 갈린다. loosely coupled는 각각 독립적으로 추정한 뒤 fusion하고, tightly coupled는 한 추정기 안에서 원시 관측이나 잔차 수준의 제약을 함께 사용한다. tight coupling은 센서 사이의 제약을 더 많이 보존할 수 있지만, 모델·보정·구현 조건과 무관하게 항상 우월한 것은 아니다.
+Stevens Institute of Technology의 Robust Field Autonomy Lab에서 Tixiao Shan과 지도교수 Brendan Englot은 [Shan & Englot 2018. LeGO-LOAM](https://doi.org/10.1109/IROS.2018.8594299)에서 지면 분리를 파이프라인 맨 앞에 두었다. 포인트 클라우드를 range image(픽셀마다 거리를 담은 2D 영상)로 펼쳐 지면 포인트를 먼저 떼어 내고, 남은 포인트를 묶음으로 나눈다(segmentation). 최적화도 두 단계로 나눴다. 먼저 지면의 planar feature로 높이($t_z$)와 roll, pitch를 구하고, 이어서 edge feature로 나머지 $t_x$, $t_y$, yaw를 구한다. 두 단계 모두 Levenberg-Marquardt로 푼다.
 
-Hong Kong University(HKU) MaRS Lab의 Wei Xu와 지도교수 Fu Zhang은 2021년 RA-L에 [**FAST-LIO**](https://arxiv.org/abs/2010.08196)를 발표했다. 드론 제어 연구실에서 나온 논문으로, 로터 진동이 심하고 기동이 빠른 UAV에서도 LiDAR odometry가 버텨야 했다. 이들이 사용한 도구는 **iterated Extended Kalman Filter(iEKF)**였다. iEKF는 측정 업데이트 단계에서 선형화 점을 현재 추정치로 반복 갱신한다. 한 번의 linearization으로 끝내는 기본 EKF보다 측정 모델의 선형화 오차를 줄일 수 있지만, 개선 폭은 초기 추정과 운동·관측 조건에 달려 있다.
+저자들은 지상 차량으로 울퉁불퉁한 지형에서 모은 데이터로 실험해, LeGO-LOAM이 LOAM보다 적은 계산으로 비슷하거나 더 나은 정확도를 낸다고 보고했다. VLP-16 데이터는 저전력 임베디드 보드인 NVIDIA Jetson TX2에서 실시간으로 처리했다. 공개 구현은 수평으로 단 VLP-16을 기준으로 맞춰져 있고, [README](https://github.com/RobustFieldAutonomyLab/LeGO-LOAM)는 스캔에 지면이 늘 있다고 가정한다고 밝힌다.
 
-이듬해 TRO에 발표한 **FAST-LIO2**([Xu et al. 2022](https://doi.org/10.1109/TRO.2022.3141876))는 ikd-Tree를 추가했다. 기존 kd-Tree는 포인트가 추가될 때마다 재구성 비용이 크다. ikd-Tree는 부분 재구성만 수행하는 incremental 방식이다. 맵 포인트가 수백만 개에 달해도 실시간 nearest-neighbor 탐색이 가능하다. 실험에서는 UAV·핸드헬드·자율주행차에서 일관된 성능이 나왔다. 드론 환경에서도 drift가 낮게 유지됐다.
+같은 해 Bonn 대학의 Jens Behley와 Cyrill Stachniss는 실외 LiDAR에 **surfel**(surface element, 작은 원반 모양의 표면 조각)을 썼다. [Behley & Stachniss 2018. "Efficient Surfel-Based SLAM using 3D Laser Range Data in Urban Environments" (RSS)](http://www.roboticsproceedings.org/rss14/p16.pdf)의 SuMa는 지도를 surfel로 만들고, 새 스캔을 그 지도에 맞춘다(scan-to-model). Ch.9에서 본 ElasticFusion이 실내 RGB-D(Kinect) 데이터에 쓰던 표현을 실외 Velodyne 데이터에 가져온 것이다. 후속작 [Chen et al. 2019. "SuMa++" (IROS)](https://doi.org/10.1109/IROS40897.2019.8967704)는 semantic segmentation 결과를 surfel에 붙여 움직이는 물체를 걸러 냈다. 2018년 무렵에는 LOAM처럼 feature를 골라 쓰는 방식, LeGO-LOAM처럼 지면을 먼저 나누는 방식, SuMa처럼 surfel 지도를 쓰는 방식이 함께 쓰였다.
 
-FAST-LIO 계보의 다음 수는 motion distortion을 아예 없애는 쪽이었다. 같은 MaRS Lab에서 나온 [He et al. 2023. "Point-LIO: Robust High-Bandwidth Light Detection and Ranging Inertial Odometry" (Advanced Intelligent Systems)](https://doi.org/10.1002/aisy.202200459)는 LiDAR 포인트가 들어올 때마다 state를 갱신한다. point-by-point 관측 업데이트다. 각 포인트를 자기 시각에서 바로 fusion해 왜곡이 발생할 틈을 지운다. 고기동 플랫폼에서 FAST-LIO2보다 drift가 줄어든 것이 보고됐다.
+---
 
-> 🔗 **구분.** FAST-LIO는 raw IMU를 이용한 상태 전파와 LiDAR 측정의 iterated Kalman update를 결합한다. [Forster et al. 2016. "On-Manifold Preintegration" (TRO)](https://doi.org/10.1109/TRO.2016.2597321)의 preintegrated factor를 iEKF로 재구현한 구조가 아니다. 두 방법은 IMU를 결합하지만 추정기 형식이 다르다.
+## 17.3 FAST-LIO: tightly coupled LiDAR-IMU
+
+회전식 LiDAR는 보통 1초에 10번 한 바퀴를 돈다. 한 바퀴를 도는 동안 센서가 빠르게 움직이면 처음과 끝의 센서 위치가 달라져 포인트 클라우드가 일그러진다. 이것을 motion distortion이라고 한다. LOAM은 한 sweep 동안 속도가 일정하다고 보고 이 왜곡을 보정했는데, 움직임이 급하면 이 가정이 맞지 않는다.
+
+IMU는 이보다 훨씬 자주 측정하므로 스캔과 스캔 사이를 채울 수 있다. 두 센서를 합치는 방식에는 loosely coupled와 tightly coupled가 있다. loosely coupled 방식은 센서마다 따로 추정한 결과를 나중에 합친다. tightly coupled 방식은 추정기 하나에 두 센서의 관측을 함께 넣는다. 그만큼 두 센서 사이의 관계를 더 많이 쓰지만, 실제 성능은 모델과 보정, 구현에 따라 달라진다.
+
+University of Hong Kong(HKU) MaRS Lab의 Wei Xu와 지도교수 Fu Zhang은 2021년 RA-L에 [FAST-LIO](https://arxiv.org/abs/2010.08196)를 발표했다. FAST-LIO는 iterated Extended Kalman Filter(iEKF, 반복 확장 칼만 필터)로 LiDAR feature point와 IMU 측정을 합친다. 측정값이 많아도 계산이 불어나지 않도록 Kalman gain을 새로 유도해, 계산량이 측정 개수가 아닌 상태 차원에 따라 정해지게 했다. 저자들은 쿼드로터에 실은 컴퓨터에서 한 스캔의 유효 feature point를 1,200개 넘게 합치면서 iEKF 한 단계의 반복을 모두 25 ms 안에 마쳤다고 보고했다. iEKF는 측정 업데이트를 할 때 새로 얻은 추정치에서 다시 선형화해 계산을 되풀이하므로, 한 번만 선형화하는 EKF보다 선형화 오차를 줄일 수 있다.
+
+이듬해 TRO에 실린 FAST-LIO2([Xu et al. 2022](https://doi.org/10.1109/TRO.2022.3141876))는 feature를 따로 뽑지 않고 원시 포인트를 바로 지도에 맞췄다. 손으로 설계한 feature 추출 단계가 없어지자 스캔 방식이 다른 LiDAR에도 그대로 쓸 수 있게 됐다. 지도는 ikd-Tree(incremental kd-Tree)에 담았다. ikd-Tree는 포인트를 넣고 지우는 일을 트리 전체를 다시 만들지 않고 처리하며, 필요할 때 균형을 다시 맞춘다. 저자들은 공개 데이터셋 19개 시퀀스로 비교했고, 넓은 실외에서 odometry와 mapping을 최대 100 Hz로 돌렸다고 보고했다. 실험 플랫폼은 UAV, 핸드헬드 장치, 자동차였다.
+
+같은 연구실의 [He et al. 2023. "Point-LIO: Robust High-Bandwidth Light Detection and Ranging Inertial Odometry" (Advanced Intelligent Systems)](https://doi.org/10.1002/aisy.202200459)는 포인트를 스캔 하나로 모으지 않았다. Point-LIO는 LiDAR 포인트가 하나 들어올 때마다 그 포인트의 측정 시각에서 상태를 갱신하므로, 스캔 안에서 생기는 motion distortion이 처음부터 생기지 않는다. 실험에서 odometry 출력은 4~8 kHz였다. IMU 측정값을 운동 모델의 출력으로 두어서, IMU가 측정 범위를 넘어 포화된 상태에서도 초당 75 rad로 도는 움직임을 추정했다. 공개 데이터셋 비교에서는 정확도와 계산 시간 모두 다른 방법과 비슷했다고 저자들은 보고했다.
+
+> 🔗 **구분.** FAST-LIO는 raw IMU 측정으로 상태를 앞으로 전파(forward propagation)하고, 스캔 안의 각 포인트를 거꾸로 전파(backward propagation)해 보정한 다음 iEKF로 갱신한다. [Forster et al. 2017. "On-Manifold Preintegration" (TRO)](https://doi.org/10.1109/TRO.2016.2597321)의 IMU preintegration factor는 factor graph에서 쓰는 방식이고, 이 장에서는 LIO-SAM이 이 방식을 쓴다.
 
 ---
 
 ## 17.4 LIO-SAM: LiDAR와 IMU를 factor graph로 묶다
 
-같은 시기, visual-inertial 시스템에서는 factor graph가 널리 쓰였고, LiDAR 쪽에도 Lu–Milios의 pose network처럼 더 오래된 graph-SLAM 계보가 있었다. [GTSAM (Dellaert·Kaess, 2012)](https://gtsam.org/)은 여러 센서의 제약을 factor로 함께 구성하는 도구를 제공했다.
+그 무렵 visual-inertial 시스템에서는 factor graph가 널리 쓰였다. LiDAR 쪽에도 Lu–Milios의 pose network로 거슬러 올라가는 graph SLAM 연구가 있었다. [GTSAM](https://gtsam.org/)은 Georgia Tech의 Frank Dellaert 연구실이 만든 factor graph 라이브러리로, 여러 센서의 제약을 factor로 엮어 최적화한다.
 
-Tixiao Shan이 LeGO-LOAM 이후 낸 [Shan et al. 2020. LIO-SAM](https://doi.org/10.1109/IROS45743.2020.9341176)은 GTSAM의 factor graph를 LiDAR-IMU 시스템의 backend로 명시적으로 채택했다. [공개 구현](https://github.com/TixiaoShan/LIO-SAM)은 두 그래프를 유지한다. 장기 mapping 그래프는 LiDAR odometry, GPS, loop closure 제약을 keyframe 사이에 쌓는다. 별도의 IMU preintegration 그래프는 관성 측정과 LiDAR odometry로 상태·bias를 추정하며, 계산량을 제한하려고 주기적으로 초기화된다.
+Tixiao Shan은 LeGO-LOAM의 다음 작업으로 [Shan et al. 2020. LIO-SAM](https://doi.org/10.1109/IROS45743.2020.9341176)을 IROS에 발표했다. LIO-SAM은 GTSAM의 factor graph로 LiDAR-IMU odometry를 푼다. 상대 측정과 절대 측정을 출처에 상관없이 factor로 넣을 수 있어서, IMU preintegration, LiDAR odometry, GPS, loop closure를 한 그래프에 함께 올렸다. IMU preintegration으로 추정한 움직임은 포인트 클라우드의 왜곡을 펴고 LiDAR odometry 최적화의 초기값이 된다. 실시간 성능을 위해 새 스캔을 전체 지도가 아닌 최근 keyframe 몇 개로 만든 국소 지도에 맞춘다.
 
-> 🔗 **차용.** LIO-SAM은 GTSAM의 factor graph에 IMU preintegration·LiDAR odometry·GPS·loop closure factor를 함께 구성했다. 다만 graph SLAM 자체는 Lu–Milios의 laser pose network를 포함한 LiDAR 계보에도 이미 있었으므로, 이를 Visual SLAM에서 LiDAR로 일방적으로 건너온 구조라고 볼 수는 없다.
+[공개 구현](https://github.com/TixiaoShan/LIO-SAM)은 실행 내내 유지되는 factor graph에서 LiDAR odometry factor와 GPS factor를 최적화한다. 또 다른 factor graph는 IMU와 LiDAR odometry factor로 IMU bias를 추정하고, IMU 주기로 위치를 내기 위해 주기적으로 초기화된다. README는 loop closure 기능을 LeGO-LOAM에서 그대로 가져온 ICP 기반의 예제라고 설명하고, 더 나은 구현으로 Scan Context를 권한다.
 
-LIO-SAM은 FAST-LIO2와 달리 loop closure를 포함해 장기 궤적의 누적 drift를 보정할 수 있다. 반면 계산 비용이 높고 GPS나 추가 sensor input이 없으면 factor graph의 강점이 줄어든다. 두 시스템은 설계 목표가 다르다. FAST-LIO2는 실시간 LiDAR-IMU 구성의 속도와 정밀도를, LIO-SAM은 다중 센서 long-term mapping의 일관성을 우선한다.
-
-역설적인 회귀도 있었다. LOAM 이후 10년 가까이 LiDAR odometry는 feature 선택·surfel·neural descriptor로 점점 복잡해지는 쪽을 달렸는데, 2023년 Bonn 대학의 [Vizzo et al. 2023. "KISS-ICP: In Defense of Point-to-Point ICP" (RA-L)](https://doi.org/10.1109/LRA.2023.3236571)은 반대 방향을 냈다. feature 추출도, 학습된 descriptor도 없이, 적응형 threshold로 튜닝이 거의 필요 없는 point-to-point ICP 하나로 KITTI에서 경쟁력 있는 odometry를 보였다. 이름 그대로 Keep It Small and Simple이다. 이 결과는 motion compensation, sampling, robust correspondence 처리 같은 구현 선택을 잘 결합하면 고전 등록법도 경쟁력이 있음을 보였다. 이를 LOAM이 등장한 역사적 원인에 대한 저자들의 평가로 읽을 필요는 없다.
+2023년 Bonn 대학의 [Vizzo et al. 2023. "KISS-ICP: In Defense of Point-to-Point ICP" (RA-L)](https://doi.org/10.1109/LRA.2023.3236571)은 이름(Keep It Small and Simple)대로 구성 요소를 대부분 덜어 냈다. 남은 것은 point-to-point ICP, 대응점(correspondence)을 고르는 거리 기준을 상황에 맞춰 바꾸는 adaptive threshold, robust kernel, 단순한 motion compensation, point cloud subsampling이다. IMU 없이 3D point cloud만 입력으로 받는다. 저자들은 파라미터를 바꾸지 않고 자동차, UAV, segway, 핸드헬드 LiDAR 데이터에서 최신 방법과 비슷한 성능을 냈다고 보고했다.
 
 ---
 
 ## 17.5 센서 가격 하락과 보급: 2007–2024
 
-LiDAR SLAM의 역사에서 기술 논문 못지않게 중요한 것이 센서 가격이다.
+2007년 DARPA Urban Challenge에서 주요 팀들이 단 Velodyne HDL-64E는 한 대에 75,000달러였다. 이 센서는 주로 자율주행 연구팀과 국방 과제에서 썼다. 2011년 IEEE Spectrum이 소개한 Google 자율주행 Prius도 지붕에 Velodyne 64빔 LiDAR를 달았다([IEEE Spectrum 2011](https://spectrum.ieee.org/how-google-self-driving-car-works)). Velodyne은 2014년 9월 16채널 VLP-16을 [7,999달러에 내놓았지만](https://www.prweb.com/releases/breaking_through_the_price_barrier_for_lidar_sensors_velodyne_introduces_3d_real_time_lidar_puck_at_7_999/prweb12139477.htm), 이 값도 연구실 예산에서 작은 돈은 아니었다.
 
-2007년 DARPA Urban Challenge에서 주요 팀들이 장착한 Velodyne HDL-64E는 대당 75,000달러였다. 자율주행 연구팀이나 국방 프로젝트가 아니면 접근하기 어려운 장비였다. 2012년에도 HDL-32E가 30,000달러 수준. LOAM이 발표된 2014년에는 VLP-16이 7,999달러로 내려왔지만 여전히 연구 예산의 상당 부분이었다.
+2019년에는 값이 훨씬 다양해졌다. DJI에서 나온 중국 업체 Livox는 그해 [Mid-40의 미국 소매가를 599달러로 발표했다](https://www.livoxtech.com/news/1). 같은 해 1월 Ouster는 128채널 OS1-128을 [18,000달러에 내놓았다](https://ouster.com/insights/blog/introducing-the-os-1-128-lidar-sensor). Ouster는 2020년 10월에 solid-state 센서 ES2를 발표하면서 [2024년 차량 양산용 예상 가격을 600달러로 제시했다](https://investors.ouster.com/news-releases/news-release-details/ouster-announces-first-high-performance-true-solid-state-digital). 이 제품들은 채널 수, 시야각, 측정 거리가 다르고, 소매가와 양산 예상가는 매기는 기준도 다르다.
 
-그 뒤 LiDAR의 가격대가 크게 넓어졌다. 중국 업체 Livox(DJI 계열)는 2019년 [Mid-40의 미국 소매가를 599달러로 발표했다](https://www.livoxtech.com/news/1). 같은 해 Ouster의 128채널 OS1-128은 18,000달러였고, Ouster는 2020년 [양산 프로그램용 solid-state ES2의 2024년 목표 가격을 600달러로 제시했다](https://investors.ouster.com/news-releases/news-release-details/ouster-announces-first-high-performance-true-solid-state-digital). 수백 달러대 제품과 양산 목표가가 등장한 것은 분명한 변화였지만, 이를 모든 LiDAR의 일률적인 100배 인하로 읽을 수는 없다. 채널 수·시야각·거리 성능이 다르고 소매가와 대량 양산 목표가도 서로 다른 기준이기 때문이다.
-
-센서가 보급되어도 알고리즘 문제가 함께 해결된 것은 아니었다. Solid-state LiDAR는 spinning 타입보다 시야각(FoV)이 제한적이고, 제품에 따라 비반복 스캔 패턴을 쓴다. 360° 회전 스캔을 전제로 설계된 원래 LOAM은 그대로 적용하기 어렵다. 반면 FAST-LIO와 FAST-LIO2는 기계식·solid-state LiDAR를 함께 다루는 방향으로 설계됐고, 작은 FoV와 불규칙한 sampling에서도 작동하는 사례를 보고했다. 저가 센서의 확산은 알고리즘을 없앤 것이 아니라 관측 범위와 scan pattern에 맞춘 새 과제를 만들었다.
+센서가 싸지고 종류가 늘자 알고리즘이 풀어야 할 문제도 생겼다. Solid-state LiDAR는 회전식보다 시야각(FoV)이 좁고, Livox 일부 제품은 같은 경로를 되풀이하지 않는 스캔 패턴을 쓴다. 360° 회전 스캔의 scan line 구조를 전제로 만든 원래 LOAM은 이런 센서에 그대로 쓰기 어렵다. FAST-LIO와 FAST-LIO2는 회전식과 solid-state LiDAR를 모두 지원하고, 저자들은 시야각이 좁은 solid-state LiDAR로 한 실험 결과도 보고했다.
 
 ---
 
-## 17.6 Visual-LiDAR 계보 분리의 원인
+## 17.6 Visual SLAM과 LiDAR SLAM이 따로 발전한 이유
 
-Visual SLAM과 LiDAR SLAM은 동시대에 발전했지만 두 커뮤니티의 교류는 오랫동안 제한적이었다. 이유는 여러 층에 걸쳐 있었다.
+두 센서는 재는 것이 다르다. 카메라는 밝기와 색을 기록하고, LiDAR는 거리를 재서 형상을 얻는다. 그래서 카메라 기반 방법은 keypoint, descriptor, photometric consistency(같은 점은 영상마다 밝기가 같다는 가정)를 중심으로 발전했고, LiDAR 방법은 edge, plane, range image를 주로 썼다. place recognition(이미 와 본 곳인지 알아보는 일)에서도 카메라 쪽은 DBoW2나 NetVLAD처럼 이미지의 겉모습(appearance)을 쓰고, LiDAR 쪽은 [Scan Context(Kim·Kim, IROS 2018)](https://gisbi-kim.github.io/publications/gkim-2018-iros.pdf)나 [PointNetVLAD](https://arxiv.org/abs/1804.03492)처럼 point cloud의 3D 구조를 쓴다.
 
-첫째는 센서 자체다. 카메라는 texture와 color를 보고, LiDAR는 range와 geometry를 본다. 카메라 기반 방법이 keypoint·descriptor·photometric consistency를 중심으로 발전할 때, LiDAR는 edge·plane·range image로 분화했다. 문제 공식 자체가 달랐다.
+논문을 내는 곳도 달랐다. 이 장에서 다룬 LiDAR 방법은 LOAM이 RSS, LeGO-LOAM과 LIO-SAM이 IROS, FAST-LIO가 RA-L, FAST-LIO2가 TRO에 실렸다. 앞 장들의 카메라 기반 방법은 로봇공학 학회지 말고도 컴퓨터 비전 학회에 자주 실렸다. PTAM은 ISMAR, DTAM은 ICCV, LSD-SLAM은 ECCV, DUSt3R는 CVPR에 나왔다.
 
-학회도 달랐다. CVPR·ICCV는 카메라 기반 방법의 주 발표 무대였고, ICRA·IROS·RSS는 LiDAR SLAM이 주로 나왔다. 연구자 집단의 겹침도 적었다. Velodyne이 구글과 자율주행 업계에 공급되던 2010년대 초중반에 LiDAR SLAM 연구자 집단은 자율주행 로봇공학 쪽에 밀집했다.
-
-Place recognition 방법도 달랐다. 카메라는 DBoW2·NetVLAD처럼 visual appearance를 사용한다. LiDAR는 [Scan Context(Kim·Kim, 2018)](https://gisbi-kim.github.io/publications/gkim-2018-iros.pdf)나 [PointNetVLAD](https://arxiv.org/abs/1804.03492) 같이 3D point cloud의 구조적 특징을 활용한다. 동일 장소라도 인식하는 신호 자체가 다르다.
-
-수렴의 첫 신호는 2020년대 초에 나타났다. LiDAR-Camera 융합을 다루는 논문이 CVPR에 올라오기 시작했고, Tixiao Shan이 낸 [LVI-SAM (2021)](https://arxiv.org/abs/2104.10831)은 LIO-SAM에 visual-inertial 서브시스템을 붙인 시도였다. 저자들은 이를 tightly coupled factor-graph 시스템으로 규정했다. 다만 구현은 서로 정보를 주고받고 필요하면 독립 동작도 하는 visual-inertial subsystem(VIS)과 lidar-inertial subsystem(LIS)으로 나뉜다.
+2020년대 초부터 두 분야를 잇는 연구가 나왔다. Tixiao Shan은 [LVI-SAM (ICRA 2021)](https://arxiv.org/abs/2104.10831)에서 LIO-SAM에 visual-inertial 시스템을 붙였다. LVI-SAM은 factor graph 하나로 visual-inertial system(VIS)과 lidar-inertial system(LIS)을 묶는다. VIS는 LIS의 추정으로 초기화하고 LiDAR로 시각 feature의 깊이를 얻는다. LIS는 VIS의 추정을 scan matching의 초기값으로 쓴다. 한쪽이 실패해도 다른 쪽만으로 동작한다.
 
 ---
 
 ## 17.7 Visual-LiDAR 수렴 시도: 2024-2025
 
-2024년을 기점으로 융합 시도가 늘었다. Foundation model이 센서와 무관하게 feature를 뽑는 방향으로 발전하면서, 카메라와 LiDAR를 하나의 프레임에서 처리하는 연구가 이어졌다. 갈래는 둘이다.
+센서 종류에 상관없이 feature를 뽑는 foundation model이 나오면서, 카메라와 LiDAR를 한 프레임워크에서 다루려는 연구도 늘었다.
 
-하나는 multi-modal pretrained feature다. LiDAR와 카메라를 같은 embedding space로 align한다. [CLIP(Radford et al., 2021)](https://arxiv.org/abs/2103.00020)이 image-text alignment를 해낸 것처럼, LiDAR-image contrastive learning을 사용하는 접근이다. 2023-2024년 여러 그룹에서 실험 단계다.
+한쪽은 LiDAR와 카메라 데이터를 같은 embedding space(특징 벡터 공간)에 놓는 multi-modal pretrained feature를 만든다. [CLIP(Radford et al., 2021)](https://arxiv.org/abs/2103.00020)이 이미지와 텍스트를 contrastive learning(같은 대상의 짝은 가깝게, 다른 짝은 멀게 학습하는 방법)으로 맞춘 것처럼, LiDAR와 이미지 사이에 같은 학습을 적용한다.
 
-다른 하나는 unified sensor abstraction이다. 센서 출력을 geometric primitive나 neural field로 통합한 뒤 단일 backend에서 처리한다. 이쪽은 아직 연구 논문 단계이고 실시간 동작을 보인 시스템은 드물다.
+다른 쪽은 센서 출력을 geometric primitive나 neural field 같은 공통 표현으로 바꾼 다음 backend 하나에서 처리하려 한다.
 
-어느 방향도 아직 LiDAR SLAM과 Visual SLAM을 실질적으로 통합한 단일 계보를 만들지 못했다. FAST-LIO2와 ORB-SLAM3는 여전히 독립적으로 쓰인다.
+그래도 이 장에서 다룬 LiDAR 방법과 앞 장들의 카메라 방법은 대부분 한 종류의 센서를 중심으로 설계됐다.
 
 ---
 
 ## 17.8 Radar는 본 책의 scope 밖이다
 
-LiDAR 평행 우주 바로 옆에는 또 하나의 평행 우주가 있다. Radar SLAM은 spinning radar(Navtech CIR 계열)와 SoC 기반 4D mmWave radar라는 두 하드웨어 분기 위에, Doppler radial velocity를 직접 측정해 correspondence-free odometry가 가능하다는 점, 그리고 speckle·multipath·receiver saturation 같은 전파 고유의 noise 모델 위에서 독립 subfield로 성숙했다. [Cen & Newman 2018](https://doi.org/10.1109/ICRA.2018.8460687)의 Oxford 계열 radar localisation에서 출발해 Adolfsson·Magnusson의 **CFEAR**, 그 후속 **TBV-SLAM**, Burnett·Barfoot의 continuous-time ICP까지 계보가 이어졌고, Oxford Radar RobotCar·Boreas·MulRan 같은 전용 데이터셋이 이 영역의 벤치마크 기반을 이룬다. 악천후와 연기 관통성이라는 실용 동기는 분명하지만, 본 책이 추적해 온 photogrammetry → SfM → Visual SLAM → learning → 3D foundation의 계보와는 접점이 얇다. radar는 "앞으로 합류할 이웃"으로 남겨 두고, 이 책은 별도 역사를 쓰지 않는다. 상세는 *The SLAM Handbook*(2026) Ch.9 참조.
+Radar SLAM은 독립된 하위 분야로 자랐다. 하드웨어는 Navtech 계열의 회전식 radar와, 칩 하나에 송수신부를 넣은 4D mmWave radar로 나뉜다. 4D mmWave radar는 Doppler 효과로 각 반사점이 센서 쪽으로 다가오는 속도(radial velocity)를 직접 재므로, 스캔 사이의 대응점을 찾지 않고도 자기 움직임을 구할 수 있다. 어느 쪽이든 speckle, multipath, receiver saturation처럼 전파에서 생기는 노이즈를 따로 모델링해야 한다. 연구는 Oxford의 [Cen & Newman 2018](https://doi.org/10.1109/ICRA.2018.8460687)에서 시작해 Adolfsson·Magnusson의 CFEAR와 후속 TBV-SLAM, Burnett·Barfoot의 continuous-time 방법으로 이어졌다. 벤치마크로는 Oxford Radar RobotCar, Boreas, MulRan 같은 radar 전용 데이터셋을 쓴다. radar는 비, 안개, 연기 속에서도 측정할 수 있다. 다만 이 책이 따라온 photogrammetry → SfM → Visual SLAM → learning → 3D foundation의 흐름과 겹치는 데가 적어 여기서는 다루지 않는다. 자세한 내용은 *SLAM Handbook*(Cambridge University Press, 2026년 4월 21일자 원고) 9장 "Radar SLAM"을 보라.
 
 ---
 
 ## 📜 예언 vs 실제
 
-> Zhang·Singh는 2014년 LOAM 논문 Conclusion에서 다음 두 가지를 명시적 future work로 꼽았다. 첫째, loop closure를 도입해 drift를 보정하는 것. 둘째, IMU 출력을 Kalman filter로 자신들의 방법과 결합하는 것. 두 방향 모두 이후 10년 안에 실현됐다. IMU 결합은 FAST-LIO(2021)·FAST-LIO2(2022)가 iEKF로 tightly coupled 방식으로 정리했고, loop closure는 LIO-SAM(2020)이 factor graph backend로 통합했다. 저자들이 스케치한 경로는 꽤 정확히 구현됐다. 그러나 이 두 축 너머에는, 논문 Conclusion에는 등장하지 않았지만 실무 현장에서 꾸준히 부각된 과제가 있었다. dynamic object 처리다. LiDAR 포인트에서 움직이는 보행자·차량을 실시간 분리하는 작업은 2026년 현재도 주로 deep learning segmentation에 의존하고, SLAM 내부의 geometry 기반 방법도 있지만, 다양한 동적 환경을 포괄하는 일반 해법은 정착되지 않았다.
+> Zhang·Singh는 2014년 LOAM 논문의 결론에서 loop closure로 drift를 바로잡는 일과, 자신들의 출력을 IMU와 함께 Kalman filter로 합쳐 drift를 더 줄이는 일을 future work로 적었다. 이 일들은 10년 안에 이루어졌다. loop closure는 LIO-SAM(2020)이 factor graph에 넣었고, IMU 결합은 FAST-LIO(2021)와 FAST-LIO2(2022)가 iEKF 기반 tightly coupled 방식으로 풀었다.
 
 ---
 
 ## 🧭 아직 열린 것
 
-**Visual+LiDAR 완전 융합.** LVI-SAM 이후에도 두 센서를 하나의 상태 추정기에서 다루는 tightly coupled 설계 가운데 널리 받아들여진 공통형은 없다. 안개·강우에서 카메라가 약해질 때 LiDAR가 빈자리를 채워야 하는 시나리오는 자율주행에서 명확한 요구다. 알고리즘과 센서 캘리브레이션의 난이도가 장벽이고, 2024-2025년의 transformer 기반 융합도 아직 연구 시제품 단계다.
+**Visual+LiDAR 완전 융합.** LVI-SAM 뒤에도 두 센서를 상태 추정기 하나에서 tightly coupled로 다루는 방식은 연구마다 설계가 다르다. 두 센서를 함께 쓰려면 센서 사이 캘리브레이션이 필요하다. 한 추정기에서 두 센서를 함께 다루는 표준 설계를 정하는 일은 남은 과제다.
 
-**Solid-state LiDAR에 최적화된 알고리즘.** 원래 LOAM은 360° spinning LiDAR의 scan line과 특징 구조를 전제로 했다. 일부 Livox 제품의 비반복 스캔과 solid-state 센서의 제한된 FoV는 관측 가능성과 motion distortion의 양상을 바꾼다. FAST-LIO2의 direct point-to-map 방식과 Livox LOAM처럼 이를 다루는 시스템은 이미 있지만, 서로 다른 FoV와 scan pattern을 한 설정으로 포괄하는 방법은 아직 확립되지 않았다.
+**Solid-state LiDAR에 맞춘 알고리즘.** 원래 LOAM은 360° 회전식 LiDAR의 scan line 구조를 전제로 했다. Livox 일부 제품의 비반복 스캔과 solid-state 센서의 좁은 FoV에서는 어떤 방향의 움직임을 관측할 수 있는지(observability)와 motion distortion이 생기는 양상이 달라진다. FAST-LIO2처럼 원시 포인트를 지도에 바로 맞추는 방식이나 Livox용 LOAM 구현([loam_livox](https://github.com/hku-mars/loam_livox))처럼 이런 센서를 다루는 시스템은 이미 있다. 서로 다른 FoV와 스캔 패턴을 설정 하나로 모두 처리하는 일은 아직 남아 있다.
 
-**동적 물체 처리.** 이 문제는 LOAM의 두 가지 명시적 future work와는 별도로 남은 과제다. 정적 환경 가정은 SLAM의 오래된 전제이고, LiDAR도 예외가 없다. 움직이는 물체를 포인트 클라우드에서 실시간 분리하는 작업은 흔히 segmentation network에 맡긴다. SLAM 내부의 geometry 기반 방법은 연산 비용과 안정성 문제를 함께 안고 있다. 실제 제품의 처리 계통은 대체로 비공개이며, 공개 연구에서도 하나의 일반 해법이 널리 받아들여지지는 않았다.
-
----
-
-LiDAR 계보는 Visual 주축과 접점이 적은 채로 성숙했다. 두 계보는 각자의 언어를 갖추었고, 그 언어들 사이의 번역은 아직 진행 중이다.
+**동적 물체 처리.** LOAM 논문이 future work로 꼽지 않은 문제다. SLAM은 오래전부터 환경이 움직이지 않는다고 가정했고, LiDAR SLAM도 이 가정을 따른다. 움직이는 점을 떼어 내는 방법으로는 §17.2의 SuMa++처럼 semantic segmentation 결과를 쓰는 방식과, Ch.15b의 ERASOR와 Dynablox처럼 기하 정보로 동적 점을 고르는 방식이 있다.

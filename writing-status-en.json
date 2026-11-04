@@ -10,6 +10,15 @@
   ],
   "_note": "English edition of slam-history-book. Source Korean chapters are complete (see writing-status.json). Each chapter progresses independently.",
   "project": "slam-history-book-en",
+  "quality_passes": {
+    "phase_0a_inventory": "complete",
+    "expected_translation_units": 24,
+    "translation_freshness": "verified_24_of_24_2026-07-17",
+    "bilingual_alignment": "verified_24_of_24_2026-07-17",
+    "prose_quality": "complete_2026-07-17",
+    "preservation_audit": "complete_no_arbitrary_deletions_2026-07-17",
+    "stage3_claims_and_sources": "complete_2026-07-17"
+  },
   "source_status": "writing-status.json",
   "style_guide": "/Users/alex/Library/CloudStorage/Dropbox/repos/writing-tools/policies/STYLE_PROSE_EN.md",
   "chapters": {
@@ -277,5 +286,808 @@
       "coherence_date": "2026-04-25",
       "editing_date": "2026-04-25"
     }
+  },
+  "editorial_renewal_2026_10_13": {
+    "scope": "Verified proposal corrections; not full proofreading of all 276 initial units.",
+    "verified_at": "2026-10-13T08:49:54Z",
+    "units": {
+      "slam-history-book/en/chapter_01_photogrammetry.md": {
+        "source_sha256": "sha256:e2dade2e8a1554b6668e728e2dd44dd27c7387b88bb7a000fbec5f68111a9f3e",
+        "language": "en",
+        "changed_since_initial_snapshot": true,
+        "finding_ids": [
+          "SH-A02",
+          "SH-A03"
+        ],
+        "source_correction_evidence": [
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 0,
+            "stage": "3-revising",
+            "reason": "Remove unsupported forty-year exclusion from academia; retain documented photogrammetric development."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 1,
+            "stage": "3-revising",
+            "reason": "Restore the distinction between disciplinary translation and an unverified causal history."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 2,
+            "stage": "3-revising",
+            "reason": "Failure of assumptions does not imply absence of alternatives or a century of convergence proofs."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 44,
+            "stage": "3-revising",
+            "reason": "Remove the remaining unsupported causal explanation of disciplinary delay."
+          }
+        ],
+        "local_case_ids": [],
+        "sealed_operational_terminals": [],
+        "author_gold_created": false,
+        "status": "targeted_source_correction_verified",
+        "review_scope": "Targeted source/content correction; no whole-file prose completion claim.",
+        "evidence_ledger": {
+          "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/finding-disposition-final.json",
+          "sha256": "sha256:ef5480253f23ce07f30f099a1dc94f9f4a4ec681a9a6ca20bdec439ad90c4b18"
+        },
+        "verified_at": "2026-10-13T08:49:54Z"
+      },
+      "slam-history-book/en/chapter_03_sfm.md": {
+        "source_sha256": "sha256:0123581aa8276ebae2f01884a7440acdbc9c5f435c9ab08664ae1bdee0c85f5b",
+        "language": "en",
+        "changed_since_initial_snapshot": true,
+        "finding_ids": [
+          "SH-A01",
+          "SH-N01"
+        ],
+        "source_correction_evidence": [
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 4,
+            "stage": "3-revising",
+            "reason": "Restore prior work and the limited historical attribution; correct author affiliation."
+          }
+        ],
+        "local_case_ids": [],
+        "sealed_operational_terminals": [],
+        "author_gold_created": false,
+        "status": "targeted_source_correction_verified",
+        "review_scope": "Targeted source/content correction; no whole-file prose completion claim.",
+        "evidence_ledger": {
+          "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/finding-disposition-final.json",
+          "sha256": "sha256:ef5480253f23ce07f30f099a1dc94f9f4a4ec681a9a6ca20bdec439ad90c4b18"
+        },
+        "verified_at": "2026-10-13T08:49:54Z"
+      },
+      "slam-history-book/en/chapter_05_monoslam_ptam.md": {
+        "source_sha256": "sha256:a034193229e30fb528e87141eee8160a063aeed61a81f851df928198444942e1",
+        "language": "en",
+        "changed_since_initial_snapshot": true,
+        "finding_ids": [
+          "SH-A04",
+          "SH-A05",
+          "SH-A06",
+          "SH-N02",
+          "SH-N05"
+        ],
+        "source_correction_evidence": [
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 6,
+            "stage": "3-revising",
+            "reason": "Correct concrete historical setting using original paper abstract and affiliation."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 7,
+            "stage": "3-revising",
+            "reason": "Replace unverified audience reaction with documented demonstration."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 8,
+            "stage": "3-revising",
+            "reason": "Remove fabricated quotation and motive; retain sensor configuration and explicit scaling constraint."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 10,
+            "stage": "3-revising",
+            "reason": "Original references and local-BA section support structural comparison, not direct submap inheritance."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 46,
+            "stage": "3-revising",
+            "reason": "Correct academic training and employment; remove invented personal appraisal."
+          }
+        ],
+        "local_case_ids": [],
+        "sealed_operational_terminals": [],
+        "author_gold_created": false,
+        "status": "targeted_source_correction_verified",
+        "review_scope": "Targeted source/content correction; no whole-file prose completion claim.",
+        "evidence_ledger": {
+          "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/finding-disposition-final.json",
+          "sha256": "sha256:ef5480253f23ce07f30f099a1dc94f9f4a4ec681a9a6ca20bdec439ad90c4b18"
+        },
+        "verified_at": "2026-10-13T08:49:54Z"
+      },
+      "slam-history-book/en/chapter_06b_certifiable.md": {
+        "source_sha256": "sha256:de23b11f0ce8ded647046720a2fcb1d4d26448f75aa8a04b0e5d700bfb744dd8",
+        "language": "en",
+        "changed_since_initial_snapshot": true,
+        "finding_ids": [
+          "SH-A07"
+        ],
+        "source_correction_evidence": [
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 11,
+            "stage": "3-revising",
+            "reason": "Handbook p.173 states failure of conditions and practical solver obstacles, not universal nonconvergence or no fast certifiable algorithm."
+          }
+        ],
+        "local_case_ids": [],
+        "sealed_operational_terminals": [],
+        "author_gold_created": false,
+        "status": "targeted_source_correction_verified",
+        "review_scope": "Targeted source/content correction; no whole-file prose completion claim.",
+        "evidence_ledger": {
+          "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/finding-disposition-final.json",
+          "sha256": "sha256:ef5480253f23ce07f30f099a1dc94f9f4a4ec681a9a6ca20bdec439ad90c4b18"
+        },
+        "verified_at": "2026-10-13T08:49:54Z"
+      },
+      "slam-history-book/en/chapter_08_direct.md": {
+        "source_sha256": "sha256:c88b3724851d8bfe9a475da262a02d1a3942f94debedfbc8599540b397125ca7",
+        "language": "en",
+        "changed_since_initial_snapshot": true,
+        "finding_ids": [
+          "SH-A08",
+          "SH-N03"
+        ],
+        "source_correction_evidence": [
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 14,
+            "stage": "3-revising",
+            "reason": "Restore actual pixel selection, including weak-gradient fallback, without generic smooth-landscape guarantee."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 16,
+            "stage": "3-revising",
+            "reason": "Distinguish per-frame candidates from window-wide active points."
+          }
+        ],
+        "local_case_ids": [],
+        "sealed_operational_terminals": [],
+        "author_gold_created": false,
+        "status": "targeted_source_correction_verified",
+        "review_scope": "Targeted source/content correction; no whole-file prose completion claim.",
+        "evidence_ledger": {
+          "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/finding-disposition-final.json",
+          "sha256": "sha256:ef5480253f23ce07f30f099a1dc94f9f4a4ec681a9a6ca20bdec439ad90c4b18"
+        },
+        "verified_at": "2026-10-13T08:49:54Z"
+      },
+      "slam-history-book/en/chapter_12_end_to_end.md": {
+        "source_sha256": "sha256:ee9c9f8f61389914d6f9aaf0313d144f0627398331305820d901e7a4b113142f",
+        "language": "en",
+        "changed_since_initial_snapshot": true,
+        "finding_ids": [
+          "SH-A09",
+          "SH-A10",
+          "SH-A11",
+          "SH-N04",
+          "SH-N11"
+        ],
+        "source_correction_evidence": [
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 17,
+            "stage": "3-revising",
+            "reason": "No verified record attributes this three-part taxonomy to a Pillai talk; replace invented attribution with a specific published study and distinguish APR from VO."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 19,
+            "stage": "3-revising",
+            "reason": "Remove unsupported Cambridge-to-Oxford test, exponential law, radar condition and predictable classical failure; preserve the distinct generalization questions."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 22,
+            "stage": "3-revising",
+            "reason": "Correct doctorate/founding dates and unsupported account of personal research stance."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 24,
+            "stage": "3-revising",
+            "reason": "Restore what the Bayesian PoseNet paper actually evaluated without inventing a universal success or failure."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 48,
+            "stage": "3-revising",
+            "reason": "State the documented research expansion directly without the removed fabricated rejection narrative."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 65,
+            "stage": "3-revising",
+            "reason": "The section no longer attributes three established failures to an invented talk; title now identifies the actual distinct questions."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 67,
+            "stage": "3-revising",
+            "reason": "Replace unsubstantiated negative performance verdict with the original method and stated evaluation scope."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 69,
+            "stage": "3-revising",
+            "reason": "Remove unsupported field-wide abandonment claims and retain documented research questions or concrete follow-on methods."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 71,
+            "stage": "3-revising",
+            "reason": "Remove unsupported field-wide abandonment claims and retain documented research questions or concrete follow-on methods."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 73,
+            "stage": "3-revising",
+            "reason": "Remove the repeated unsupported claim that classical failures are inherently more predictable and narrow the comparison to the evaluated tasks."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 75,
+            "stage": "3-revising",
+            "reason": "Remove the repeated unsupported claim that classical failures are inherently more predictable and narrow the comparison to the evaluated tasks."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 77,
+            "stage": "3-revising",
+            "reason": "Remove a final blanket failure claim that contradicts the bounded results presented above."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-review-repairs.json",
+              "sha256": "sha256:52237684629d9eba09622bb0c313079f144e7289adb0fc26e39bd8558d52ac2c"
+            },
+            "operation_index": 1,
+            "stage": "3-review-repair",
+            "reason": "Independent primary-source review of adjacent and repeated claims."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-review-repairs.json",
+              "sha256": "sha256:52237684629d9eba09622bb0c313079f144e7289adb0fc26e39bd8558d52ac2c"
+            },
+            "operation_index": 3,
+            "stage": "3-review-repair",
+            "reason": "Independent primary-source review of adjacent and repeated claims."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-review-repairs.json",
+              "sha256": "sha256:52237684629d9eba09622bb0c313079f144e7289adb0fc26e39bd8558d52ac2c"
+            },
+            "operation_index": 5,
+            "stage": "3-review-repair",
+            "reason": "Independent primary-source review of adjacent and repeated claims."
+          }
+        ],
+        "local_case_ids": [],
+        "sealed_operational_terminals": [],
+        "author_gold_created": false,
+        "status": "targeted_source_correction_verified",
+        "review_scope": "Targeted source/content correction; no whole-file prose completion claim.",
+        "evidence_ledger": {
+          "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/finding-disposition-final.json",
+          "sha256": "sha256:ef5480253f23ce07f30f099a1dc94f9f4a4ec681a9a6ca20bdec439ad90c4b18"
+        },
+        "verified_at": "2026-10-13T08:49:54Z"
+      },
+      "slam-history-book/en/chapter_14_nerf_slam.md": {
+        "source_sha256": "sha256:165c349be798c5d04ab398c24fcf0e767670bb6319cb6a1b0bb037fc1a476ddb",
+        "language": "en",
+        "changed_since_initial_snapshot": true,
+        "finding_ids": [
+          "TB-01",
+          "TB-04",
+          "TB-09"
+        ],
+        "source_correction_evidence": [
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 25,
+            "stage": "3-revising",
+            "reason": "Remove unsupported community reaction and incorrect fourteen-month interval."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 26,
+            "stage": "3-revising",
+            "reason": "Restore hardware/demo scope and several rather than unsupported majority of systems."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 27,
+            "stage": "3-revising",
+            "reason": "arXiv first submission is 2022-10-24; official implementation reuses DROID-SLAM and Instant-NGP."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 28,
+            "stage": "3-revising",
+            "reason": "Restore actual estimator and representation lineage; remove unsupported Dellaert attribution."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 29,
+            "stage": "3-revising",
+            "reason": "Do not infer loop-closure support from modularity; describe documented module interface."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 52,
+            "stage": "3-revising",
+            "reason": "Attribute the marginal-covariance computation to the NeRF-SLAM extension."
+          }
+        ],
+        "local_case_ids": [],
+        "sealed_operational_terminals": [],
+        "author_gold_created": false,
+        "status": "targeted_source_correction_verified",
+        "review_scope": "Targeted source/content correction; no whole-file prose completion claim.",
+        "evidence_ledger": {
+          "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/finding-disposition-final.json",
+          "sha256": "sha256:ef5480253f23ce07f30f099a1dc94f9f4a4ec681a9a6ca20bdec439ad90c4b18"
+        },
+        "verified_at": "2026-10-13T08:49:54Z"
+      },
+      "slam-history-book/en/chapter_15_gaussian_splatting.md": {
+        "source_sha256": "sha256:88e7f362bf1302612bbf57cfa3d24b07a4f76ba0ac965d5ee304c2c8fec55189",
+        "language": "en",
+        "changed_since_initial_snapshot": true,
+        "finding_ids": [
+          "SH-A12",
+          "SH-A13",
+          "SH-N10",
+          "SH-P01"
+        ],
+        "source_correction_evidence": [
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 31,
+            "stage": "3-revising",
+            "reason": "Restore failure geometry in original equation and Figure3."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 32,
+            "stage": "3-revising",
+            "reason": "Displayed loss is isotropy, not fabricated neighboring-depth consistency; it does not recover metric scale."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 34,
+            "stage": "3-revising",
+            "reason": "Restore internal depth-hypothesis initialization; remove external learned prior and fictional scale-maintenance loss."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 35,
+            "stage": "3-revising",
+            "reason": "Original Introduction explicitly excludes external depth predictor/tracking."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 36,
+            "stage": "3-revising",
+            "reason": "Restore evaluation alignment conditions from supplementary §8.1.1 while preserving all reported values."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 59,
+            "stage": "3-revising",
+            "reason": "Use the same symbol as the following definition and rendering equation; effective alpha is distinct."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-symbol-repairs.json",
+              "sha256": "sha256:e6a1fef9752737b51abc790be67f43d837beb749e4914ea9c47fc4bc568f3f72"
+            },
+            "operation_index": 0,
+            "stage": "3-review-repair",
+            "reason": "Match canonical Korean learned opacity o and effective alpha; symbolic correction explicitly includes displayed equation, no numerical change."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-symbol-repairs.json",
+              "sha256": "sha256:e6a1fef9752737b51abc790be67f43d837beb749e4914ea9c47fc4bc568f3f72"
+            },
+            "operation_index": 1,
+            "stage": "3-review-repair",
+            "reason": "Match canonical Korean learned opacity o and effective alpha; symbolic correction explicitly includes displayed equation, no numerical change."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-symbol-repairs.json",
+              "sha256": "sha256:e6a1fef9752737b51abc790be67f43d837beb749e4914ea9c47fc4bc568f3f72"
+            },
+            "operation_index": 2,
+            "stage": "3-review-repair",
+            "reason": "Match canonical Korean learned opacity o and effective alpha; symbolic correction explicitly includes displayed equation, no numerical change."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-source-scope-repairs.json",
+              "sha256": "sha256:7f54416b41bb667e7becc0b669da33661dc63d882a3ce8c14ff6080d4d3af1e1"
+            },
+            "operation_index": 4,
+            "stage": "3-review-repair",
+            "reason": "Independent review restored exact version/date scope and English diagram language."
+          }
+        ],
+        "local_case_ids": [],
+        "sealed_operational_terminals": [],
+        "author_gold_created": false,
+        "status": "targeted_source_correction_verified",
+        "review_scope": "Targeted source/content correction; no whole-file prose completion claim.",
+        "evidence_ledger": {
+          "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/finding-disposition-final.json",
+          "sha256": "sha256:ef5480253f23ce07f30f099a1dc94f9f4a4ec681a9a6ca20bdec439ad90c4b18"
+        },
+        "verified_at": "2026-10-13T08:49:54Z"
+      },
+      "slam-history-book/en/chapter_15b_dynamic.md": {
+        "source_sha256": "sha256:fc50d8ce7f9a8069b2cebda5b7a5f9af7e502c540da25d63d6823938269f236c",
+        "language": "en",
+        "changed_since_initial_snapshot": true,
+        "finding_ids": [
+          "SH-A14",
+          "SH-N06",
+          "SH-N07",
+          "SH-N08"
+        ],
+        "source_correction_evidence": [
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 38,
+            "stage": "3-revising",
+            "reason": "Identify the actual consulted manuscript by its compilation date, not a mismatched publication year."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 53,
+            "stage": "3-revising",
+            "reason": "Original related work and reference list do not support Atlas inheritance; restore the independently verified KO comparison."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 54,
+            "stage": "3-revising",
+            "reason": "Khronos§V-B documents deformation graph and loop closures; its references do not substantiate first-ever loop closure or DynamicFusion descent."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 58,
+            "stage": "3-revising",
+            "reason": "Correct ERASOR authorship and replace the unsupported two-traversal scene-differencing description with its pseudo-occupancy and ground-plane method."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 61,
+            "stage": "3-revising",
+            "reason": "Keep the supported technical relationship in public prose; retain the removed attribution and evidence assessment in this audit."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 63,
+            "stage": "3-revising",
+            "reason": "Clarify the distinct target problem rather than narrating the source audit."
+          }
+        ],
+        "local_case_ids": [],
+        "sealed_operational_terminals": [],
+        "author_gold_created": false,
+        "status": "targeted_source_correction_verified",
+        "review_scope": "Targeted source/content correction; no whole-file prose completion claim.",
+        "evidence_ledger": {
+          "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/finding-disposition-final.json",
+          "sha256": "sha256:ef5480253f23ce07f30f099a1dc94f9f4a4ec681a9a6ca20bdec439ad90c4b18"
+        },
+        "verified_at": "2026-10-13T08:49:54Z"
+      },
+      "slam-history-book/en/chapter_19_open_problems.md": {
+        "source_sha256": "sha256:928de17e8845e46e1c5ff28facaf642a1d16cba40587e45c07ec9f4d2731b586",
+        "language": "en",
+        "changed_since_initial_snapshot": true,
+        "finding_ids": [
+          "SH-A15",
+          "SH-N09",
+          "SH-N12",
+          "TB-02",
+          "TB-03",
+          "TB-08",
+          "TB-10"
+        ],
+        "source_correction_evidence": [
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 39,
+            "stage": "3-revising",
+            "reason": "Verify Eq16.34–36 in Handbookp484; preserve three distinct representations and distinguish lossy sub-symbolic compression from lossless hierarchy."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 41,
+            "stage": "3-revising",
+            "reason": "LVI-SAM original abstract explicitly defines tightly coupled information exchange and independent fallback."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 42,
+            "stage": "3-revising",
+            "reason": "Remove unsupported universal threshold and separate performance failures; avoid universal no-method claim with no bounded comparison set."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 56,
+            "stage": "3-revising",
+            "reason": "Meta official announcement datedJune4,2025; align KO and EN."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-edits.json",
+              "sha256": "sha256:0e727c6afd7fa2e997f1bd03601b33dae4315b0ec774bd66303f55d8ba87002a"
+            },
+            "operation_index": 78,
+            "stage": "3-revising",
+            "reason": "Synchronize the EN lineage diagram with the KO canonical node and edge set. Remove reverse chronological and unsubstantiated direct inheritance links, restore independent branches and the Kimera node; preserve EN navigation labels. This is bilingual source synchronization, not an independent verification of every preserved graph edge."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-source-scope-repairs.json",
+              "sha256": "sha256:7f54416b41bb667e7becc0b669da33661dc63d882a3ce8c14ff6080d4d3af1e1"
+            },
+            "operation_index": 1,
+            "stage": "3-review-repair",
+            "reason": "Independent review restored exact version/date scope and English diagram language."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/history-source-scope-repairs.json",
+              "sha256": "sha256:7f54416b41bb667e7becc0b669da33661dc63d882a3ce8c14ff6080d4d3af1e1"
+            },
+            "operation_index": 2,
+            "stage": "3-review-repair",
+            "reason": "Independent review restored exact version/date scope and English diagram language."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/tb10-stage3-edits.json",
+              "sha256": "sha256:befb60dcd533e33468f5fccc141578ba9fb65a3602bb74099a84c0b306a071ca"
+            },
+            "operation_index": 0,
+            "stage": "3-translation",
+            "reason": "Restore Korean counterpart propositions: deliberate simplifying assumptions, lineage-attributed solved claims, existing versus newly posed problems."
+          },
+          {
+            "journal": {
+              "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/tb10-stage3-edits.json",
+              "sha256": "sha256:befb60dcd533e33468f5fccc141578ba9fb65a3602bb74099a84c0b306a071ca"
+            },
+            "operation_index": 1,
+            "stage": "3-translation",
+            "reason": "Restore Korean counterpart propositions: deliberate simplifying assumptions, lineage-attributed solved claims, existing versus newly posed problems."
+          }
+        ],
+        "local_case_ids": [
+          "renewal-tb-10-en-r3"
+        ],
+        "sealed_operational_terminals": [
+          {
+            "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/production/renewal-20261013-r3/renewal-tb-10-en-r3/run-final-selected/operational-terminal.json",
+            "sha256": "sha256:57c1a4906a9bb37c7daac11391d3e4fd1eb2d684b97455ee4b2a69939e19c073"
+          }
+        ],
+        "author_gold_created": false,
+        "status": "prose_integration_verified",
+        "review_scope": "Whole-file accumulation reading and current v2 integration; earlier source corrections separately linked.",
+        "evidence_ledger": {
+          "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/finding-disposition-final.json",
+          "sha256": "sha256:ef5480253f23ce07f30f099a1dc94f9f4a4ec681a9a6ca20bdec439ad90c4b18"
+        },
+        "verified_at": "2026-10-13T08:49:54Z",
+        "integration_receipt_v2": {
+          "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/production/renewal-20261013-r3/renewal-20261013-r3-265399a29338-accumulation/integration-receipt.json",
+          "sha256": "sha256:b3ac18e088b5edfe67605937918e1379c7163fe2be3ec1081e7851996e5fb09a"
+        },
+        "verify_integration_result": {
+          "command": [
+            "python3",
+            "writing-tools/tools/editorial-workflow.py",
+            "verify-integration",
+            "--dataset",
+            "writing-tools/evals/datasets/renewal-20261013-r3-selected-en",
+            "--receipt",
+            "writing-tools/audits/2026-10-13-editorial-renewal/implementation/production/renewal-20261013-r3/renewal-20261013-r3-265399a29338-accumulation/integration-receipt.json"
+          ],
+          "exit_code": 0,
+          "stdout": "verified integration: renewal-20261013-r3-265399a29338-integration (pass) <- writing-tools/audits/2026-10-13-editorial-renewal/implementation/production/renewal-20261013-r3/renewal-20261013-r3-265399a29338-accumulation/integration-receipt.json\n",
+          "stderr": "",
+          "historical_head_used": false,
+          "allow_hold_used": false
+        }
+      }
+    },
+    "build": {
+      "output": "slam-history-book/guide.html",
+      "sha256": "sha256:33a7699964a0aef8927984dffb90b4f8048e5451fd0052f3b5eceecef1395cbe",
+      "build": {
+        "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/build-final-results.json",
+        "sha256": "sha256:c1b5df032bf0667f35e90bf44c59167dffd5807c5af830bfdbae0af04e4dcae8"
+      },
+      "browser": {
+        "path": "writing-tools/audits/2026-10-13-editorial-renewal/implementation/browser-verification-final-build.json",
+        "sha256": "sha256:9d217b0cb84a3b437b6f88a7c7dd557043884d04dfa45c7b89a14d8049974486"
+      },
+      "status": "current_verified"
+    },
+    "legacy_status_preserved": true
   }
 }

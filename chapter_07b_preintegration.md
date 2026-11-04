@@ -1,93 +1,93 @@
-# Ch.7b — 흔들리는 센서에서 제약식으로: IMU Preintegration의 발명
+# Ch.7b — IMU Preintegration: IMU 측정을 factor graph의 제약으로
 
-2009년 시드니의 ACFR(Australian Centre for Field Robotics)에서 박사과정생 Todd Lupton과 지도교수 Salah Sukkarieh는 빠른 기동 중 IMU 측정을 factor graph에 묶는 문제를 다뤘다. 드론이 빠르게 기동할 때 IMU는 200Hz로 측정값을 내놓지만, factor graph에 이를 전부 넣기는 어려웠다. 키프레임은 초당 몇 개뿐인데, 그 사이 수십·수백 개 IMU 측정을 어떻게 한 묶음으로 만들 것인가. Lupton이 IROS에 낸 답이 preintegration의 씨앗이었다. 6년 뒤 2015년 RSS, Christian Forster가 Davide Scaramuzza·Luca Carlone·Frank Dellaert와 함께 그 씨앗을 SO(3) 매니폴드 위로 옮겼을 때 IMU는 factor graph의 일등시민이 되었다. Ch.7의 ORB-SLAM3, Ch.8의 VI-DSO, Ch.17의 LIO-SAM은 이 수식을 "Forster 2016을 썼다"로 처리했다. FAST-LIO는 raw IMU 전파와 iterated filter update를 쓰는 다른 경로다.
-
----
-
-## 7b.1 MEMS와 센서의 민주화
-
-Preintegration이 필요해진 이유는 IMU가 싸졌기 때문이다. 스트랩다운 관성항법의 뿌리는 1950년대 항공우주에 있다. 잠수함·미사일의 ring laser gyro는 수만 달러 장비였고 로봇공학 커뮤니티가 쓸 일은 없었다. 흐름을 바꾼 것은 MEMS(Micro-Electro-Mechanical Systems)였다. Analog Devices의 ADXL, InvenSense의 MPU 시리즈가 6축 IMU를 수 달러로 끌어내렸다. iPhone에 IMU가 들어간 것이 2007년, 2010년대 초반에는 연구용 드론·핸드헬드 장비가 당연히 MEMS IMU를 달았다. 스마트폰 수십억 대가 단가를 떨어뜨리는 시점과 Visual SLAM이 monocular scale ambiguity(Ch.5 §🧭)를 진지하게 고민하는 시점이 겹쳤다.
-
-측정 모델은 단순하다. 가속도계는 중력이 섞인 specific force $\tilde{\mathbf{a}} = \mathbf{R}_w^b(\mathbf{a}^w - \mathbf{g}^w) + \mathbf{b}^a + \boldsymbol{\eta}^a$를, 자이로스코프는 angular velocity $\tilde{\boldsymbol{\omega}} = \boldsymbol{\omega}_b^b + \mathbf{b}^g + \boldsymbol{\eta}^g$를 준다. 여기서 $\mathbf{b}$는 bias, $\boldsymbol{\eta}$는 white noise다. 중력이 항상 섞이고, bias는 시간에 따라 천천히 떠다니며(random walk), MEMS 노이즈는 고주파다. IMU를 쓸 때에는 중력 방향을 추정하고 world frame을 그 방향에 정렬하는 경우가 많다. IMU는 온도·전원 상태마다 bias가 조금씩 달라지는 까다로운 동반자였다.
+2009년 시드니 대학교 ACFR(Australian Centre for Field Robotics)의 Todd Lupton과 Salah Sukkarieh는 빠르게 움직이는 플랫폼에서 얻은 IMU 측정을 추정기에 넣는 문제를 다뤘다. IMU는 초당 수백 번 측정값을 내지만 keyframe은 초당 몇 개뿐이다. 그 사이에 쌓이는 측정 수십·수백 개를 한 묶음으로 다룰 방법이 필요했다. Lupton과 Sukkarieh가 IROS 2009에 낸 논문에서 preintegration(사전 적분)이 시작됐다. 6년 뒤인 2015년 RSS에서 Christian Forster는 Luca Carlone, Frank Dellaert, Davide Scaramuzza와 함께 이 방법을 SO(3) manifold 위에서 다시 정식화했다. Ch.7의 ORB-SLAM3, Ch.8의 VI-DSO, Ch.17의 LIO-SAM은 이 수식을 따로 유도하지 않고 Forster의 논문을 인용한다. FAST-LIO는 다른 방식을 쓴다. IMU 원측정으로 상태를 그대로 전파하고 iterated filter로 갱신한다.
 
 ---
 
-## 7b.2 첫 시도 — Lupton & Sukkarieh (2009 / 2012)
+## 7b.1 MEMS IMU의 보급
 
-문제는 factor graph의 시간 축이었다. Ch.6가 정리한 Kaess의 iSAM2는 키프레임 단위의 pose를 노드로 삼는다. 그런데 IMU는 키프레임 사이에 수십 번 측정을 던진다. 이 측정을 전부 노드로 만들면 그래프가 폭발하고, 버리면 정보가 사라진다.
+preintegration이 필요해진 것은 IMU가 싸진 뒤였다. 관성항법은 1950년대 항공우주 분야에서 시작됐다. 잠수함이나 미사일에 쓰던 ring laser gyro는 수만 달러짜리 장비여서 로봇 연구자들이 쓸 일이 없었다. 이 사정을 바꾼 것이 MEMS(Micro-Electro-Mechanical Systems, 반도체 공정으로 만든 초소형 기계 소자)다. Analog Devices의 ADXL 가속도계와 InvenSense의 MPU 시리즈가 나오면서 6축 IMU 가격이 몇 달러로 내려갔다. 2007년 첫 iPhone에 가속도계가 들어갔고, 2010년 iPhone 4에 자이로스코프가 들어갔다. 스마트폰이 수십억 대 팔리며 단가가 떨어지던 무렵, Visual SLAM 연구자들은 단안 카메라의 scale 문제(Ch.5 🧭)를 본격적으로 고민하고 있었다.
 
-Lupton과 Sukkarieh의 [Visual-Inertial-Aided Navigation for High-Dynamic Motion (IROS 2009, TRO 2012)](https://doi.org/10.1109/TRO.2011.2170332)이 내놓은 답은 우회였다. 키프레임 $i$에서 $j$ 사이의 IMU 측정을 *한 번만* 수치 적분해 상대 증분을 만들어 놓자. 그 증분을 하나의 factor로 삼으면 IMU 원측정은 그래프에 들어갈 필요가 없다. "pre-integration"이라는 이름이 여기서 나왔다.
-
-아이디어는 맞았지만 구현에 두 장애물이 있었다. 회전 표현이 Euler angle이었다(gimbal lock이 있고 매니폴드가 아니다). 더 큰 문제는 bias였다. BA 한 번 돌 때마다 bias 추정치가 바뀌고, bias가 바뀌면 증분도 달라진다. 증분을 매번 재적분하면 키프레임당 수백 개 측정을 다시 처리해야 한다. Lupton도 이를 줄이기 위한 1차 편향 보정을 제안했다. 6년 뒤 Forster는 회전의 매니폴드 구조를 다루면서 그 보정을 SO(3) 위에서 정식화했다.
+측정 모델은 간단하다. 가속도계는 중력이 섞인 specific force(비력) $\tilde{\mathbf{a}} = \mathbf{R}_w^b(\mathbf{a}^w - \mathbf{g}^w) + \mathbf{b}^a + \boldsymbol{\eta}^a$를 재고, 자이로스코프는 각속도 $\tilde{\boldsymbol{\omega}} = \boldsymbol{\omega}_b^b + \mathbf{b}^g + \boldsymbol{\eta}^g$를 잰다. 여기서 $\mathbf{b}$는 bias, $\boldsymbol{\eta}$는 white noise다. bias는 시간에 따라 천천히 변하므로 random walk로 모델링한다. bias는 온도와 전원 상태에 따라서도 조금씩 달라져 다루기 까다로웠다. MEMS 잡음은 고주파 성분이 크다. 가속도계 측정에는 늘 중력이 섞여 있다. 그래서 IMU를 쓰는 시스템은 중력 방향을 추정해 world frame을 그 방향에 맞추는 경우가 많다.
 
 ---
 
-## 7b.3 변곡점 — Forster-Carlone (2015 / 2017)
+## 7b.2 첫 시도: Lupton & Sukkarieh (2009 / 2012)
 
-2015년 RSS, ETH Zürich의 박사과정생 Christian Forster가 Scaramuzza(UZH), Carlone(Georgia Tech, 이후 MIT), Dellaert(Georgia Tech, GTSAM의 창시자)와 함께 [IMU Preintegration on Manifold for Efficient Visual-Inertial Maximum-a-Posteriori Estimation](https://www.roboticsproceedings.org/rss11/p06.pdf)을 냈다. 2017년 IEEE TRO에 확장판 [On-Manifold Preintegration for Real-Time Visual-Inertial Odometry](https://doi.org/10.1109/TRO.2016.2597321)가 실렸다. UZH의 민첩한 드론 실험, Georgia Tech의 GTSAM factor graph 언어, Carlone의 최적화 이론이 한 논문에서 만났다.
+어려움은 측정 주기의 차이에서 왔다. Ch.6에서 본 iSAM2는 keyframe마다 pose를 노드로 둔다. 그런데 IMU는 keyframe 사이에 측정을 수십 번 낸다. 측정마다 노드를 만들면 그래프가 감당할 수 없이 커지고, 측정을 버리면 정보를 잃는다.
 
-재정의가 셋이었다. $\Delta\mathbf{R}_{ij}$를 SO(3) 매니폴드 위 상대 회전으로 엄밀히 정의하고, $\Delta\mathbf{v}_{ij}, \Delta\mathbf{p}_{ij}$를 *중력과 초기 상태에 독립*이 되도록 재정의한 것이 첫째였다. 이 양들은 물리적 증분이 아니라 수학적으로 state-independent하게 만들어진 양이다. 사전적분량을 다시 계산하지 않고도 IMU factor를 평가할 수 있지만, 잔차에는 양 끝 pose와 velocity뿐 아니라 중력과 편향 보정도 들어간다. 둘째, noise를 지수사상 끝으로 밀어내는 right Jacobian trick으로 공분산 $\boldsymbol{\Sigma}_{ij}$를 해석적으로 propagate했다.
+Lupton과 Sukkarieh는 IROS 2009 논문 [Efficient Integration of Inertial Observations into Visual SLAM without Initialization](https://doi.org/10.1109/IROS.2009.5354267)에서 이 문제에 답했다. 2012년 IEEE TRO에는 확장판 [Visual-Inertial-Aided Navigation for High-Dynamic Motion in Built Environments Without Initial Conditions](https://doi.org/10.1109/TRO.2011.2170332)이 실렸다. 두 사람은 keyframe $i$와 $j$ 사이의 IMU 측정을 *한 번만* 적분해 상대 증분을 만들어 두었다. 이 증분은 초기 자세나 속도를 몰라도 계산할 수 있다. 증분을 제약 하나로 쓰면 IMU 원측정을 하나하나 추정기에 넣지 않아도 된다. "pre-integration"이라는 이름이 이 논문에서 나왔다.
 
-셋째는 **Bias 1차 Jacobian 선형 보정**이었다. BA 반복 중 bias가 조금 바뀌었을 때 증분 전체를 재적분하지 말고 precomputed 편미분으로 1차 근사 보정하자는 것이다. Lupton의 Euclidean 선형화와 같은 아이디어지만 SO(3) 위에서 작동한다. 키프레임 사이를 처음 적분할 때 편미분을 함께 계산해 두면, 선형화점이나 bias가 조금 바뀔 때 측정값 전체를 다시 적분하지 않고 1차 보정으로 factor를 갱신할 수 있다. 이 계산 절감 덕분에 IMU factor를 실시간 최적화 안에서 다루기 쉬워졌다.
-
-GTSAM에 Forster의 구현이 레퍼런스로 올라갔다. 후속 시스템들은 수식을 다시 쓰지 않고 `ImuFactor`를 `#include`했다.
-
-> 🔗 **공통 언어.** Forster의 manifold preintegration은 SO(3)의 지수사상과 right Jacobian으로 회전 불확실성을 다룬다. [Barfoot 2017. *State Estimation for Robotics*](https://doi.org/10.1017/9781316671528)는 뒤이어 이 Lie group 계산을 상태 추정의 공통 체계로 정리했다. 2017년 책이 2015년 논문의 원전인 것은 아니지만, 두 작업은 같은 수학적 언어를 보여 준다. Forster의 기여는 Lupton의 preintegration 아이디어를 Euler angle이 아닌 SO(3) 위에서 전개한 데 있다.
-
-> 🔗 **차용.** Bias 1차 Jacobian 아이디어 자체는 [Lupton & Sukkarieh 2012](https://doi.org/10.1109/TRO.2011.2170332)가 먼저 제시했다. Forster et al. TRO 2016 §VIII-B는 이 부채를 명시하며 "we follow [Lupton-Sukkarieh] but operate directly on SO(3)"라 적었다. Euclidean 근사를 매니폴드 위로 옮기자 같은 수학이 실시간이 되었다.
+구현에는 걸림돌이 있었다. 먼저 회전을 Euler angle로 나타냈다. Euler angle에는 특이점(gimbal lock)이 있고, 회전이 이루는 manifold 구조를 반영하지 못한다. 더 큰 문제는 bias였다. 최적화를 한 번 돌릴 때마다 bias 추정값이 바뀌고, bias가 바뀌면 증분도 달라진다. 증분을 매번 다시 적분하면 keyframe마다 측정 수백 개를 다시 처리해야 한다. Lupton과 Sukkarieh는 bias가 바뀐 만큼 증분을 1차 근사로 고치는 방법을 함께 내놓았다. 6년 뒤 Forster 등은 이 보정을 SO(3) 위에서 다시 정식화했다.
 
 ---
 
-## 7b.4 실무 VIO 3파의 정립
+## 7b.3 Forster 등의 on-manifold preintegration (2015 / 2017)
 
-Forster 공식이 자리 잡자 2017-2022년 사이 VIO 시스템이 세 갈래로 뻗었다.
+2015년 RSS에서 University of Zurich(UZH)의 박사과정생 Christian Forster가 [IMU Preintegration on Manifold for Efficient Visual-Inertial Maximum-a-Posteriori Estimation](https://www.roboticsproceedings.org/rss11/p06.pdf)을 발표했다. 공저자는 지도교수 Davide Scaramuzza(UZH)와 Georgia Tech의 Luca Carlone(이후 MIT), Frank Dellaert(GTSAM을 만든 사람)였다. 2017년 IEEE TRO에는 확장판 [On-Manifold Preintegration for Real-Time Visual-Inertial Odometry](https://doi.org/10.1109/TRO.2016.2597321)가 실렸다. 저자들은 GTSAM의 iSAM2 위에 VIO를 구현했다. 실험에는 VI-Sensor로 기록한 430 m 실내 궤적을 썼고, 센서를 Google Tango 기기에 붙여 사무실 건물 둘레를 걸은 실외 궤적도 썼다.
 
-첫 갈래는 필터 계열이고 뿌리는 Forster보다 앞서 있다. 2007년 UC Riverside의 Anastasios Mourikis와 Stergios Roumeliotis가 ICRA에 낸 [MSCKF(Multi-State Constraint Kalman Filter)](https://doi.org/10.1109/ROBOT.2007.364024)가 출발점이었다. stochastic cloning으로 과거 여러 카메라 포즈를 필터 상태에 유지한다. 관측한 3D 점은 상태에 추가하지 않고, 선형화한 관측식을 점 Jacobian의 left null space로 투영해 점 위치 오차에 대한 의존성을 제거한다. preintegration 없이 EKF 뼈대로 Visual-Inertial을 실시간으로 돌린 초기에 큰 영향을 준 사례였다. 2021년 화성에서 NASA JPL의 Mars helicopter Ingenuity가 돌린 추정기가 MSCKF 계열이었다. University of Delaware의 Guoquan Huang 그룹이 2020년 [OpenVINS](https://doi.org/10.1109/ICRA40945.2020.9196524)로 오픈소스화했다.
+Forster 등은 먼저 $\Delta\mathbf{R}_{ij}$를 SO(3)의 상대 회전으로 엄밀하게 정의했다. 이어 $\Delta\mathbf{v}_{ij}, \Delta\mathbf{p}_{ij}$를 *중력과 초기 상태에 독립*이 되도록 다시 정의했다. 이 양은 물리적인 속도·위치 변화량과 다르다. 상태에 의존하지 않도록 수학적으로 구성한 값이다. 그래서 한 번 계산한 preintegration 값으로 IMU factor를 여러 번 평가할 수 있다. residual에는 양 끝의 pose와 속도, 중력, bias 보정이 함께 들어간다. 다음으로 잡음 항을 지수 사상 바깥으로 빼내는 right Jacobian 기법을 써서 공분산 $\boldsymbol{\Sigma}_{ij}$를 해석적으로 전파했다.
 
-두 번째 갈래는 최적화 계열이다. HKUST의 Shaojie Shen 그룹과 박사과정생 Tong Qin이 2018년 TRO에 낸 [VINS-Mono](https://doi.org/10.1109/TRO.2018.2853729)가 대표작이다. Forster 공식을 그대로 받아 sliding-window tightly-coupled BA 안에 IMU factor로 심고, 초기화 단계에서 scale과 gravity 방향을 분리 추정하는 절차를 정리했다. 코드가 공개되어 2019-2022년 학회의 VIO baseline이 됐다. Ch.7의 ORB-SLAM3가 EuRoC 11개 시퀀스 평균 ATE 0.043m로 보고될 때 같은 표에서 VINS-Mono는 0.110m였다.
+마지막은 **bias 1차 Jacobian 보정**이다. 최적화를 반복하는 동안 bias가 조금 바뀌면, 미리 계산해 둔 편미분으로 증분을 1차 근사만큼 고친다. keyframe 사이를 처음 적분할 때 편미분을 함께 계산해 두면, bias가 조금 바뀌어도 다시 적분하지 않고 factor를 갱신할 수 있다. 계산이 이만큼 줄어서 IMU factor를 실시간 최적화에 넣기 쉬워졌다.
 
-세 번째 갈래는 direct 계열이다. Ch.8에서 다룬 VI-DSO(2018), Basalt(2019), [DM-VIO(2022)](https://doi.org/10.1109/LRA.2021.3140129)가 여기 속한다. TUM Cremers 그룹이 DSO의 photometric BA 위에 Forster의 inertial factor를 얹은 적층 구조였다. DM-VIO는 *delayed marginalization*을 더했다. IMU 초기화가 수렴하기 전에 섣불리 marginalize하면 잘못된 prior가 고정돼 장기 drift를 유발하는데, 두 marginalization prior를 병렬로 유지하다 gravity와 scale이 관측된 뒤 최종 prior로 합치는 방식이다.
+저자들은 preintegration 구현을 GTSAM 4.0에 공개했다. 그 뒤 여러 시스템이 수식을 직접 구현하지 않고 GTSAM의 `ImuFactor`를 `#include`해 썼다.
 
----
+> 🔗 **공통 수학.** Forster의 on-manifold preintegration은 SO(3)의 지수 사상과 right Jacobian으로 회전의 불확실성을 다룬다. [Barfoot 2017. *State Estimation for Robotics*](https://doi.org/10.1017/9781316671528)는 이런 Lie group 계산을 상태 추정 전반에 걸쳐 정리했다. 이 책은 Forster의 2015년 논문보다 2년 뒤에 나왔다. 두 작업은 같은 수학을 쓴다.
 
-## 7b.5 Observability — 무엇을 못 보는가
-
-Huang 그룹이 2010년대 초부터 정리한 분석에 따르면, 단서 없는 visual-inertial 시스템의 null space는 **4차원**, 즉 3차원 global position과 1차원 yaw-around-gravity다. 절대 좌표와 중력 축 회전은 IMU와 카메라만으로는 영원히 알 수 없다. GPS를 더하면 position이, 자기장이나 외부 anchor를 더하면 yaw가 복원된다. 순수 VIO는 이 4차원 부분공간을 구조적으로 볼 수 없다.
-
-*roll과 pitch는 보인다*. 가속도계가 중력으로 수평을 읽기 때문이다. IMU를 붙이면 Ch.5가 지적한 monocular scale ambiguity도 해결된다.
-
-더 까다로운 쪽은 degenerate motion이다. 전역 yaw의 비관측성은 운동에 관계없이 남으며, 시차나 관성 운동의 변화가 부족하면 깊이·scale·편향을 추가로 구별하기 어려워질 수 있다. 드론의 hover나 자동차의 일정 속도 직진에서는 이런 운동 자극 부족을 살펴야 한다. 이륙·제동·선회가 정보를 더할 수 있지만, 특정 동작 하나가 scale 추정을 보장하지는 않는다.
-
-> 📜 **예언 vs 실제.** Forster et al.은 2017년 TRO §IX에서 세 방향을 꼽았다. time-synchronization과 online extrinsic calibration의 통합, long-term operation에서 bias random walk 가정 검증, event camera·rolling shutter 같은 비동기 센서로의 확장. 2026년 시점에서 첫 번째는 VINS-Mono·Kalibr·OpenVINS가 시간 offset을 상태 변수로 올리며 표준화됐고, 두 번째는 navigation-grade IMU에서는 맞지만 consumer MEMS에서는 온도·전원 변동이 여전히 남았으며, 세 번째는 Le Gentil의 GP 연속시간 preintegration이 답의 한 갈래가 되었다. 예언은 대체로 적중했으나 저자들이 그린 단일 확장이 아니라 세 갈래로 분화했다.
+> 🔗 **차용.** bias 1차 보정은 [Lupton & Sukkarieh 2012](https://doi.org/10.1109/TRO.2011.2170332)가 먼저 제시했다. Forster et al.은 자신들의 보정이 "similar to the bias correction in [Lupton & Sukkarieh] but operates directly on SO(3)"라고 적었다.
 
 ---
 
-## 7b.6 Continuous-time 분기
+## 7b.4 실제 VIO 시스템들
 
-2021년 RSS, 시드니의 UTS(University of Technology Sydney)에서 Cédric Le Gentil과 지도교수 Teresa Vidal-Calleja가 [Continuous Integration over SO(3) for IMU Preintegration](https://roboticsproceedings.org/rss17/p075.pdf)을 냈다. 같은 시드니였다. Lupton의 ACFR에서 몇 km 떨어진 곳에서 같은 문제를 다른 각도로 다시 본 셈이다.
+2007–2022년에 나온 VIO 시스템은 필터 기반, 최적화 기반, direct 방식으로 나눠 볼 수 있다.
 
-Forster의 preintegration은 discrete하다. IMU 측정 사이를 piecewise-constant로 가정하고 Euler integration한다. LiDAR·event camera처럼 비동기 센서가 섞이면 IMU 표본 사이 시각의 상태를 평가해야 한다. 비동기성 자체가 구간 상수 근사를 깨뜨리는 것은 아니지만, 시간 보간의 정확도가 중요해진다. Le Gentil의 답은 IMU를 **Gaussian Process**로 모델링해 angular velocity를 연속 함수로 본 것이다. 임의의 시간 $\tau$에서 상태를 평가할 수 있으니 비동기 측정이 자연스럽게 들어온다.
+필터 기반 VIO는 Forster보다 먼저 나왔다. 2007년 University of Minnesota의 Anastasios Mourikis와 Stergios Roumeliotis가 ICRA에 낸 [MSCKF(Multi-State Constraint Kalman Filter)](https://doi.org/10.1109/ROBOT.2007.364024)에서 시작했다. MSCKF는 stochastic cloning(과거 상태를 복제해 필터에 남기는 기법)으로 과거 카메라 포즈 여러 개를 필터 상태에 남겨 둔다. 관측한 3D 점은 상태에 넣지 않는다. 대신 선형화한 관측식을 점 Jacobian의 left null space로 투영해, 점 위치 오차가 관측식에 끼치는 영향을 없앤다. preintegration 없이 EKF로 visual-inertial 추정을 실시간으로 돌린 초기 사례다. 2021년 화성에서 비행한 NASA JPL의 Ingenuity 헬리콥터는 MAVeN이라는 EKF로 위치를 추정했다. MAVeN도 base image를 찍은 시점의 위치와 자세를 복제 상태(clone state)로 필터에 넣는다. University of Delaware의 Guoquan Huang 그룹은 2020년 MSCKF 기반 [OpenVINS](https://doi.org/10.1109/ICRA40945.2020.9196524)를 오픈소스로 공개했다.
 
-이 방향은 B-spline·STEAM·GPMP 계보와 만난다.
+최적화 기반의 대표는 HKUST의 Tong Qin, Peiliang Li, Shaojie Shen이 2018년 TRO에 낸 [VINS-Mono](https://doi.org/10.1109/TRO.2018.2853729)다. VINS-Mono는 preintegration한 IMU 측정을 sliding window tightly-coupled BA에 factor로 넣는다. 초기화 단계에서 scale과 중력 방향을 따로 추정하는 절차도 정리했다. 코드가 공개되어 있어 2019–2022년 학회 논문들이 VIO 비교 기준으로 썼다. Ch.7의 ORB-SLAM3 논문 표를 보면, EuRoC 11개 시퀀스의 단안-관성 평균 ATE가 ORB-SLAM3는 0.043 m, VINS-Mono는 0.110 m였다.
+
+direct 방식으로는 Ch.8에서 다룬 VI-DSO(ICRA 2018)와 [DM-VIO(RA-L 2022)](https://doi.org/10.1109/LRA.2021.3140129)가 있다. TUM Cremers 그룹은 VI-DSO에서 DSO의 photometric BA에 inertial factor를 더했다. DM-VIO에서는 *delayed marginalization*을 더했다. IMU 초기화가 끝나기 전에 marginalize하면 잘못된 scale이 prior에 굳는다. DM-VIO는 주 그래프 옆에 marginalization을 일정 keyframe 수만큼 늦게 하는 두 번째 factor graph를 둔다. IMU 초기화가 끝나면 이 그래프에 IMU factor를 넣고 다시 marginalize해, 주 시스템에 쓸 새 prior를 만든다.
 
 ---
 
-## 7b.7 차용의 지형
+## 7b.5 Observability
 
-> 🔗 **차용.** Factor graph 위에서 IMU factor를 평가·최적화하는 골격은 Ch.6에서 정리한 [Dellaert의 GTSAM](https://gtsam.org/) 전통 그대로다. Forster의 `ImuFactor`는 GTSAM의 `NoiseModelFactor` 인터페이스에 꽂혀 visual reprojection factor와 나란히 하나의 `Values` 객체로 최적화되었다. 소프트웨어 구조의 상속이었다.
+Minnesota의 Hesch, Kottas, Bowman, Roumeliotis는 2014년 TRO 논문에서 외부 기준이 없는 visual-inertial 시스템에 관측할 수 없는 방향이 **넷** 있음을 보였다. 전역 위치 3자유도와 중력축 둘레의 회전(yaw) 1자유도다. 이 네 방향으로 상태를 옮겨도 IMU와 카메라 측정값은 그대로다. GPS를 더하면 위치를, 자기장이나 외부 기준점을 더하면 yaw를 구할 수 있다.
 
-> 🔗 **차용.** Bias를 random walk로 다루는 방식은 Ch.4의 Kalman filter state propagation 관습에서 왔다. Lupton 이전부터 항법 커뮤니티가 "bias를 상태에 포함하고 process noise를 작게 주는" 모델을 썼고, preintegration 시대에는 이것이 bias random walk factor로 재해석됐다.
+*roll과 pitch는 관측된다*. 가속도계가 중력 방향을 재므로 수평을 알 수 있다. IMU를 붙이면 Ch.5에서 본 단안 카메라의 scale도 관측할 수 있다. 다만 아래처럼 운동이 충분해야 한다.
+
+더 까다로운 것은 degenerate motion(관측 정보가 부족해지는 운동)이다. 전역 yaw는 어떻게 움직여도 관측할 수 없다. 여기에 시차나 가속이 부족하면 깊이·scale·bias까지 구별하기 어려워질 수 있다. 드론이 제자리 비행을 하거나 자동차가 일정한 속도로 직진할 때가 그렇다. 이륙, 제동, 선회는 정보를 더하지만, 어떤 동작 하나가 scale 추정을 보장하지는 않는다.
+
+> 📜 **예언 vs 실제.** Forster et al.의 TRO 논문 결론(§IX)은 앞으로 할 연구를 따로 꼽지 않았다. 대신 preintegration과 structureless vision factor의 코드를 GTSAM 4.0에 공개한다고 밝혔다. 그 뒤 카메라–IMU 시간 offset은 Kalibr, VINS-Mono, OpenVINS가 추정 대상에 넣으면서 흔히 함께 추정하는 값이 됐다. 비동기 센서 문제에는 Le Gentil의 GP 연속시간 preintegration이 한 가지 답을 내놓았다.
+
+---
+
+## 7b.6 연속시간 preintegration
+
+2021년 RSS에서 UTS(University of Technology Sydney)의 Cédric Le Gentil과 Teresa Vidal-Calleja가 [Continuous Integration over SO(3) for IMU Preintegration](https://roboticsproceedings.org/rss17/p078.pdf)을 발표했다. UTS는 Lupton이 연구한 ACFR과 같은 시드니에 있다.
+
+Forster의 preintegration은 이산적이다. IMU 측정 사이에서는 값이 일정하다고 보고 Euler 적분을 한다. LiDAR나 event camera처럼 측정 시각이 IMU와 맞지 않는 센서가 섞이면, IMU 표본 사이 시각의 상태를 계산해야 한다. 측정 시각이 어긋난다고 구간 상수 근사가 깨지지는 않지만, 시간 보간이 얼마나 정확한지가 중요해진다. Le Gentil은 각속도를 **Gaussian Process**(GP)로 모델링해 연속 함수로 다뤘다. 아무 시각 $\tau$에서나 상태를 계산할 수 있으므로 비동기 측정을 그대로 넣을 수 있다. 논문은 IMU bias와 센서 사이 시간 차이를 보정하는 방법도 함께 냈다.
+
+이 연구는 B-spline, STEAM, GPMP 같은 연속시간 추정 연구와 이어진다(Ch.7c).
+
+---
+
+## 7b.7 가져온 것들
+
+> 🔗 **차용.** IMU factor를 factor graph에서 평가하고 최적화하는 구조는 Ch.6에서 본 [Dellaert의 GTSAM](https://gtsam.org/)을 그대로 따른다. `ImuFactor`는 GTSAM의 `NoiseModelFactor` 인터페이스를 구현하므로, visual reprojection factor와 함께 하나의 `Values` 객체로 최적화된다.
+
+> 🔗 **차용.** bias를 random walk로 다루는 방식은 Ch.4에서 본 Kalman filter의 상태 전파 관습에서 왔다. 항법 분야는 Lupton 이전부터 bias를 상태에 넣고 process noise를 작게 주는 모델을 썼다. preintegration에서는 이 모델이 bias random walk factor가 됐다.
 
 ---
 
 ## 🧭 아직 열린 것
 
-**Visual-inertial observability의 실시간 감지.** 4차원 null space와 degenerate motion 표는 이론적으로 정리됐지만, 실제 시스템이 "지금 내가 degenerate 구간에 있다"를 판단하는 메커니즘은 미완성이다. Hesch·Li·Huang 계열의 FEJ(First-Estimate Jacobian)가 선형화 시점의 null space를 보존하지만, 런타임에 degenerate 조건의 시작·종료를 포착해 제어 루프에 피드백하는 널리 합의된 방법은 2026년 기준 없다. 드론 제어와 VIO 추정이 계산 자원을 공유할 때 이 공백은 추정 실패를 제어기가 늦게 알아차리는 위험으로 이어진다.
+**관측 가능성을 실시간으로 감지하기.** 4차원 null space와 degenerate motion은 이론으로 정리됐다. Huang, Mourikis, Roumeliotis가 제안한 FEJ(First-Estimate Jacobian)는 선형화할 때 null space를 보존한다. 실행 중에 degenerate 구간의 시작과 끝을 알아내 제어 루프에 알려 주는 일은 남은 과제다.
 
-**Preintegration과 continuous-time의 통합.** Forster의 이산 증분과 Le Gentil의 GP 연속표현은 같은 문제를 다른 수학 언어로 푼다. LiDAR·event·frame 카메라를 섞어 쓸 때 어떤 표현을 밑바닥에 깔 것인가는 아직 엔지니어링 선택의 문제다. B-spline 연속시간 BA가 부분적 답을 내놓았지만 배포 시스템 다수는 여전히 Forster의 이산 factor를 쓴다.
+**Preintegration과 continuous-time의 통합.** Forster의 이산 증분과 Le Gentil의 GP 연속 표현은 같은 문제를 다른 수학으로 푼다. LiDAR, event camera, 일반 카메라를 섞어 쓸 때 어느 표현을 기본으로 삼을지는 정해지지 않았다. B-spline 연속시간 BA는 Ch.7c에서 다룬다.
 
-**학습 기반 IMU bias 모델.** Bias random walk 가정은 navigation-grade IMU에서는 맞지만, consumer MEMS에서는 온도 hysteresis와 전원 과도 현상 때문에 어긋난다. TLIO·RoNIN 계열이 LSTM·Transformer로 IMU-only odometry의 bias를 학습했고, 최근에는 conditional diffusion으로 bias 분포 자체를 모델링하는 시도가 나왔다. 이 접근을 Forster factor 안에 어떻게 넣을지, 학습 모델을 결합한 뒤에도 preintegration의 수학적 우아함이 어디까지 유지될지는 다음 질문이다.
+**학습 기반 IMU bias 모델.** bias random walk 가정은 navigation-grade IMU에서는 맞지만, consumer MEMS에서는 온도 hysteresis와 전원 과도 현상 때문에 어긋난다. TLIO와 RoNIN 같은 연구는 IMU만 쓰는 odometry를 신경망으로 학습했다. 최근에는 conditional diffusion으로 bias 분포를 모델링하려는 시도도 나왔다. 이런 학습 모델을 Forster의 factor에 어떻게 넣을지는 아직 정해지지 않았다.
 
 ---
 
-Lupton이 시드니에서 시작한 아이디어가 6년 동안 Euler angle의 벽에 갇혀 있었고, Forster가 SO(3)로 옮겨 bias Jacobian의 자물쇠를 풀었고, Le Gentil이 다시 시드니에서 연속시간으로 가지를 쳤다. 세 세대의 작업이 ORB-SLAM3, VI-DSO, LIO-SAM의 한 줄 뒤에 쌓여 있다.
+Le Gentil의 연속시간 preintegration은 더 넓은 흐름의 한 갈래다. Ch.7c는 궤적 자체를 시간의 연속 함수로 두는 방법을 다룬다.
