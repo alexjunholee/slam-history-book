@@ -1,131 +1,119 @@
-# Ch.17 — The LiDAR Parallel Universe: From LOAM to FAST-LIO
+# Chapter 21. LiDAR SLAM: From LOAM to FAST-LIO
 
-The lineage from Ch.1 photogrammetry through Ch.16 Foundation 3D shares one premise: the sensor is a camera. MonoSLAM, PTAM, ORB-SLAM, DSO, and DUSt3R all read the world through pixels. Over the same period, LiDAR SLAM developed separately around ICP and point-cloud registration rather than keypoints, photometric consistency, or feature descriptors. The two communities rarely cited each other, and they used different benchmarks and conferences.
+Every lineage traced from Chapter 1 photogrammetry through Chapter 20 Foundation 3D shared one quiet premise: the sensor was a camera. MonoSLAM, PTAM, ORB-SLAM, DSO, and DUSt3R all interpreted the world through pixels. Over the same decades, however, an independent tradition grew up around laser rangefinders—built on Iterative Closest Point (ICP) and point-cloud registration rather than keypoints, photometric residuals, or visual descriptors. The two communities rarely cited one another, met at different conferences, and judged success on separate benchmarks.
 
-LOAM combined three earlier elements: point-to-plane matching from Besl & McKay's 1992 ICP, the network-of-poses formulation from Lu & Milios's 1997 work on globally consistent scan alignment, and the demand for real-time outdoor operation after the 2007 DARPA Urban Challenge. Ji Zhang's 2014 contribution was to split high-frequency odometry from low-frequency mapping on a spinning Velodyne. That division became a standard LiDAR-system architecture.
+Within that laser tradition, LOAM fused three strands: point-to-plane matching from Besl & McKay's 1992 ICP, the "network of poses" formulation from Lu & Milios's 1997 work on globally consistent scan alignment, and the urgent push for real-time outdoor autonomy sparked by the 2007 DARPA Urban Challenge. Ji Zhang's decisive 2014 insight was architectural: splitting high-frequency odometry from low-frequency mapping on a spinning Velodyne scanner—a two-tier template that became standard across LiDAR SLAM.
 
-When Ji Zhang presented LOAM at RSS 2014, it drew little attention from the Visual SLAM community, which was occupied with ElasticFusion and LSD-SLAM. LOAM shared no code with camera-based methods, and the researcher populations barely overlapped. Both lineages belonged to robotics but developed apart for roughly a decade. LOAM built on [ICP (Besl·McKay, 1992)](https://graphics.stanford.edu/courses/cs164-09-spring/Handouts/paper_icp.pdf), while the factor graph already standard in Graph SLAM crossed into LiDAR systems only later.
+When Zhang presented LOAM at RSS 2014, the Visual SLAM community barely noticed, preoccupied as it was with ElasticFusion and LSD-SLAM. LOAM shared no codebase with camera-based pipelines, and the two researcher pools scarcely overlapped; both belonged to robotics yet evolved on parallel tracks for roughly a decade. LOAM rooted itself in [ICP (Besl·McKay, 1992)](https://graphics.stanford.edu/courses/cs164-09-spring/Handouts/paper_icp.pdf), whereas the factor graphs already standard in Graph SLAM crossed into LiDAR systems only years later.
 
----
-
-## 17.1 LOAM: edges and planes, and the capture of KITTI
-
-In 2014, Google's Waymo predecessor program was already driving on roads, and the influence of the DARPA Urban Challenge remained strong. A Velodyne HDL-64E cost $75,000 per unit. LiDAR research was therefore concentrated in large, well-funded groups able to afford the hardware. CMU Robotics Institute's Autonomous Mobile Robot Lab, led by Professor Sanjiv Singh, was one of them.
-
-Attempts to build maps with LiDAR existed before LOAM. [Lu & Milios 1997. "Globally Consistent Range Scan Alignment for Environment Mapping" (Autonomous Robots)](https://doi.org/10.1023/A:1008854305733) placed 2D range scans as nodes, tied them together with relative scan-to-scan constraints as edges, and jointly optimized the full trajectory. This "network of poses" idea became an origin point of pose-graph SLAM (see Ch.6). Alongside Besl and McKay's ICP, [Biber and Straßer 2003. "The Normal Distributions Transform" (IROS)](https://doi.org/10.1109/IROS.2003.1249285) proposed NDT, a distribution-based method that aligns per-cell Gaussian distributions; Magnusson later extended it to 3D. These methods were either 2D or offline 3D. LOAM brought real-time 3D operation.
-
-Ji Zhang, under Singh's supervision, released [Zhang & Singh 2014. "LOAM: Lidar Odometry and Mapping in Real-time" (RSS)](https://www.roboticsproceedings.org/rss10/p07.pdf). He classified LiDAR points into two kinds of features. An **edge point** is a point with high smoothness $c$ (high curvature); a **planar point** is one with low $c$ (low curvature). Rather than registering the whole point set like ICP, LOAM matches only these two feature sets. Edge points are constrained point-to-line against edge lines in the neighboring scan, and planar points are constrained point-to-plane against local planes. This selection lowers computational cost enough for real-time operation.
-
-The algorithm is split into two stages. Lidar Odometry estimates the 6-DoF transform between scans at 10 Hz. Lidar Mapping, at a lower frequency (1 Hz), registers against the full map to correct the error. Separating high-frequency odometry from low-frequency mapping suppresses drift while retaining real-time performance. Later LiDAR SLAM systems widely adopted this two-tier structure.
-
-LOAM entered the leading group in public KITTI comparisons after its release. The widely reported relative translation error is 0.78% on sequence 00 and 0.84% averaged over the listed sequences. These figures show its competitiveness, but they do not establish a universal advantage over visual odometry under different sensor and evaluation conditions.
-
-> 🔗 **Borrowed.** LOAM's feature-based point registration starts from Besl·McKay's (1992) ICP. The difference is that it selectively matches only edge and planar features rather than all points. Selective reuse of classical registration bought both speed and precision.
+Radar SLAM branched along yet another independent path, split between spinning mechanically scanned sensors like the Navtech CIR series and single-chip 4D mmWave radars. Direct Doppler radial-velocity returns support correspondence-free odometry, paired with radio-specific noise models for speckle, multipath reflections, and receiver saturation. Its own arc runs from Oxford's radar localization in [Cen & Newman 2018](https://doi.org/10.1109/ICRA.2018.8460687), through Adolfsson and Magnusson's **CFEAR** and its successor **TBV-SLAM**, to Burnett and Barfoot's continuous-time ICP—supported by benchmarks including Oxford Radar RobotCar, Boreas, and MulRan. While radar's resilience in rain, fog, and smoke offers clear operational value, its history scarcely intersects the photogrammetry → SfM → Visual SLAM → learning → 3D foundation lineage covered here; a full technical treatment appears in Handbook of SLAM (2026) Ch.9.
 
 ---
 
-## 17.2 LeGO-LOAM: cut the ground first
+## 21.1 LOAM: edges and planes, and the capture of KITTI
 
-LOAM did not treat the ground plane explicitly. In outdoor driving environments, a significant share of the point cloud is road surface. Grouping it with other edge and planar features produces matching noise.
+By 2014, Google's self-driving program—the precursor to Waymo—was already logging road miles, and momentum from the 2007 DARPA Urban Challenge remained strong. Because a Velodyne HDL-64E cost $75,000 per unit, 3D LiDAR research clustered inside well-funded labs able to field the hardware, among them Sanjiv Singh's Autonomous Mobile Robot Lab at Carnegie Mellon's Robotics Institute.
 
-At Stevens Institute of Technology's Robust Field Autonomy Lab, Tixiao Shan and his advisor Brendan Englot separated ground segmentation as the first stage in [Shan & Englot 2018. LeGO-LOAM](https://doi.org/10.1109/IROS.2018.8594299). The point cloud is projected onto a range image, the ground points are separated first, and the non-ground points are then re-clustered. Ground is used for roll and pitch estimation, and clusters are used for yaw and translation. This is a two-stage optimization.
+Range-based mapping itself predated LOAM by nearly two decades. [Lu & Milios 1997. "Globally Consistent Range Scan Alignment for Environment Mapping" (Autonomous Robots)](https://doi.org/10.1023/A:1008854305733) had modeled 2D laser scans as graph nodes linked by relative scan-to-scan edges and jointly optimized the trajectory—laying an early cornerstone of pose-graph SLAM (→ Chapter 6). Alongside Besl and McKay's ICP, [Biber and Straßer 2003. "The Normal Distributions Transform" (IROS)](https://doi.org/10.1109/IROS.2003.1249285) introduced NDT, aligning local Gaussian cell distributions in a formulation Magnusson later generalized to 3D. Yet those predecessors ran either in 2D or offline in 3D; LOAM delivered real-time 3D mapping on live vehicles.
 
-The result required less computation than LOAM. Where the original LOAM struggled to run in real time on a Velodyne VLP-16, LeGO-LOAM runs on the same sensor even on embedded NVIDIA Jetson platforms. The reduction came with a cost: segmentation can fail and odometry can degrade in sparse scans or environments with irregular ground, including occluded sections, rough off-road terrain, and building interiors.
+In [Zhang & Singh 2014. "LOAM: Lidar Odometry and Mapping in Real-time" (RSS)](https://www.roboticsproceedings.org/rss10/p07.pdf), Ji Zhang—working under Singh—avoided registering every raw laser return. Instead, he scored local smoothness $c$ to separate sharp **edge points** (high curvature) from flat **planar points** (low curvature), matching only those sparse geometric classes: edge points against line segments and planar points against local surface patches in neighboring scans. Dropping the rest of the cloud slashed computation enough to run live.
 
-Beyond its lower computational cost, LeGO-LOAM established a design pattern: preprocess the sensor input into structured components before running odometry. FAST-LIO and LIO-SAM later used related modular preprocessing.
+To reconcile speed with global accuracy, Zhang split the pipeline into two asynchronous loops. **Lidar Odometry** runs at 10 Hz to track 6-DoF motion between consecutive sweeps, while **Lidar Mapping** runs at 1 Hz to register accumulated sweeps against the global point cloud and cancel drift. That division—fast frame-to-frame tracking paired with slower map-level refinement—quickly became canonical across LiDAR SLAM.
 
-Around the same time as LeGO-LOAM, Jens Behley and Cyrill Stachniss at the University of Bonn brought **surfels** (surface elements) to outdoor LiDAR instead of using edge and plane features. Their **SuMa**, described in [Behley & Stachniss 2018. "Efficient Surfel-Based SLAM using 3D Laser Range Data in Urban Environments" (RSS)](http://www.roboticsproceedings.org/rss14/p16.pdf), summarized each point's neighborhood as a disk-shaped surfel and performed scan-to-model registration. The follow-up [Chen et al. 2019. "SuMa++" (IROS)](https://doi.org/10.1109/IROS40897.2019.8967704) used semantic segmentation to filter moving objects at the surfel level. The surfel representation used by ElasticFusion in the indoor RGB-D lineage (Ch.9) had crossed into outdoor Velodyne systems. By 2018, feature selection (LOAM), segmentation-first processing (LeGO-LOAM), and surfel accumulation (SuMa) were competing approaches.
+Once released, LOAM climbed near the top of the KITTI odometry leaderboard, posting a widely cited relative translation error of 0.78% on sequence 00 and 0.84% averaged across the evaluated sequences. Those numbers proved its strength on highway-scale scans, though differences in sensors and evaluation protocols preclude claiming any universal edge over visual odometry.
 
----
-
-## 17.3 FAST-LIO — tightly coupled LiDAR-IMU
-
-LiDAR scan frequency sits at 10–20 Hz. Fast motion between scans produces motion distortion in the point cloud. The sensor position at the end of a scan differs from its position at the start, which degrades the LOAM family on high-speed platforms.
-
-An IMU runs at 100–400 Hz and can fill the gaps between LiDAR scans. Performance depends on how the two sensors are combined. A loosely coupled system estimates each independently and fuses the results; a tightly coupled system handles both inside one state estimator. The latter can use their cross-correlation but is harder to implement.
-
-At Hong Kong University (HKU)'s MaRS Lab, Wei Xu and his advisor Fu Zhang presented [**FAST-LIO**](https://arxiv.org/abs/2010.08196) in RA-L 2021. Their drone-control work supplied a concrete field requirement: LiDAR odometry had to withstand heavy rotor vibration and fast UAV maneuvers. They used an **iterated Extended Kalman Filter (iEKF)**, which repeatedly re-linearizes at the current estimate during the measurement update. This can reduce measurement-model linearization error relative to a basic EKF that linearizes once, but the improvement depends on the initial estimate and the motion and observation conditions.
-
-The following year they published **FAST-LIO2** ([Xu et al. 2022](https://doi.org/10.1109/TRO.2022.3141876)) in TRO, adding the ikd-Tree. Conventional kd-Trees carry heavy reconstruction cost every time a point is added. The ikd-Tree is an incremental variant that performs only partial reconstruction. Real-time nearest-neighbor search stays feasible even with millions of map points. Experiments showed consistent performance on UAVs, handheld rigs, and autonomous cars. Drift stayed low even in drone environments.
-
-The next FAST-LIO system addressed motion distortion at the point level. [He et al. 2023. "Point-LIO: Robust High-Bandwidth Light Detection and Ranging Inertial Odometry" (Advanced Intelligent Systems)](https://doi.org/10.1002/aisy.202200459), also from the MaRS Lab, updates the state whenever a LiDAR point arrives instead of collecting a full scan before updating. Each point is fused at its own timestamp rather than correcting intra-scan distortion with a constant-velocity model or IMU interpolation. The authors reported lower drift than FAST-LIO2 on high-agility platforms.
-
-> 🔗 **Borrowed.** FAST-LIO brings to LiDAR a tightly coupled IMU framework developed in Visual-Inertial SLAM. [Forster et al. 2016. "On-Manifold Preintegration" (TRO)](https://doi.org/10.1109/TRO.2016.2597321) established the preintegration formulation, while FAST-LIO implemented tightly coupled inertial estimation in iEKF form.
+> 🔗 **Borrowed.** LOAM's geometric registration descends directly from Besl·McKay's (1992) ICP, but swaps brute-force all-point matching for selective edge-to-line and plane-to-plane alignment—a targeted refinement that bought both speed and accuracy.
 
 ---
 
-## 17.4 LIO-SAM: the factor graph crosses over to LiDAR
+## 21.2 LeGO-LOAM: cut the ground first
 
-Factor graphs were already standard in Visual SLAM. [GTSAM (Dellaert·Kaess, 2012)](https://gtsam.org/) had become a common backend for Visual-Inertial systems, while LiDAR systems still relied mainly on EKF variants or scan matching. LiDAR pipelines therefore made less use of graph optimization's ability to correct the full trajectory after loop closure.
+For all its success, LOAM treated every planar return alike—a blind spot on roads, where ground points dominate the scan and easily introduce noisy, ambiguous matches alongside building facades.
 
-Tixiao Shan, after LeGO-LOAM, released [Shan et al. 2020. LIO-SAM](https://doi.org/10.1109/IROS45743.2020.9341176), which explicitly adopted GTSAM's factor graph as the backend of a LiDAR-IMU system. The [public implementation](https://github.com/TixiaoShan/LIO-SAM) maintains two graphs. The long-term mapping graph accumulates LiDAR odometry, GPS, and loop-closure constraints between keyframes. A separate IMU-preintegration graph estimates state and bias from inertial measurements and LiDAR odometry and is reset periodically to bound computation.
+At Stevens Institute of Technology's Robust Field Autonomy Lab, Tixiao Shan and his advisor Brendan Englot tackled that bottleneck in [Shan & Englot 2018. LeGO-LOAM](https://doi.org/10.1109/IROS.2018.8594299). Projecting each 3D scan onto a 2D range image, LeGO-LOAM segments out the ground plane first, clusters the remaining above-ground objects, and runs a two-stage optimization: ground points constrain roll, pitch, and vertical translation, while object clusters solve for yaw and horizontal translation.
 
-> 🔗 **Borrowed.** LIO-SAM imports directly into a LiDAR system the GTSAM factor graph backend that Dellaert (from 2006 onward) had standardized on the Visual SLAM side.
+Cutting away raw ground clutter yielded sharp computational savings. Where original LOAM strained to keep up in real time on a lightweight 16-beam Velodyne VLP-16, LeGO-LOAM ran live on the same sensor even on an embedded NVIDIA Jetson. The trade-off was fragility whenever the ground assumption broke: in sparse scans, occluded alleys, rugged off-road terrain, or cluttered indoor rooms, segmentation errors could quickly degrade odometry. Still, LeGO-LOAM established an enduring pattern—structuring raw point clouds through modular preprocessing before optimization—that later systems like FAST-LIO and LIO-SAM built upon.
 
-LIO-SAM handles accumulated drift better than FAST-LIO2 because it includes loop closure, but its computational cost is higher. Without GPS or another sensor, the factor graph offers less advantage. The two systems serve different design goals: FAST-LIO2 prioritizes speed and precision in a real-time single-sensor configuration, while LIO-SAM prioritizes consistency in multi-sensor long-term mapping.
-
-For nearly ten years after LOAM, LiDAR odometry added feature selection, surfels, and neural descriptors. In 2023, [Vizzo et al. 2023. "KISS-ICP: In Defense of Point-to-Point ICP" (RA-L)](https://doi.org/10.1109/LRA.2023.3236571) at Bonn took the opposite direction. An adaptive threshold and a point-to-point ICP, with no feature extraction or learned descriptors and little tuning, produced competitive odometry on KITTI. The name stood for Keep It Small and Simple. The result showed that classical registration remained competitive when motion compensation, sampling, and robust correspondence handling were combined effectively. It does not establish why LOAM arose historically.
+Around the same time, Jens Behley and Cyrill Stachniss at the University of Bonn bypassed edge and plane extraction altogether in favor of **surfels** (disk-shaped surface elements). Their **SuMa** system, presented in [Behley & Stachniss 2018. "Efficient Surfel-Based SLAM using 3D Laser Range Data in Urban Environments" (RSS)](http://www.roboticsproceedings.org/rss14/p16.pdf), summarized local neighborhoods as oriented surfels for scan-to-model registration, and [Chen et al. 2019. "SuMa++" (IROS)](https://doi.org/10.1109/IROS40897.2019.8967704) layered semantic segmentation on top to strip moving vehicles before surfel fusion. A surface representation popularized indoors by ElasticFusion (Chapter 12) had crossed into outdoor Velodyne mapping—leaving feature selection (LOAM), ground-first segmentation (LeGO-LOAM), and surfel accumulation (SuMa) competing side by side by 2018.
 
 ---
 
-## 17.5 Falling sensor prices and wider use: 2007–2024
+## 21.3 FAST-LIO — tightly coupled LiDAR-IMU
 
-Sensor price shaped LiDAR SLAM alongside its technical papers.
+A spinning LiDAR typically sweeps at just 10–20 Hz. On a fast-moving vehicle or agile drone, the sensor translates and rotates significantly between the first and last laser firing of a single sweep, warping the point cloud with motion distortion that undermines LOAM-style scan matching.
 
-At the 2007 DARPA Urban Challenge, the Velodyne HDL-64E used by leading teams cost $75,000 per unit, putting it beyond most groups outside autonomous-driving and defense research. In 2012 the HDL-32E was still around $30,000. By 2014, when LOAM appeared, the VLP-16 had dropped to $7,999, still a significant share of a research budget.
+An IMU, sampling at 100–400 Hz, fills that temporal gap. How tightly the two sensors are coupled, however, dictates accuracy under rapid motion: loosely coupled pipelines fuse separate inertial and laser estimates after the fact, whereas tightly coupled estimators place raw LiDAR returns and inertial measurements inside a single joint state—exploiting cross-correlations at the price of tighter mathematical integration.
 
-The LiDAR market spread across a much wider range of prices over the following decade. In 2019, Livox (part of DJI) [announced a US retail price of $599 for the Mid-40](https://www.livoxtech.com/news/1). Ouster's 128-channel OS1-128 cost $18,000 that year; in 2020, Ouster [announced a $600 target price for the solid-state ES2 in 2024 series-production programs](https://investors.ouster.com/news-releases/news-release-details/ouster-announces-first-high-performance-true-solid-state-digital). Products and production targets in the hundreds of dollars marked a real shift, but they do not establish a uniform 100-fold decline across LiDAR: channel count, field of view, range, and retail-versus-volume pricing differ.
+At the University of Hong Kong (HKU)'s MaRS Lab, Wei Xu and his advisor Fu Zhang faced a demanding field testbed: quadrotors buffeted by rotor vibration and aggressive flight maneuvers. Their [**FAST-LIO**](https://arxiv.org/abs/2010.08196) (RA-L 2021) fused IMU measurements and LiDAR edge/plane residuals inside an **iterated Extended Kalman Filter (iEKF)**. By re-linearizing the measurement model repeatedly around each updated state estimate, an iEKF can cut linearization errors compared with a standard single-step EKF, though the realized gain depends on initialization quality and motion dynamics.
 
-Wider availability did not eliminate algorithmic constraints. Solid-state LiDARs generally have a more limited field of view (FoV) than spinning sensors, and some use non-repetitive scan patterns. The original LOAM, designed around a 360° rotating scan, does not transfer unchanged. FAST-LIO and FAST-LIO2, by contrast, were designed to handle both mechanical and solid-state LiDARs and reported operation with small FoV and irregular sampling. Lower prices therefore changed the algorithmic questions rather than removing them.
+A year later, the same team pushed further in **FAST-LIO2** ([Xu et al. 2022](https://doi.org/10.1109/TRO.2022.3141876), TRO), dropping feature extraction to register raw points directly against a custom incremental data structure—the **ikd-Tree**. Because conventional kd-trees incur heavy rebuild overhead whenever new points arrive, the ikd-Tree restructures only affected branches incrementally, keeping nearest-neighbor queries real-time across millions of mapped points and delivering low drift across UAVs, handheld rigs, and ground vehicles alike.
 
----
+The MaRS Lab then pushed temporal granularity to its limit in [He et al. 2023. "Point-LIO: Robust High-Bandwidth Light Detection and Ranging Inertial Odometry" (Advanced Intelligent Systems)](https://doi.org/10.1002/aisy.202200459). Rather than buffering a full sweep and deskewing intra-scan distortion afterward, Point-LIO updates the filter state at the exact timestamp of every arriving LiDAR point—cutting drift even further on high-agility platforms.
 
-## 17.6 Why the Visual and LiDAR lineages split
-
-Visual SLAM and LiDAR SLAM developed in the same period, yet the two communities exchanged little for years. Several differences reinforced the split.
-
-The sensors produced different measurements. Cameras capture texture and color; LiDAR measures range and geometry. Camera-based methods developed around keypoints, descriptors, and photometric consistency, while LiDAR methods used edges, planes, and range images. Their problem formulations differed accordingly.
-
-The conferences differed as well. Camera-based methods appeared mainly at CVPR and ICCV, while LiDAR SLAM appeared mostly at ICRA, IROS, and RSS. The researcher populations overlapped little. During the early-to-mid 2010s, as Velodyne supplied Google and the autonomous-driving industry, LiDAR SLAM concentrated in self-driving robotics groups.
-
-Place recognition methods diverged too. Cameras use visual appearance, as in DBoW2 and NetVLAD. LiDAR uses the structural features of a 3D point cloud, as in [Scan Context (Kim·Kim, 2018)](https://gisbi-kim.github.io/publications/gkim-2018-iros.pdf) or [PointNetVLAD](https://arxiv.org/abs/1804.03492). Even for the same location, the signal being recognized is different.
-
-The first signs of convergence appeared in the early 2020s, when LiDAR-camera fusion papers began reaching CVPR. Tixiao Shan's [LVI-SAM (2021)](https://arxiv.org/abs/2104.10831) added a visual-inertial subsystem to LIO-SAM. The authors presented a tightly coupled factor graph, but the LIS and VIS subsystems operate largely independently and support each other during failures. A fully unified state estimate remained open.
+> 🔗 **Borrowed.** FAST-LIO imported into LiDAR SLAM the tightly coupled inertial fusion paradigm forged in Visual-Inertial SLAM. Whereas [Forster et al. 2016. "On-Manifold Preintegration" (TRO)](https://doi.org/10.1109/TRO.2016.2597321) formalized inertial factors for graph optimization, FAST-LIO realized tight LiDAR-inertial coupling inside an iterated EKF.
 
 ---
 
-## 17.7 Visual-LiDAR convergence attempts: 2024–2025
+## 21.4 LIO-SAM: the factor graph crosses over to LiDAR
 
-From 2024, more work attempted to handle camera and LiDAR data in one representation as foundation models became less tied to a single sensor. Two approaches emerged.
+While Visual-Inertial SLAM had standardized around factor-graph backends like [GTSAM (Dellaert·Kaess, 2012)](https://gtsam.org/), most LiDAR pipelines through the late 2010s still relied on EKF filters or pairwise scan matching—leaving them less equipped to propagate global loop-closure corrections back through an entire trajectory.
 
-One approach uses multimodal pretrained features to align LiDAR and camera data in the same embedding space. It adapts the contrastive-learning principle of [CLIP (Radford et al., 2021)](https://arxiv.org/abs/2103.00020) from image-text alignment to LiDAR-image pairs. In 2023–2024, this work remained experimental.
+In 2020, building on his LeGO-LOAM work, Tixiao Shan brought GTSAM squarely into LiDAR-inertial mapping with [Shan et al. 2020. LIO-SAM](https://doi.org/10.1109/IROS45743.2020.9341176). Its [public codebase](https://github.com/TixiaoShan/LIO-SAM) couples two factor graphs: a long-term mapping graph that binds keyframes with LiDAR odometry, GPS, and loop-closure factors, and a short-term IMU-preintegration graph that tracks high-rate state and sensor bias before resetting periodically to keep runtime bounded.
 
-The other approach converts sensor outputs into shared geometric primitives or neural fields and processes them in one backend. This work also remained at the research-paper stage, with few demonstrations of real-time operation.
+> 🔗 **Borrowed.** LIO-SAM carried the GTSAM factor-graph backend—cultivated by Dellaert in Visual SLAM from 2006 onward—directly into LiDAR-inertial mapping.
 
-Neither approach had produced a common system lineage by 2026. FAST-LIO2 and ORB-SLAM3 were still used independently.
+Choosing between FAST-LIO2 and LIO-SAM reflects a classic systems trade-off: LIO-SAM suppresses long-term drift more effectively when loop closures or GPS factors are available, at higher computational cost, whereas FAST-LIO2 excels in speed and raw precision for single-sensor real-time flight without external aids.
 
----
-
-## 17.8 Radar is outside this book's scope
-
-Radar SLAM developed as another independent subfield, divided between spinning radar such as the Navtech CIR family and SoC-based 4D mmWave radar. Direct Doppler radial-velocity measurements enable correspondence-free odometry, while radio-specific noise models address speckle, multipath, and receiver saturation. The lineage runs from Oxford's radar localisation in [Cen & Newman 2018](https://doi.org/10.1109/ICRA.2018.8460687), through Adolfsson and Magnusson's **CFEAR** and its successor **TBV-SLAM**, to Burnett and Barfoot's continuous-time ICP. Oxford Radar RobotCar, Boreas, and MulRan supply dedicated benchmarks. Radar's operation in bad weather and smoke offers a clear practical advantage, but it has little historical overlap with the photogrammetry → SfM → Visual SLAM → learning → 3D foundation lineage. Its separate history falls outside this book; Handbook of SLAM (2026) Ch.9 provides a technical account.
+Meanwhile, after a decade in which LiDAR odometry accumulated edge/plane classifiers, surfels, and neural descriptors, [Vizzo et al. 2023. "KISS-ICP: In Defense of Point-to-Point ICP" (RA-L)](https://doi.org/10.1109/LRA.2023.3236571) at Bonn challenged the premise that complexity was mandatory. True to its name ("Keep It Small and Simple"), KISS-ICP paired vanilla point-to-point ICP with an adaptive correspondence threshold, motion compensation, and clean voxel subsampling—requiring no feature extraction, no learned descriptors, and minimal tuning—yet matched modern baselines on KITTI. That result demonstrated how far careful engineering of classical registration could reach, though it reflects modern compute and motion compensation rather than explaining the historical conditions under which LOAM first emerged.
 
 ---
 
-## 📜 Prediction vs. outcome
+## 21.5 Falling sensor prices and wider use: 2007–2024
 
-> Zhang and Singh named two items as explicit future work in the conclusion of the 2014 LOAM paper: loop closure to correct drift and fusion with IMU output through a Kalman filter. Both appeared within the next ten years. FAST-LIO (2021) and FAST-LIO2 (2022) integrated the IMU with a tightly coupled iEKF, while LIO-SAM (2020) added loop closure through a factor-graph backend. One field problem absent from the paper's conclusion remained: dynamic-object handling. As of 2026, real-time separation of moving pedestrians and vehicles from LiDAR points often used deep-learning segmentation. Geometric methods within SLAM also existed, but no general solution covered the range of dynamic environments.
+The trajectory of LiDAR SLAM was shaped as much by hardware economics as by estimation theory.
 
----
+At the 2007 DARPA Urban Challenge, the flagship Velodyne HDL-64E cost $75,000, restricting 3D LiDAR experimentation largely to defense contractors and well-endowed autonomous-driving labs. By 2012 the 32-beam HDL-32E hovered near $30,000, and by LOAM's 2014 debut the 16-beam VLP-16 had fallen to $7,999—still a major line item for an academic lab.
 
-## 🧭 Still open
+Over the ensuing decade, pricing splintered across a far broader spectrum. In 2019, DJI-backed Livox [announced a US retail price of $599 for the Mid-40](https://www.livoxtech.com/news/1); that same year Ouster's 128-channel OS1-128 retailed at $18,000, and in 2020 Ouster [announced a $600 target price for its solid-state ES2 in 2024 series-production programs](https://investors.ouster.com/news-releases/news-release-details/ouster-announces-first-high-performance-true-solid-state-digital). While sub-thousand-dollar units marked a genuine inflection point, those announcements do not imply a uniform 100-fold price drop across all LiDARs, given wide differences in beam count, range, field of view, and retail versus automotive-volume pricing.
 
-**Full Visual+LiDAR fusion.** Even after LVI-SAM, no tightly coupled design that handles both sensors inside one state estimator has become a broadly accepted common architecture. Autonomous-driving systems need LiDAR to compensate when a camera weakens in fog or rain, but algorithm design and sensor calibration remain barriers. Transformer-based fusion in 2024–2025 remained at the research-prototype stage.
-
-**Algorithms optimized for solid-state LiDAR.** The original LOAM assumed the scan-line structure of a 360° spinning LiDAR. Non-repetitive scans in some Livox products and the limited FoV of solid-state sensors change observability and motion distortion. FAST-LIO2's direct point-to-map formulation and Livox LOAM already address parts of this setting, but no single configuration covers the differing fields of view and scan patterns across sensor families.
-
-**Dynamic object handling.** The static-world assumption remained in LiDAR SLAM from Zhang's 2014 work through 2026. Systems commonly hand real-time separation of moving objects to segmentation networks. Geometric approaches inside SLAM still face computational and stability costs. Production pipelines are mostly proprietary, while public research has not converged on one generally accepted solution.
+Cheaper sensors also brought fresh algorithmic headaches. Solid-state LiDARs typically offer narrower fields of view than 360° spinning turrets, and several scan in non-repetitive rosette patterns—conditions under which LOAM's ring-based edge/plane logic breaks down. By contrast, FAST-LIO and FAST-LIO2 were built to accommodate both spinning and solid-state sensors, operating reliably under narrow fields of view and irregular sampling. Falling hardware prices thus transformed the algorithmic problem rather than solving it.
 
 ---
 
-The LiDAR and visual lineages matured with separate technical vocabularies, and their integration remained incomplete. Other approaches developed beside both of them, including biologically inspired, event-based, and semantic SLAM, without becoming the main line of either community.
+## 21.6 Why the Visual and LiDAR lineages split
+
+Despite pursuing the same spatial estimation goal over the same decades, Visual SLAM and LiDAR SLAM operated almost as separate disciplines. Several structural forces kept them apart:
+
+Measurement physics drove divergent math. Cameras capture dense texture and appearance, nudging researchers toward keypoints, descriptors, and photometric residuals; LiDAR directly measures 3D range, favoring edges, planes, surfels, and range-image geometry.
+
+Institutional venues reinforced the divide. Visual SLAM lived primarily at CVPR and ICCV, whereas LiDAR SLAM anchored ICRA, IROS, and RSS—and during the early-to-mid 2010s, as Velodyne hardware flowed into Google and autonomous-driving startups, LiDAR expertise concentrated heavily in self-driving teams.
+
+Even loop closure evolved incompatible vocabularies. Camera systems matched appearance via DBoW2 or NetVLAD, while LiDAR systems encoded 3D structural signatures with descriptors such as [Scan Context (Kim·Kim, 2018)](https://gisbi-kim.github.io/publications/gkim-2018-iros.pdf) and [PointNetVLAD](https://arxiv.org/abs/1804.03492): for the very same street corner, the two sensors were recognizing fundamentally different signals.
+
+Early bridges finally emerged in the early 2020s as LiDAR-camera fusion reached top vision and robotics venues. Tixiao Shan's [LVI-SAM (2021)](https://arxiv.org/abs/2104.10831) grafted a visual-inertial subsystem onto LIO-SAM; although framed as a tightly coupled factor graph, its LiDAR-inertial (LIS) and visual-inertial (VIS) branches still run largely as semi-independent trackers that rescue each other upon failure, leaving a single seamlessly unified state estimator unfinished.
+
+---
+
+## 21.7 Visual-LiDAR convergence attempts: 2024–2025
+
+From 2024 onward, sensor-agnostic foundation models renewed efforts to unite cameras and LiDAR inside one framework along two main paths. One line adapts the contrastive alignment of [CLIP (Radford et al., 2021)](https://arxiv.org/abs/2103.00020) from image-text pairs to LiDAR-camera pairs, mapping both modalities into a shared pretrained embedding space—work that remained largely experimental through 2023–2024. The other converts laser returns and camera pixels into common geometric primitives or neural fields handled by one backend, likewise remaining largely at the paper-prototype stage without widespread real-time deployment. By 2026, no unified mainstream lineage had displaced standalone specialists: FAST-LIO2 and ORB-SLAM3 continued to dominate their respective domains independently.
+
+---
+
+## Prediction vs. outcome
+
+> In the conclusion of their 2014 LOAM paper, Zhang and Singh explicitly highlighted two items for future work: adding loop closure to bound long-term drift and fusing IMU measurements via a Kalman filter. Both materialized within a decade—VIO-style tightly coupled iEKF fusion in FAST-LIO (2021) and FAST-LIO2 (2022), and factor-graph loop closure in LIO-SAM (2020). What the 2014 conclusion left unmentioned was dynamic-object handling. By 2026, stripping moving pedestrians and vehicles from LiDAR scans in real time leaned heavily on deep-learning segmentation alongside geometric filters, with no single consensus solution across all dynamic scenes.
+
+---
+
+## Still open
+
+**Full Visual+LiDAR fusion.** Even after LVI-SAM, no tightly coupled visual-LiDAR state estimator has emerged as a universal standard. Autonomous vehicles rely on LiDAR when rain or fog blinds cameras, yet cross-sensor calibration, asymmetric failure modes, and unified estimator design remain stumbling blocks—and 2024–2025 transformer-based fusion prototypes had yet to leave the lab.
+
+**Algorithms optimized for solid-state LiDAR.** Classic LOAM baked in the ring structure of a 360° rotating scanner. Non-repetitive scan patterns (as in Livox units) and narrow fields of view alter motion distortion and geometric observability; while FAST-LIO2's direct point-to-map formulation and Livox LOAM tackle parts of that gap, no single framework spans the full diversity of solid-state optics and scan schedules.
+
+**Dynamic object handling.** From Zhang's 2014 paper through 2026, mainstream LiDAR SLAM largely retained a static-world assumption. Real-time pipelines routinely offload moving-object masking to external segmentation networks while purely geometric in-loop filtering battles compute and stability limits; commercial autonomous-driving stacks remain proprietary, leaving open research without a settled standard.
+
+---
+
+Camera SLAM and LiDAR SLAM each matured into formidable engineering traditions, speaking separate technical dialects while converging only partially at their borders. Yet alongside both mainstreams ran quieter, more unorthodox lineages—biologically inspired cognitive maps, microsecond event cameras, object-centric semantic worlds—that never claimed the center of either community, yet left lasting marks on where SLAM is heading next.

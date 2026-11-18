@@ -1,123 +1,115 @@
-# Ch.5 — MonoSLAM → PTAM: The Real-Time Daydream and the Split Revolution
+# Chapter 5. Real-Time Monocular SLAM: MonoSLAM and PTAM
 
-EKF-SLAM provided a way to estimate a map together with its uncertainty, but its covariance matrix hit a structural wall that grew as $O(N^2)$ in the number of landmarks $N$. The theory was not wrong; the limit followed from the design. Davison and Klein responded in different ways.
+EKF-SLAM gave robotics a way to estimate a map alongside its own uncertainty, yet its dense covariance matrix ran straight into an $O(N^2)$ scaling wall in the number of landmarks $N$. Nothing was wrong with the probability theory; the bottleneck was baked into the architecture. Over the span of four years, Andrew Davison and Georg Klein offered two sharply different answers to that ceiling.
 
-In 2003, Davison at Oxford estimated the pose of a hand-held camera and a map of its surroundings in real time on a desktop PC. He carried over the probabilistic spatial-relations mathematics that Smith and Cheeseman had laid down in 1988 and the EKF-SLAM structure that Leonard and Durrant-Whyte had built on it, but used a single camera as the sensor. With no IMU, stereo rig, or laser, he combined the 1994 Shi-Tomasi corner detector with a Kalman predict-update loop. By the standards of the day, it was an unusual combination.
+In 2003, Davison—then at Oxford—achieved real-time 3D tracking of a handheld camera and its surrounding scene on an ordinary desktop PC. Carrying forward the probabilistic spatial-relations framework laid down by Smith and Cheeseman in 1988 and the EKF-SLAM architecture built on it by Leonard and Durrant-Whyte, he stripped away the laser scanners, stereo rigs, and IMUs that robotics teams usually depended on. Pairing the 1994 Shi-Tomasi corner detector with a Kalman predict-update loop on a single camera, he produced a combination that looked audacious by the standards of the day.
 
-Four years later, in 2007, Klein and Murray at Oxford offered a different answer. They split tracking and mapping into two threads, an architecture that became the backbone of Visual SLAM for the next ten years.
-
----
-
-## 1. The 2003 demo
-
-At ICCV 2003, Davison presented [Real-Time Simultaneous Localisation and Mapping with a Single Camera](https://doi.org/10.1109/ICCV.2003.1238654). It was an early demonstration of real-time SLAM using a monocular camera alone.
-
-The mainstream of SLAM at the time used laser sensors. LiDAR delivered 2D ranges directly, and stereo cameras recovered depth at the pixel level. A monocular camera had no depth information to begin with. Estimating 3D structure from a single camera required at least two frames, and uncertainty in the initial depth estimate propagated through the entire EKF state vector. The theory existed; real-time implementation remained difficult.
-
-MonoSLAM used a single camera without an IMU or stereo rig, avoiding the extra hardware and stereo calibration those configurations require. It demonstrated the feasibility of monocular real-time SLAM, while the EKF's growing covariance matrix limited map size.
+Four years later, in 2007, Klein and Murray at Oxford broke through the EKF wall in another way altogether: splitting pose tracking and map optimization into two parallel threads, an architectural pattern that became the backbone of Visual SLAM for the next decade.
 
 ---
 
-## 2. The beauty and the wall of the EKF
+## 5.1 The 2003 demo
 
-[MonoSLAM](https://doi.org/10.1109/TPAMI.2007.1049), published in IEEE PAMI in 2007 with Davison, Ian Reid, Nicholas Molton, and Olivier Stasse as co-authors, was the full account of the ICCV 2003 demo.
+At ICCV 2003, Davison unveiled [Real-Time Simultaneous Localisation and Mapping with a Single Camera](https://doi.org/10.1109/ICCV.2003.1238654), one of the earliest live demonstrations of real-time SLAM driven solely by a single moving camera.
 
-MonoSLAM's state vector transplanted the formulation of [Smith-Self-Cheeseman (1988)](https://arxiv.org/abs/1304.3111) and [Leonard-Durrant-Whyte (1991)](https://ieeexplore.ieee.org/document/174711/) (Ch.4) directly onto a monocular camera. It packed a camera state $\mathbf{x}_v \in \mathbb{R}^{13}$ (position 3, quaternion orientation 4, velocity 3, angular velocity 3) and landmarks $\mathbf{y}_i \in \mathbb{R}^3$ into one vector $\mathbf{x} = (\mathbf{x}_v^\top, \mathbf{y}_1^\top, \ldots, \mathbf{y}_N^\top)^\top \in \mathbb{R}^{13+3N}$. The system maintained the full $(13+3N)\times(13+3N)$ covariance $\mathbf{P}$ frame by frame in a predict-update loop. The predict step propagated the covariance through the Jacobian $\mathbf{F}$ of the camera motion model $f$ ($\mathbf{P}^- = \mathbf{F}\mathbf{P}\mathbf{F}^\top + \mathbf{Q}$); the update step computed the Kalman gain from the Jacobian $\mathbf{H}_i$ of the projection function and refreshed the state and covariance. The EKF predict-update equations are identical to those in Ch.4 §4.3. The state vector now carried camera velocity and angular velocity along with pose because a moving camera needs a dynamics model.
+Mainstream SLAM in 2003 leaned heavily on range sensors. LiDAR scanners measured 2D distances directly, while stereo rigs recovered pixel-level depth through triangulation. A monocular camera starts with no depth reading at all: inferring 3D structure requires observing the scene across at least two viewpoints, and any initial depth uncertainty ripples straight through the entire EKF state vector. Although the geometry was well understood on paper, turning it into a real-time loop was notoriously fragile.
 
-The dominant cost in the covariance update $(\mathbf{I} - \mathbf{K}_i\mathbf{H}_i)\mathbf{P}^-$ came from a $(13+3N)^2$ matrix multiplication, or $O(N^2)$ in the number of landmarks $N$. §III of the paper states that "about 100" features could be sustained at 30 Hz in real time.
-
-> 🔗 **Borrowed.** MonoSLAM's EKF state vector transplants the Smith-Cheeseman-Durrant-Whyte (1988-1991) probabilistic spatial-relations representation directly onto a monocular camera. The Kalman filter itself had existed since 1960, but Leonard and Durrant-Whyte established the practice of placing robot pose and landmarks in one "augmented state vector" in 1991.
-
-That number exposed the system's ceiling, which the paper acknowledged by proposing a submapping strategy as future work. Building a hierarchy inside an EKF was difficult because the covariance matrix carried every correlation between every pair of landmarks, with none omitted.
-
-MonoSLAM's choice of [Shi-Tomasi (1994)](https://doi.org/10.1109/CVPR.1994.323794) corners followed the same constraint. "Good Features to Track" selected points likely to remain trackable. Restricting the state vector to such corners made the EKF update more stable. The PAMI paper states that map management kept about 12 features stably visible per frame with a wide-angle lens. The EKF ran as long as that bounded set tracked well.
-
-> 🔗 **Borrowed.** The Shi-Tomasi 1994 corner detector was already in use in MonoSLAM, not first in PTAM. The design philosophy of "select good features, then track them" is the direct Shi-Tomasi → MonoSLAM → PTAM lineage.
+By flying solo with one camera—skipping both IMUs and multi-camera stereo calibration—MonoSLAM proved that pure monocular real-time SLAM was genuinely possible, even as the EKF's expanding covariance matrix kept the resulting map tight and small.
 
 ---
 
-## 3. 2007, the same year
+## 5.2 The beauty and the wall of the EKF
 
-That bounded feature count exposed the EKF's ceiling. Klein confronted the same limit at Oxford.
+Four years after the ICCV demo, Davison, Ian Reid, Nicholas Molton, and Olivier Stasse published the complete archival account of [MonoSLAM](https://doi.org/10.1109/TPAMI.2007.1049) in IEEE TPAMI (2007).
 
-In 2007, Klein and Murray presented [Parallel Tracking and Mapping for Small AR Workspaces](https://doi.org/10.1109/ISMAR.2007.4538852) at ISMAR. The same year, PAMI carried the finished version of Davison's MonoSLAM. Their appearance in the same year reflected a direct lineage.
+MonoSLAM transplanted the joint-state formulation of [Smith-Self-Cheeseman (1988)](https://arxiv.org/abs/1304.3111) and [Leonard-Durrant-Whyte (1991)](https://ieeexplore.ieee.org/document/174711/) (Chapter 4) directly onto a moving monocular camera. Its augmented state vector $\mathbf{x} = (\mathbf{x}_v^\top, \mathbf{y}_1^\top, \ldots, \mathbf{y}_N^\top)^\top \in \mathbb{R}^{13+3N}$ packed the 13-dimensional camera state $\mathbf{x}_v \in \mathbb{R}^{13}$—3 for position, 4 for quaternion orientation, 3 for linear velocity, and 3 for angular velocity—together with $N$ 3D landmarks $\mathbf{y}_i \in \mathbb{R}^3$. Because a free-moving handheld camera needed a smooth dynamics model between frames, velocity and angular velocity had to ride inside the state vector alongside pose. Frame after frame, the filter maintained the full $(13+3N)\times(13+3N)$ covariance matrix $\mathbf{P}$ through the standard predict-update equations from Chapter 4 §4.3: predicting via the motion model $f$ and its Jacobian $\mathbf{F}$ ($\mathbf{P}^- = \mathbf{F}\mathbf{P}\mathbf{F}^\top + \mathbf{Q}$), then updating with the Kalman gain derived from the projection Jacobian $\mathbf{H}_i$.
 
-Klein had completed his doctorate under Tom Drummond at Cambridge and was working with Murray as a postdoctoral researcher at Oxford when PTAM appeared. Murray had also supervised Davison. PTAM continued MonoSLAM's demonstration of monocular real-time operation within this research lineage, but replaced the EKF with separate tracking and mapping threads.
+That exact covariance update, $(\mathbf{I} - \mathbf{K}_i\mathbf{H}_i)\mathbf{P}^-$, dictated the system's computational ceiling. Dominated by $(13+3N)^2$ matrix operations, its cost scaled as $O(N^2)$ with the number of landmarks $N$; in §III of the PAMI paper, the authors noted that real-time 30 Hz operation could sustain "about 100" features.
 
-The next problem was scale, and Klein discarded the EKF.
+> 🔗 **Borrowed.** MonoSLAM's EKF state vector transplants the Smith-Cheeseman-Durrant-Whyte (1988-1991) probabilistic spatial-relations representation directly onto a monocular camera. While the Kalman filter dates back to 1960, Leonard and Durrant-Whyte established the convention of packing robot pose and landmarks into a single "augmented state vector" in 1991.
+
+Even as they acknowledged that ceiling by pointing toward submapping as future work, partitioning an EKF was notoriously tricky because its dense covariance matrix explicitly linked every pair of landmarks. That same compute budget also shaped how MonoSLAM picked features: by relying on [Shi-Tomasi (1994)](https://doi.org/10.1109/CVPR.1994.323794) "Good Features to Track," the system invested its scarce state-vector slots exclusively in corners likely to stay trackable. As the PAMI paper reports, active map management kept roughly 12 features reliably in view per frame under a wide-angle lens—and as long as that tight set stayed locked on target, the filter ran smoothly.
+
+> 🔗 **Borrowed.** The Shi-Tomasi 1994 corner detector was already at work in MonoSLAM before PTAM adopted it. The design rule of "select good features, then track them" forms a direct Shi-Tomasi → MonoSLAM → PTAM lineage.
 
 ---
 
-## 4. The split
+## 5.3 2007, the same year
 
-PTAM separated tracking (camera pose tracking) from mapping (3D map construction) and ran them in two parallel threads.
+Maintaining only a dozen active features laid bare the EKF's fundamental bottleneck—and at Oxford, Georg Klein was confronting that exact same limit.
 
-In the EKF, the two tasks were coupled inside one loop. Each frame ran a predict-update cycle: predict the state when the camera moves, then update it once landmarks are found in the image.
+In 2007, the very year Davison's definitive MonoSLAM paper appeared in TPAMI, Klein and David Murray presented [Parallel Tracking and Mapping for Small AR Workspaces](https://doi.org/10.1109/ISMAR.2007.4538852) at ISMAR. That simultaneity was no coincidence; both works grew out of the same academic circle. Klein had earned his PhD under Tom Drummond at Cambridge before joining Murray—who had previously supervised Davison—as a postdoctoral researcher at Oxford. PTAM carried forward MonoSLAM's commitment to real-time monocular operation, yet made a decisive break to achieve scale: Klein threw out the EKF entirely.
 
-PTAM separated the tasks. The tracking thread estimates only the camera pose in each frame. It matches the 2D projections of 3D points visible from the current keyframe set to the actual observations and computes the pose in real time. The mapping thread runs bundle adjustment whenever a new keyframe is added. Because tracking runs independently, slow mapping does not block it.
+---
 
-The bundle adjustment on the mapping thread minimized the sum of reprojection errors over a keyframe set $\mathcal{K}$ and a 3D point set $\mathcal{P}$:
+## 5.4 The split
+
+PTAM's defining insight was to decouple camera pose **tracking** from 3D **mapping** and execute them in two separate, parallel threads.
+
+In EKF-SLAM, tracking and mapping were welded inside a single sequential loop: every incoming frame had to predict the camera state, match landmarks, and pay for a full joint covariance update. PTAM broke that coupling. Its **tracking thread** did one job as fast as possible—estimating only the current camera pose at frame rate by projecting already-mapped 3D points from nearby keyframes and aligning them with image observations. Meanwhile, its **mapping thread** worked asynchronously in the background, adding new keyframes whenever the camera explored fresh ground and refining the 3D map with bundle adjustment—without ever stalling the live tracker.
+
+On the mapping thread, bundle adjustment minimized the robust sum of reprojection errors across a set of keyframes $\mathcal{K}$ and 3D map points $\mathcal{P}$:
+
 $$\min_{\{\mathbf{T}_k\}, \{\mathbf{p}_j\}} \sum_{k \in \mathcal{K}} \sum_{j \in \mathcal{P}_k} \rho\!\left(\left\|\mathbf{z}_{kj} - \pi(\mathbf{T}_k,\, \mathbf{p}_j)\right\|^2_{\mathbf{\Sigma}_{kj}}\right)$$
-where $\mathbf{T}_k \in SE(3)$ is the pose of keyframe $k$, $\mathbf{p}_j \in \mathbb{R}^3$ is a 3D point, $\pi$ is the camera projection function, $\mathbf{z}_{kj}$ is the observed pixel coordinate of point $j$ in keyframe $k$, $\mathbf{\Sigma}_{kj}$ is the measurement covariance, and $\rho$ is a robust kernel such as the Huber function. The mapping thread solved this optimization iteratively with Levenberg–Marquardt. Running asynchronously, it did not affect the real-time behavior of the tracking thread.
 
-> 🔗 **Borrowed.** The bundle adjustment on PTAM's mapping thread directly applies [Triggs et al. 1999 "Bundle Adjustment — A Modern Synthesis"](https://doi.org/10.1007/3-540-44480-7_21). The hundred-year photogrammetry tradition covered in Part I moved into the center of a real-time SLAM backend. Large joint updates were costly in EKF-SLAM because of covariance-matrix size; splitting the threads let keyframe BA run asynchronously from tracking.
+In this objective, $\mathbf{T}_k \in SE(3)$ denotes the pose of keyframe $k$, $\mathbf{p}_j \in \mathbb{R}^3$ is a 3D landmark, $\pi$ is the camera projection function, $\mathbf{z}_{kj}$ is the observed pixel coordinate of point $j$ in keyframe $k$ with measurement covariance $\mathbf{\Sigma}_{kj}$, and $\rho$ is a robust loss kernel such as Huber. Solving this objective iteratively via Levenberg–Marquardt in a background thread meant that optimization cost never interrupted real-time camera tracking.
 
-The split had large consequences. Because the mapping thread ran bundle adjustment asynchronously, the number of landmarks in the map was no longer bound by the EKF's $O(N^2)$ constraint. PTAM used hundreds of keyframes, each holding hundreds of patch features, compared with MonoSLAM's tens of landmarks.
+> 🔗 **Borrowed.** The bundle adjustment running in PTAM's mapping thread directly applies [Triggs et al. 1999 "Bundle Adjustment — A Modern Synthesis"](https://doi.org/10.1007/3-540-44480-7_21). The century-old photogrammetry lineage traced in Part I had moved straight into the heart of a real-time SLAM backend: what EKF-SLAM could not afford because of its dense covariance matrix, PTAM achieved by letting keyframe BA run asynchronously from tracking.
 
-PTAM also changed initialization. As the user moved the camera slowly, the system estimated the essential matrix with a 5-point algorithm from the [Nistér 2004](https://doi.org/10.1109/TPAMI.2004.17) line (the PTAM paper cites the follow-up Stewénius·Engels·Nistér 2006) and recovered the initial 3D structure from the first keyframe pair. This too was borrowed.
+That single architectural split transformed map scale overnight. Freed from the EKF's $O(N^2)$ ceiling, PTAM scaled effortlessly from MonoSLAM's few dozen landmarks to maps spanning hundreds of keyframes, each packed with hundreds of patch features.
 
-The essential matrix $\mathbf{E}$ is a $3\times 3$ matrix capturing the pure geometric relation between two camera frames, satisfying ${\mathbf{p}'}^\top \mathbf{E}\, \mathbf{p} = 0$ for corresponding point pairs $(\mathbf{p}, \mathbf{p}')$. $\mathbf{E}$ decomposes internally as $\mathbf{E} = \mathbf{t}_\times \mathbf{R}$ ($\mathbf{t}_\times$ is the skew-symmetric matrix of the translation, $\mathbf{R}$ is the rotation), so it has 5 degrees of freedom. Five point correspondences make the problem minimal, but they do not give a unique solution: the polynomial system has up to ten candidate solutions over the complex numbers. Nistér's contribution was to solve this system efficiently enough for a real-time RANSAC loop. PTAM used the solver during initialization to estimate the relative pose between the first two keyframes and triangulate the initial 3D point cloud.
+Initialization underwent a similar upgrade. Rather than assuming a known calibration pattern, PTAM asked the user to translate the camera smoothly sideways, estimated the essential matrix between the first two keyframes using a 5-point solver descended from [Nistér (2004)](https://doi.org/10.1109/TPAMI.2004.17) (specifically citing the follow-up by Stewénius, Engels, and Nistér 2006), and triangulated an initial 3D point cloud.
 
-> 🔗 **Borrowed.** PTAM's 5-point essential-matrix initialization follows the minimal-solver lineage opened by David Nistér's 2004 "An Efficient Solution to the Five-Point Relative Pose Problem" (the PTAM paper directly cites the follow-up Stewénius·Engels·Nistér 2006 ISPRS). Nistér's solver used the minimum number of correspondences needed to build a monocular camera's initial map. PTAM placed it inside a RANSAC loop to estimate the relative pose of the first two keyframes at near-real-time speed.
+Algebraically, the essential matrix $\mathbf{E}$ is a $3\times 3$ matrix tying normalized corresponding points $(\mathbf{p}, \mathbf{p}')$ across two views through the epipolar constraint ${\mathbf{p}'}^\top \mathbf{E}\, \mathbf{p} = 0$. Factoring internally as $\mathbf{E} = \mathbf{t}_\times \mathbf{R}$—where $\mathbf{t}_\times$ is the skew-symmetric matrix of translation and $\mathbf{R}$ is rotation—$\mathbf{E}$ has five degrees of freedom. Although five point pairs suffice minimally, the resulting polynomial system yields up to ten complex candidate roots; Nistér's breakthrough was solving that polynomial fast enough to run inside a real-time RANSAC loop, giving PTAM a lightweight way to bootstrap its first keyframe pair.
 
-> 🔀 **Structural parallel.** Leonard-Durrant-Whyte submaps and PTAM's keyframe map both manage computation through selected local units. The PTAM paper, however, does not cite that submap lineage as a direct design source. It explains keyframe selection through parallel tracking and mapping and the needs of local bundle adjustment. ORB-SLAM later added a covisibility graph.
+> 🔗 **Borrowed.** PTAM's 5-point essential-matrix initialization follows the minimal-solver lineage opened by David Nistér's 2004 "An Efficient Solution to the Five-Point Relative Pose Problem" (the PTAM paper directly cites the follow-up Stewénius·Engels·Nistér 2006 ISPRS). Using the minimum five correspondences needed for a monocular camera's initial map, PTAM embedded the solver inside RANSAC to recover the relative pose of the first two keyframes at near-real-time speed.
 
----
-
-## 5. The diffusion of the new architecture
-
-PTAM was designed for AR (augmented reality) workspaces; the paper's title states "Small AR Workspaces" explicitly. Because the tracking thread ran reliably in real time, it could be integrated directly into AR applications.
-
-Commercial adoption was fast. In the early 2010s, Metaio (a German AR startup, acquired by Apple in 2015) and Qualcomm's Vuforia SDK adopted tracking/mapping split structures similar to PTAM's. These commercial SDKs helped spread stable planar AR on consumer smartphones.
-
-The academic effect was more direct. [ORB-SLAM](https://arxiv.org/abs/1502.00956), published in 2015 by Raul Mur-Artal, J.M.M. Montiel, and Juan D. Tardós, inherited PTAM's structure. It swapped patch features for ORB descriptors, refined keyframe management with a covisibility graph, and added loop closure on top. Without PTAM, ORB-SLAM's blueprint would have been different.
-
-Qin, Li, and Shen's [VINS-Mono](https://arxiv.org/abs/1708.03852) (2018) also uses two threads for sliding-window optimization and loop closure, extending the tracking/mapping split into Visual-Inertial Odometry (VIO).
+> 🔀 **Structural parallel.** Leonard-Durrant-Whyte submaps and PTAM's keyframe map both keep computation bounded by working over local subsets. Yet the PTAM paper does not cite submapping as a design inspiration; its keyframes grew naturally out of separating tracking from mapping and feeding local bundle adjustment—a structure ORB-SLAM later formalized with a covisibility graph.
 
 ---
 
-## 6. Davison vs Klein & Murray — a view comparison
+## 5.5 The diffusion of the new architecture
 
-Two papers came out in 2007. MonoSLAM PAMI was the finished version of the 2003 demo. PTAM came out the same year, with a new structure that broke through MonoSLAM's limits.
+Designed expressly for augmented reality—as announced in its subtitle, "Small AR Workspaces"—PTAM delivered tracking stable and responsive enough to anchor virtual objects directly onto live video.
 
-One reason MonoSLAM retained the EKF was its explicit joint representation of state and uncertainty. The covariance matrix represented state uncertainty explicitly, tracking both the uncertainty of each landmark and the covariance between landmarks. From this viewpoint, bundle adjustment traded explicit uncertainty representation for scalability.
+Industry picked up the pattern quickly. By the early 2010s, commercial AR platforms including Metaio (a German AR startup acquired by Apple in 2015) and Qualcomm's Vuforia SDK had adopted PTAM-style split tracking-and-mapping designs, helping bring reliable planar AR to consumer smartphones.
 
-Klein & Murray paid that price willingly. What mattered in AR applications was real-time tracking of the camera pose. There was no need to track map uncertainty at the centimeter level. Refining the map periodically through bundle adjustment was enough.
-
-The field accepted this trade. From the 2010s onward, graph-based optimization and bundle adjustment became mainstream, while EKF-SLAM receded except in applications with severely limited compute resources. MonoSLAM's concern with probabilistic consistency did not disappear. Rather than join the PTAM lineage directly, Davison's lab moved in stages toward factor-graph-based estimation and then Gaussian Belief Propagation (GBP) and the Robot Web. Twenty-three years later, in Ch.18 of the *SLAM Handbook*, Davison describes this trajectory as EKF → BA → factor graph → GBP. He does not name and assess MonoSLAM directly, but recasts the history around a general principle: each change of representation prompts a redesign of the system.
+In academia, PTAM's blueprint proved even more foundational. When Raul Mur-Artal, J.M.M. Montiel, and Juan D. Tardós introduced [ORB-SLAM](https://arxiv.org/abs/1502.00956) in 2015, they kept PTAM's parallel-thread backbone while swapping patch features for ORB descriptors, organizing keyframes with a covisibility graph, and adding a third thread for loop closure. Three years later, Qin, Li, and Shen's [VINS-Mono](https://arxiv.org/abs/1708.03852) (2018) carried the same multi-threaded split—separating sliding-window optimization from loop closure—into visual-inertial odometry (VIO).
 
 ---
 
-## 📜 Prediction vs. outcome
+## 5.6 Davison vs Klein & Murray — a view comparison
+
+Seen side by side in 2007, Davison's TPAMI MonoSLAM paper and Klein and Murray's ISMAR PTAM paper mark a clean fork in SLAM's evolution: MonoSLAM brought the probabilistic EKF paradigm to maturity, while PTAM broke its scaling limits with a new architecture.
+
+Davison had a principled reason for holding onto the EKF: it maintained an explicit joint probability distribution over the entire system, tracking both the uncertainty of every landmark and the cross-correlations linking them. From that perspective, adopting bundle adjustment meant giving up explicit, continuously updated map covariance in exchange for raw scalability.
+
+Klein and Murray happily made that trade. For augmented reality, the priority was rock-solid camera pose tracking at frame rate—not tracking landmark covariance to the centimeter—and periodic bundle adjustment kept the map accurate enough.
+
+The broader community embraced the same trade-off. Throughout the 2010s, keyframe bundle adjustment and graph optimization swept Visual SLAM, confining EKF-SLAM largely to severely compute-starved platforms. Yet Davison's underlying insistence on consistent probabilistic inference never vanished. Instead of stepping straight onto the PTAM track, his lab evolved its representation in stages—from EKF to bundle adjustment, then to factor graphs, and onward to Gaussian Belief Propagation (GBP) and the Robot Web. Looking back twenty-three years later in Chapter 18 of the *SLAM Handbook*, Davison summarizes that arc as EKF → BA → factor graph → GBP: not as a narrow critique of MonoSLAM, but as an illustration of a broader principle that every shift in mathematical representation invites a redesign of the system around it.
+
+---
+
+## Prediction vs. outcome
 
 > **Davison 2007 PAMI MonoSLAM**: In the Conclusion, Davison named larger indoor and outdoor environments, faster motion, and complex scenes with occlusion and lighting changes as the next tasks. He specifically proposed a submap strategy and CMOS cameras running above 100 Hz, and suggested extending the sparse map to a dense representation of "higher-order entities" (surfaces, etc.).
 >
-> These predictions met different fates. Submaps, PTAM's keyframe structure, and ORB-SLAM's covisibility graph share a concern with limiting computation, but this comparison alone does not establish direct inheritance. No system, however, achieved hierarchical scaling while retaining the EKF; that hierarchy arrived with the shift to BA-based architectures. High-frame-rate cameras took concrete form through 2010s event-camera research. Robustness to dynamic scenes remains open as of 2026. DynaSLAM and FlowSLAM are among the attempts, but no solution has yet entered the baseline pipeline. Davison did not flag IMU integration directly in Future Work (though the body cites related work), and the VIO boom of the 2010s pursued that direction. The concern with probabilistic consistency survived in factor graphs and GBP. Twenty-three years later, in Handbook Ch.18, Davison discusses system redesign through changes of representation. Placing MonoSLAM within that lineage is the interpretation of this history.
+> These predictions met different fates. Submaps, PTAM's keyframe structure, and ORB-SLAM's covisibility graph share a concern with limiting computation, though that parallel alone does not establish direct lineage—and no system achieved hierarchical scaling while keeping the EKF intact, as hierarchy arrived only with the move to BA-based architectures. High-frame-rate sensing materialized in the 2010s through event-camera research. Meanwhile, robustness to dynamic scenes remains open as of 2026: systems such as DynaSLAM and FlowSLAM have tackled the problem, yet none has entered the standard baseline pipeline. Although Davison did not flag IMU fusion explicitly in Future Work (despite citing related work in the body), the VIO boom of the 2010s pursued that path aggressively. Above all, MonoSLAM's commitment to probabilistic consistency endured inside factor graphs and GBP—a trajectory Davison revisits in Handbook Ch.18 around how changing representations reshape systems, within which this history situates MonoSLAM.
 
 > **Klein & Murray 2007 PTAM**: In §8 (Failure modes / Mapping inadequacies), Klein and Murray listed the system's limitations: corner-based tracking's vulnerability to motion blur, the geometric poverty of a point-cloud-centric map, and "not designed to close large loops in the SLAM sense." They stated plainly that global consistency across large loops was outside PTAM's design scope.
 >
-> In 2015 ORB-SLAM directly addressed those limitations. It added [DBoW2](http://doriangalvez.com/papers/GalvezTRO12.pdf)-based appearance loop closure and covisibility-graph-based keyframe management, and replaced patch features with ORB descriptors. ORB-SLAM took on the map-scaling task that PTAM had excluded. Klein & Murray did not explicitly identify appearance-based loop closure as the answer, but the limits they marked became the starting point for the subsequent lineage.
+> Eight years later, ORB-SLAM (2015) tackled those exact boundaries head-on, adding [DBoW2](http://doriangalvez.com/papers/GalvezTRO12.pdf)-based appearance loop closure, covisibility-graph keyframe management, and ORB descriptors in place of raw patches to solve the large-scale mapping problem PTAM had left aside. While Klein and Murray did not prescribe appearance-based loop closure specifically, the failure modes they documented became the direct checklist for the generation that followed.
 
 ---
 
-## 🧭 Still open
+## Still open
 
-**Monocular scale recovery.** From MonoSLAM to PTAM, every monocular system carries scale ambiguity. A single image cannot determine absolute distance; this is a geometric fact. Adding an IMU makes scale observable through gravity direction and accelerometer readings. In pure monocular systems without an IMU, however, scale recovery remains unsolved even in 2026. Learning-based monocular depth estimation ([MiDaS](https://arxiv.org/abs/1907.01341), [Depth Anything](https://arxiv.org/abs/2401.10891)) estimates relative depth from a single image, but converting it to metric scale still requires an external reference (a ground-plane assumption, a known object size, and so on).
+**Monocular scale recovery.** Every pure monocular system from MonoSLAM to PTAM faces an unavoidable geometric ambiguity: a single camera cannot recover absolute metric scale without an external reference. Fusing an IMU resolves scale through gravity and linear acceleration, yet in vision-only monocular SLAM the problem remains open even in 2026. Learned monocular depth networks such as [MiDaS](https://arxiv.org/abs/1907.01341) and [Depth Anything](https://arxiv.org/abs/2401.10891) predict rich relative depth from a single image, but grounding those predictions in true metric units still depends on external cues such as a known ground-plane height or recognized object dimensions.
 
-**Environmental generality of a single VO system.** MonoSLAM handled only indoor desktop scenes. PTAM explicitly limited its scope to "Small AR Workspaces." ORB-SLAM2 later tried to span indoor, outdoor, and RGB-D settings, but tracking still fails under extreme lighting changes or in low-texture spaces. As of 2026, no single pipeline robustly handles indoor corridors, outdoor downtowns, nighttime environments, and textureless white walls at once. Multimodal fusion (camera + LiDAR + IMU) covers some of this range, but the generality of a camera-only system remains unsettled.
+**Environmental generality of a single VO system.** MonoSLAM stayed within an indoor desk, PTAM targeted "Small AR Workspaces," and ORB-SLAM2 expanded to indoor, outdoor, and RGB-D domains—yet tracking still breaks down under harsh lighting shifts or featureless surfaces. As of 2026, no single monocular pipeline handles bright city streets, dark indoor corridors, nighttime scenes, and blank white walls with equal reliability. Multimodal rigs pairing cameras, LiDAR, and IMUs bridge much of that gap, leaving the universality of camera-only systems unresolved.
 
-**Feature tracking in low light and dynamic scenes.** MonoSLAM assumed sufficient lighting and a static scene; PTAM did the same in 2007. As of 2026, most feature-based SLAM systems still carry these assumptions implicitly. ORB features can fail entirely in low light, while scenes crowded with moving people cause dynamic points to be misclassified as static. Learning-based optical flow and semantic segmentation attempt to address the problem, but no system has become a real-time, general-purpose solution.
+**Feature tracking in low light and dynamic scenes.** Both MonoSLAM and PTAM implicitly assumed steady illumination and a static world, assumptions most feature-based SLAM systems still lean on in 2026. ORB extraction falters in dim light, while crowded scenes full of moving people corrupt static triangulation with dynamic points. Learned optical flow and semantic segmentation help mitigate these failures, yet neither has yielded a lightweight, general-purpose real-time fix.
 
 ---
 
-PTAM's tracking/mapping split left loop closure unresolved. As keyframes accumulated, so did error, becoming visible when the camera completed a loop. The PTAM paper itself declared loop closure, correcting accumulated error when the camera returned to a known place, out of scope. Elsewhere, graph-SLAM researchers had spent a decade preparing an answer.
+Even as PTAM's tracking-and-mapping split broke MonoSLAM's landmark limit, it left one crucial problem deliberately untouched: loop closure. As keyframes piled up along long trajectories, small drift errors accumulated until the camera returned to a familiar spot and found the map misaligned—a failure Klein and Murray had explicitly declared out of scope. Elsewhere in robotics, graph-SLAM researchers had already spent a decade forging the tool built to close that loop.

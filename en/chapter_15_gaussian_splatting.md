@@ -1,117 +1,109 @@
-# Ch.15 — The Gaussian Splatting Era: From 3DGS to GS-SLAM
+# Chapter 18. 3D Gaussian Splatting-Based SLAM
 
-iMAP and NICE-SLAM represented space with an MLP, but their representations were difficult to edit directly. Updating the global MLP in iMAP could affect other regions; NICE-SLAM reduced that problem with local feature grids. NICE-SLAM also ran below 1 fps on an RTX 3090, far from real-time SLAM. Its scene representation remained difficult to inspect within the network parameters.
+Although iMAP and NICE-SLAM brought neural fields into SLAM, implicit representations remained awkward to edit and slow to run. Updating iMAP's global MLP risked corrupting previously mapped rooms, and while NICE-SLAM curbed that interference with local feature grids, it still ran below 1 fps on an RTX 3090—leaving scene geometry locked inside opaque network weights.
 
-At SIGGRAPH in August 2023, Bernhard Kerbl of INRIA, Georgios Kopanas, Thomas Leimkuhler, and George Drettakis presented [their paper](https://arxiv.org/abs/2308.04079). Kerbl retained the differentiable scene optimization that NeRF had developed over the preceding three years but changed the representation's form. Instead of encoding scenes in MLPs or voxel feature grids, as iMAP, NICE-SLAM, and Co-SLAM did, 3DGS represented them with millions of explicit ellipsoidal Gaussian primitives. The SLAM community adopted the representation within six months. Its rasterization drew on Matthias Zwicker's twenty-year-old EWA splatting technique (2001), while its optimization retained the differentiable-rendering framework associated with NeRF.
+At SIGGRAPH in August 2023, Bernhard Kerbl, Georgios Kopanas, Thomas Leimkuhler, and George Drettakis of INRIA offered a decisive turn in [their paper](https://arxiv.org/abs/2308.04079). Rather than abandoning the differentiable photometric optimization that NeRF had refined over the previous three years, 3D Gaussian Splatting (3DGS) replaced MLPs and voxel grids with millions of explicit ellipsoidal Gaussian primitives. Its rasterizer drew directly on Matthias Zwicker's twenty-year-old EWA splatting technique (2001), while its optimization preserved NeRF's differentiable-rendering loop. Within six months, the SLAM community had built a new wave of systems around it.
 
 ---
 
-## The structure of 3DGS
+## 18.1 The structure of 3DGS
 
-Kerbl represented scenes as an explicit set of Gaussians. Each Gaussian has a position (mean) $\boldsymbol{\mu} \in \mathbb{R}^3$, a covariance matrix $\boldsymbol{\Sigma} \in \mathbb{R}^{3 \times 3}$, a learnable opacity $o \in (0,1]$, and a color expressed in spherical harmonics coefficients. For training stability the covariance is factored into a scale vector $\mathbf{s}$ and a unit quaternion $\mathbf{q}$:
+In 3DGS, a scene is an explicit collection of anisotropic 3D Gaussians. Each primitive carries a center $\boldsymbol{\mu} \in \mathbb{R}^3$, a 3D covariance matrix $\boldsymbol{\Sigma} \in \mathbb{R}^{3 \times 3}$, a learnable opacity $o \in (0,1]$, and view-dependent color parameterized by spherical harmonics. To keep covariance positive semi-definite during gradient descent, $\boldsymbol{\Sigma}$ is factored into a scaling vector $\mathbf{s}$ and a unit rotation quaternion $\mathbf{q}$:
 
 $$\boldsymbol{\Sigma} = \mathbf{R}\mathbf{S}\mathbf{S}^\top\mathbf{R}^\top$$
 
-Rendering alpha-blends the projected 2D Gaussians in depth order. Each Gaussian's effective opacity $\alpha_i$ is the product of the learnable opacity $o_i$ and the 2D Gaussian density $G_i(\mathbf{x})$ evaluated at the pixel location. The pixel color $C$ is
+To render an image, 3D Gaussians are projected onto the image plane, sorted by depth, and alpha-blended in front-to-back order. Each primitive's effective opacity $\alpha_i$ multiplies its learnable opacity $o_i$ by the 2D Gaussian density $G_i(\mathbf{x})$ at pixel $\mathbf{x}$, yielding pixel color:
 
 $$C = \sum_{i \in N} c_i \alpha_i \prod_{j<i}(1 - \alpha_j), \quad \alpha_i = o_i G_i(\mathbf{x})$$
 
-Unlike NeRF, which numerically approximates a volume-rendering integral, 3DGS runs directly through a GPU rasterization pipeline. Its tile-based rasterizer implements both forward and backward passes as custom CUDA kernels. On a single RTX 3090, it renders at more than 30 fps after training. This novel-view rendering rate cannot be compared directly as a speed ratio with NICE-SLAM's full tracking-and-mapping throughput.
+Whereas NeRF approximates a continuous volume-rendering integral by marching samples along every ray, 3DGS feeds primitives straight into a GPU rasterization pipeline with custom CUDA tile-rasterizer kernels for both forward and backward passes. On a single RTX 3090, a trained scene renders at well over 30 fps—though this pure novel-view rendering speed cannot be compared directly as a simple speedup ratio against NICE-SLAM's full tracking-and-mapping loop.
 
-Initialization uses a sparse point cloud from SfM. Training then iterates a **densification** procedure that splits, clones, and prunes Gaussians. When the view-space position gradient crosses a threshold, Gaussians with large scale split into two children, and Gaussians with small scale clone at the same position. Gaussians with low opacity are pruned periodically.
+Optimization typically starts from a sparse SfM point cloud and alternates parameter updates with adaptive **densification**—splitting, cloning, and pruning primitives. Where large view-space position gradients signal under-reconstructed detail, oversized Gaussians split into two children while tiny Gaussians clone themselves; meanwhile, near-transparent primitives whose opacity drops below a threshold are periodically culled.
 
-> 🔗 **Borrowed.** 3DGS's rasterization-based splatting descends directly from Zwicker et al.'s [EWA splatting (2001)](https://www.cs.umd.edu/~zwicker/publications/EWAVolumeSplatting-VIS01.pdf). Zwicker wrapped each point in an elliptical weighted-average kernel to render point clouds. Kerbl replaced that kernel with a learnable Gaussian and accelerated it with a GPU tile rasterizer.
-
----
-
-## Structural fit between 3DGS and SLAM
-
-Implicit representations posed several difficulties for SLAM. An MLP-based NeRF had to update the entire network for each new observation, while catastrophic forgetting made incremental learning difficult. Expanding the map required increasing the network's capacity. NICE-SLAM's voxel grid mitigated these problems but retained a trade-off between resolution and memory.
-
-3DGS addressed these problems with an explicit representation. When a new keyframe arrives, the system can add Gaussians only to the corresponding region. Densification aligns naturally with keyframe insertion, while rendering retains NeRF-level quality at real-time speed. GS-SLAM papers began appearing in quick succession in late 2023.
+> 🔗 **Borrowed.** 3DGS's rasterization-based splatting descends directly from Zwicker et al.'s [EWA splatting (2001)](https://www.cs.umd.edu/~zwicker/publications/EWAVolumeSplatting-VIS01.pdf), which wrapped point samples in elliptical weighted-average kernels for smooth point-cloud rendering. Kerbl replaced fixed kernels with learnable Gaussians and accelerated the pass with a GPU tile rasterizer.
 
 ---
 
-## GS-SLAM: an early attempt
+## 18.2 Structural fit between 3DGS and SLAM
 
-Chi Yan (HKU) and collaborators posted [Yan et al. 2023. GS-SLAM](https://arxiv.org/abs/2311.11700) on arXiv in November 2023. Several 3DGS-SLAM manuscripts appeared around the same time; GS-SLAM was among the early systems to combine 3DGS with tracking and mapping.
+From a SLAM perspective, implicit fields fought against incremental mapping at an architectural level. A global MLP had to adjust shared weights for every new frame, inviting catastrophic forgetting and forcing capacity trade-offs as maps expanded; voxel grids localized those updates at the price of cubic memory growth.
 
-GS-SLAM followed the classical SLAM framework: tracking estimated the pose of the current frame, and mapping updated the Gaussian map. Yan introduced two mechanisms. Adaptive Gaussian expansion inserted Gaussians into low-coverage regions when a new keyframe was added. Geometry-aware Gaussian selection optimized only Gaussians that contributed substantially to the rendering loss, reducing computation during backpropagation.
+An explicit Gaussian map aligned far more cleanly with incremental SLAM. Whenever a new keyframe reveals unobserved geometry, the system can insert Gaussians strictly in that local volume without disturbing distant regions. Densification pairs naturally with keyframe addition, while tile rasterization delivers NeRF-grade visual fidelity at interactive frame rates. Unsurprisingly, 3DGS-SLAM preprints began appearing in rapid succession before the end of 2023.
 
-Tracking optimizes the pose against a rendered photometric loss. GS-SLAM's tracking loss is an L1 color loss over sampled pixels:
+---
+
+## 18.3 GS-SLAM: an early attempt
+
+In November 2023, Chi Yan (HKU) and collaborators posted [Yan et al. 2023. GS-SLAM](https://arxiv.org/abs/2311.11700) to arXiv—one of the earliest attempts to wrap 3DGS inside a complete tracking-and-mapping pipeline.
+
+Following classical SLAM separation, GS-SLAM alternates between estimating the current frame's pose and refining the Gaussian map. To make optimization tractable, Yan introduced two mechanisms: adaptive Gaussian expansion, which seeds new primitives in under-covered regions upon keyframe insertion, and geometry-aware Gaussian selection, which restricts backpropagation to primitives contributing meaningfully to the rendering residual.
+
+During tracking, GS-SLAM optimizes camera pose by minimizing a rendered L1 photometric loss across sampled pixels:
 
 $$\mathcal{L}_{track} = \sum_m \|\mathbf{C}_m - \hat{\mathbf{C}}_m\|_1$$
 
-During mapping, Yan used a weighted sum of color L1 and depth L1 losses. Training the Gaussian map also inherited the original 3DGS objective, $(1-\lambda)\mathcal{L}_1 + \lambda\mathcal{L}_{D\text{-}SSIM}$ with $\lambda=0.2$, as its default form. The differentiable rasterizer makes this loss differentiable with respect to pose.
-
-On the Replica dataset, GS-SLAM matched NICE-SLAM's PSNR at higher throughput. It nevertheless required an RGB-D camera and was not validated in large-scale outdoor environments.
+During mapping, it combines color and depth L1 losses alongside the original 3DGS photometric-structural objective, $(1-\lambda)\mathcal{L}_1 + \lambda\mathcal{L}_{D\text{-}SSIM}$ with $\lambda=0.2$—all end-to-end differentiable with respect to camera pose through the custom rasterizer. On Replica, GS-SLAM matched NICE-SLAM's PSNR at substantially higher throughput, though it still depended on an RGB-D sensor and remained unvalidated outdoors.
 
 ---
 
-## SplaTAM: silhouette-based densification
+## 18.4 SplaTAM: silhouette-based densification
 
-[Keetha et al. 2024. SplaTAM (CVPR)](https://arxiv.org/abs/2312.02126), by Nikhil Keetha at Carnegie Mellon and his colleagues, used a simpler densification method than GS-SLAM based on a silhouette mask.
+Soon after, Nikhil Keetha and colleagues at Carnegie Mellon simplified Gaussian densification in [Keetha et al. 2024. SplaTAM (CVPR)](https://arxiv.org/abs/2312.02126).
 
-The **silhouette mask** identifies regions in the current view that the existing Gaussians do not explain. SplaTAM adds new Gaussians to these empty areas of the rendered mask, using absence of coverage as a direct densification criterion.
+Like GS-SLAM, SplaTAM alternates between optimizing camera pose with the map frozen and updating Gaussian parameters with poses held fixed. What distinguishes SplaTAM is how it decides where the map needs new primitives: a **silhouette mask** flags pixels in the current view that existing Gaussians fail to cover, and SplaTAM seeds new Gaussians directly into those empty regions.
 
-Tracking optimizes the pose, while mapping optimizes the Gaussian parameters. Tracking holds the map fixed, and mapping updates the Gaussians. GS-SLAM also separates pose and map variables, so separation alone does not distinguish SplaTAM.
+> 🔗 **Borrowed.** SplaTAM adapts PTAM's keyframe-based map-management principle (Klein & Murray, 2007) to an explicit Gaussian representation. Selective keyframe insertion—which PTAM used to expand a sparse landmark map—becomes the trigger for silhouette-guided densification in SplaTAM.
 
-> 🔗 **Borrowed.** SplaTAM applies PTAM's keyframe-based map-management principle (Klein & Murray, 2007) to a new representation. Selective keyframe insertion, which PTAM used to maintain its map, becomes the trigger for Gaussian densification in SplaTAM.
+The visual gain over earlier neural-field SLAM was stark: on Replica, SplaTAM achieved a PSNR of 34.11 dB compared with NICE-SLAM's 24.42 dB in the paper's benchmark table. Even so, in the CVPR paper's Limitations & Future Work section, Keetha noted sensitivity to motion blur, depth noise, and rapid rotations, as well as reliance on known camera intrinsics, dense depth sensors, and limited spatial scalability.
 
-On the Replica dataset SplaTAM recorded PSNR 34.11 dB. In the same paper's table, NICE-SLAM recorded 24.42 dB. The rendering-quality gap was clear.
-
-In the Limitations & Future Work section of the 2024 CVPR paper, Keetha listed sensitivity to motion blur, depth noise, and aggressive rotation. He also identified removal of the dependence on known intrinsics and dense depth, along with improved scalability, as future work.
-
-> 📜 **Prediction vs. outcome.** In SplaTAM's Limitations section (2024), Keetha identified sensitivity to motion blur, depth noise, and aggressive rotation, as well as dependence on known intrinsics and dense depth. Matsuki's MonoGS (CVPR 2024) removed the depth requirement with a monocular RGB system in the same year. Work on unknown intrinsics and large-scale operation remained in progress in 2024–2025.
+> 📜 **Prediction vs. outcome.** In SplaTAM's Limitations section (2024), Keetha singled out sensitivity to motion blur, depth noise, and aggressive rotation alongside reliance on known intrinsics, dense depth, and small-scale scenes. Later that same year, Matsuki's MonoGS (CVPR 2024) eliminated the depth-sensor requirement with a monocular RGB formulation, while removing calibrated intrinsics and scaling to large outdoor scenes remained active challenges through 2024–2025.
 
 ---
 
-## MonoGS: monocular RGB
+## 18.5 MonoGS: monocular RGB
 
-[Matsuki et al. 2024. MonoGS (CVPR)](https://arxiv.org/abs/2312.06741), by Hidenobu Matsuki at Imperial College's Dyson Robotics Lab and his colleagues, removed the depth-sensor requirement. It performs 3DGS SLAM from a single monocular RGB camera.
+[Matsuki et al. 2024. MonoGS (CVPR)](https://arxiv.org/abs/2312.06741), developed by Hidenobu Matsuki and colleagues at Imperial College's Dyson Robotics Lab, dropped the depth camera altogether, running 3DGS SLAM from a single monocular RGB stream.
 
-Scale is a central difficulty in the monocular setting: projective geometry alone does not determine absolute metric scale. Matsuki optimized Gaussian geometry directly and added an isotropy loss, but the monocular trajectory remains scale-free.
+Moving to monocular RGB reintroduces SLAM's classic scale ambiguity: projective geometry alone cannot fix metric scale. Matsuki optimized Gaussian geometry directly from multiview photometric residuals and added an **isotropy loss** to stabilize under-constrained primitives, though the resulting monocular trajectory remains defined only up to an arbitrary scale factor:
 
 $$\mathcal{L}_{iso} = \sum_k \| \mathbf{s}_k - \bar{s}_k \mathbf{1} \|_1$$
 
-Here $\mathbf{s}_k \in \mathbb{R}^3$ is the scale vector of the $k$-th Gaussian, and $\bar{s}_k = \frac{1}{3}\sum_j s_{k,j}$ is the mean scale across its three axes. Isotropy regularization discourages large differences between those axis lengths. It reduces elongation along the viewing direction when viewpoint constraints are insufficient, limiting artifacts that interfere with rendering and tracking.
+Here $\mathbf{s}_k \in \mathbb{R}^3$ denotes the axis scales of the $k$-th Gaussian and $\bar{s}_k = \frac{1}{3}\sum_j s_{k,j}$ their mean. Penalizing deviations from $\bar{s}_k$ keeps Gaussians from stretching into needle-like ellipsoids along viewing rays when parallax is weak, suppressing artifacts that otherwise destabilize both rendering and pose tracking.
 
-For tracking, Matsuki optimizes pose directly with the photometric loss between the Gaussian rendering and the observed image. New Gaussians at pixels with rendered depth are initialized around that depth with low variance; those without rendered depth are initialized around the rendered image's median depth with high variance. Multiview observations then refine these depth hypotheses. Neither initialization nor isotropy regularization recovers absolute metric scale.
+For tracking, MonoGS optimizes pose directly against the photometric difference between rendered and observed pixels. New Gaussians at pixels with valid rendered depth are initialized near that depth with tight variance, while uncovered pixels start at the frame's median rendered depth with high variance so subsequent views can triangulate and refine them—though neither mechanism supplies metric scale.
 
-> 🔗 **Distinction.** MonoGS uses neither a pretrained monocular depth predictor nor an external tracking module. The paper therefore does not support a direct MonoDepth2 lineage for its initialization.
+> 🔗 **Distinction.** MonoGS uses neither a pretrained monocular depth predictor nor an external tracking module. Its initialization therefore does not derive from the MonoDepth2 lineage.
 
-Matsuki worked at Imperial's Dyson Robotics Lab, as did Sucar on iMAP and Bloesch on CodeSLAM under Davison's supervision. MonoGS reflects the lab's transition from implicit MLPs to explicit Gaussian representations.
-
-In [the first arXiv version of MonoGS, released in 2023](https://arxiv.org/abs/2312.06741v1), average ATE RMSE on TUM-RGBD was 4.44 cm monocular and 1.58 cm RGB-D. Monocular trajectories were aligned to ground truth with scale adjustment; RGB-D trajectories used rigid alignment only. Rendering quality in the RGB-D setting on Replica reached an average PSNR of 37.50 dB, comparable to other same-generation GS-SLAM systems.
+Coming out of Davison's Dyson Robotics Lab—following Bloesch's CodeSLAM and Sucar's iMAP—MonoGS marked the group's pivot from latent codes and implicit MLPs to explicit Gaussian primitives. In [the initial 2023 arXiv release of MonoGS](https://arxiv.org/abs/2312.06741v1), average ATE RMSE on TUM-RGBD reached 4.44 cm in monocular mode (after scale alignment) and 1.58 cm in RGB-D mode (with rigid alignment only), while RGB-D rendering on Replica averaged 37.50 dB PSNR—squarely alongside peer GS-SLAM systems.
 
 ---
 
-## RTG-SLAM and real-time processing
+## 18.6 RTG-SLAM and real-time processing
 
-Speed remained a problem for GS-SLAM systems because neither GS-SLAM nor SplaTAM operated convincingly in real time. Peng Zhexi's group at Zhejiang University published [RTG-SLAM (SIGGRAPH 2024)](https://arxiv.org/abs/2404.19706) in 2024 with real-time performance as an explicit objective.
+Even with fast CUDA rasterization, neither GS-SLAM nor SplaTAM ran comfortably in real time across the full tracking-and-mapping loop. In 2024, Peng Zhexi's group at Zhejiang University tackled throughput head-on in [RTG-SLAM (SIGGRAPH 2024)](https://arxiv.org/abs/2404.19706).
 
-RTG-SLAM controls the number of Gaussians by optimizing only those that contribute substantially to the current camera view. It initializes Gaussians from surfels (surface elements), preserving geometry with fewer primitives. On the Replica dataset, it approached real-time throughput.
-
----
-
-## Representation choices after 3DGS
-
-The rapid growth of 3DGS papers after 2024 broadened the representation choices in SLAM mapping. TSDF and occupancy grids remain in use for embedded, planning, and safety applications, while NeRF and 3DGS are selected for different objectives. 3DGS papers emphasize rendering speed and explicit primitive updates, but that trend alone does not establish that the other representations left the mainstream.
-
-The shift reflected both representation design and compatibility with available hardware. GPU rasterizers are more highly optimized than GPU ray marchers, and 3DGS's ability to use the existing graphics pipeline accelerated its adoption relative to NeRF.
-
-> 🔗 **Borrowed.** 3DGS directly inherits differentiable scene optimization from NeRF. Mildenhall et al. (2020) established the use of gradients and a photometric loss to connect observations with rendering. Kerbl retained that framework while replacing the implicit MLP with explicit Gaussians.
-
-> 📜 **Prediction vs. outcome.** In §7.4, Limitations, of the 3DGS paper (2023), Kerbl et al. identified elongated artifacts and popping in sparsely observed regions, the absence of regularization, and memory consumption of more than 20 GB during training and several hundred MB when rendering large scenes. They proposed antialiasing, more principled culling, and point-cloud compression as future work. The [Compact 3DGS](https://arxiv.org/abs/2311.13681) line and [Niedermayr et al.](https://arxiv.org/abs/2401.02436) directly addressed compression in 2024. The original paper did not explicitly propose dynamic-scene extensions such as [4DGS](https://arxiv.org/abs/2310.08528) and [Deformable 3DGS](https://arxiv.org/abs/2309.13101), or generation and editing systems such as [DreamGaussian](https://arxiv.org/abs/2309.16653) and [GaussianEditor](https://arxiv.org/abs/2311.14521), but these became separate research directions around 2024.
+Rather than updating the entire primitive set, RTG-SLAM caps Gaussian count by optimizing only primitives that strongly affect the current view and initializing Gaussians from compact **surfels** (surface elements), preserving surface geometry with far fewer parameters. On Replica, that pruning brought the system close to genuine real-time throughput.
 
 ---
 
-## 🧭 Still open
+## 18.7 Representation choices after 3DGS
 
-Memory scaling. The number of Gaussians grows linearly with scene size. A few hundred thousand primitives may suffice for the indoor Replica dataset, but an outdoor city block can require tens of millions. Researchers are studying Gaussian pruning and level-of-detail hierarchies, but no consensus exists on managing the trade-off between memory and rendering quality at large scale. The Compact 3DGS line (Lee et al. 2024, Niedermayr et al. 2024) explores compression.
+The surge of 3DGS papers after 2024 widened SLAM's map-representation toolkit without rendering earlier structures obsolete. TSDFs and occupancy grids remain workhorses for embedded robotics, path planning, and safety-critical navigation, while NeRF and 3DGS serve goals centered on photorealistic rendering and dense appearance. Emphasizing 3DGS's speed and explicit updates captures its strength, not the disappearance of other map types.
 
-Semantic integration. In 2023, [LERF](https://arxiv.org/abs/2303.09553) combined language features with NeRF, while [LangSplat](https://arxiv.org/abs/2312.16084) combined them with a Gaussian representation, and later work coupled semantic Gaussians to SLAM. A common protocol that compares real-time updates, tracking quality, and semantic accuracy across scenes and hardware has not settled. Interference between jointly optimized semantic and geometric variables remains a central evaluation target.
+At the same time, 3DGS's rapid adoption owed as much to silicon as to geometry: modern GPUs are engineered around hardware rasterizers rather than volumetric ray marchers, so aligning scene representation with the graphics pipeline gave 3DGS a decisive engineering tailwind over NeRF.
 
-Dynamic scenes. 4DGS and Deformable 3DGS added a time dimension to Gaussians. In SLAM, dynamic objects move independently of the background and require separate treatment. GS-SLAM (Yan et al. 2023), SplaTAM (Keetha et al. 2024), and MonoGS (Matsuki et al. 2024) all retain a static-world assumption. Ch.15b separately traces SLAM's treatment of moving objects, from mask-based outlier rejection and multi-object factor graphs to deformable reconstruction.
+> 🔗 **Borrowed.** 3DGS directly inherits differentiable scene optimization from NeRF. Mildenhall et al. (2020) established how photometric gradients connect pixel observations to 3D scene parameters; Kerbl preserved that optimization engine while swapping the implicit MLP for explicit Gaussians.
 
-3DGS also left its initialization unresolved. Gaussians could originate from an SfM point cloud or a depth sensor, but placing them required a known pose, while estimating a pose required an existing map. Systems handled this dependency differently: RGB-D methods used measured depth, while MonoGS formed initial depth hypotheses internally without an external depth predictor. DUSt3R and its successors, covered in Ch.16, instead learned geometry directly rather than initializing it from an existing representation.
+> 📜 **Prediction vs. outcome.** In §7.4 (Limitations) of the 2023 3DGS paper, Kerbl et al. flagged needle-like artifacts and "popping" in sparsely observed regions, the lack of geometric regularization, and heavy memory footprints—over 20 GB during training and several hundred megabytes at render time on large scenes—pointing toward antialiasing, principled culling, and point-cloud compression. Compression soon materialized in [Compact 3DGS](https://arxiv.org/abs/2311.13681) and [Niedermayr et al.](https://arxiv.org/abs/2401.02436) in 2024, while directions scarcely anticipated in the original paper—dynamic extensions like [4DGS](https://arxiv.org/abs/2310.08528) and [Deformable 3DGS](https://arxiv.org/abs/2309.13101), or generative editing pipelines like [DreamGaussian](https://arxiv.org/abs/2309.16653) and [GaussianEditor](https://arxiv.org/abs/2311.14521)—quickly branched into major subfields of their own.
+
+---
+
+## Still open
+
+**Memory scaling.** Primitive counts grow roughly linearly with scene volume: a Replica room needs a few hundred thousand Gaussians, whereas an outdoor city block can demand tens of millions. Pruning heuristics, level-of-detail hierarchies, and compression lines such as Compact 3DGS (Lee et al. 2024, Niedermayr et al. 2024) explore ways to tame that footprint, yet no standard protocol balances memory against visual fidelity at large scale.
+
+**Semantic integration.** Following [LERF](https://arxiv.org/abs/2303.09553) (2023) for NeRF, [LangSplat](https://arxiv.org/abs/2312.16084) (2023) attached open-vocabulary language embeddings to 3D Gaussians, and subsequent SLAM prototypes followed suit. Even so, the field lacks shared benchmarks evaluating live updates, tracking accuracy, and semantic fidelity together, and joint optimization of geometric and semantic attributes can still degrade both.
+
+**Dynamic scenes.** While 4DGS and Deformable 3DGS added time to static splats, GS-SLAM (Yan et al. 2023), SplaTAM (Keetha et al. 2024), and MonoGS (Matsuki et al. 2024) all assumed a static world. Handling moving and deforming objects—from mask-based outlier rejection to multi-object factor graphs and non-rigid reconstruction—forms a distinct lineage traced in Chapter 19.
+
+3DGS also left initialization caught in a familiar loop: seeding Gaussians requires known camera poses or depth, yet estimating poses requires an existing map. RGB-D pipelines leaned on depth sensors, while MonoGS bootstrapped depth hypotheses internally without an external depth network. A separate line of research led by DUSt3R bypassed that chicken-and-egg problem altogether by learning to predict 3D geometry directly from raw images (→ Chapter 20).

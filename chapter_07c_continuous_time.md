@@ -1,103 +1,99 @@
-# Ch.7c — Continuous-Time Trajectory: 궤적을 시간의 연속 함수로
+# 10장 연속시간 궤적 추정
 
-Ch.7b의 preintegration은 IMU 측정을 이산 keyframe 사이의 상대 factor 하나로 압축했다. 이 압축은 keyframe이라는 단위가 있어야 성립한다. 두 keyframe 사이에 들어온 관성 측정 100개를 factor 하나로 묶으려면 factor 양 끝의 시각이 분명해야 한다. 셔터가 이미지 전체에 한 번에 열리고 닫히는 카메라라면 이 가정에 문제가 없다. 그렇지 않은 센서도 있다.
+preintegration은 수백 개의 IMU 측정을 이산적인 두 keyframe 사이의 상대 factor 하나로 압축해 냈다. 하지만 이 영리한 압축에는 keyframe이라는 단위가 또렷하게 존재한다는 전제가 깔려 있다. 양 끝의 시각이 명확히 찍히는 global shutter 카메라라면 문제될 것이 없다. 그러나 현실의 모든 센서가 그렇게 깔끔하게 한 순간을 포착하지는 않는다.
 
-rolling shutter 카메라로 찍은 이미지 한 장은 행마다 다른 시각의 자세로 투영된다. spinning LiDAR가 한 바퀴를 도는 사이에도 차량은 움직인다. IMU와 카메라도 서로 다른 주기로 측정값을 낸다. 2012년 ICRA에서 [Paul Furgale, Timothy Barfoot, Gabe Sibley](https://doi.org/10.1109/ICRA.2012.6225005)는 자세를 시간 t의 함수로 두고 이 센서들의 측정을 하나의 확률적 batch 추정 문제로 묶었다. 논문 제목은 "Continuous-time batch estimation using temporal basis functions"다. 세 사람은 유한한 개수의 temporal basis function(시간 기저 함수) 계수를 상태로 추정했다.
+소비자용 rolling shutter 카메라는 이미지 한 장 안에서도 위쪽 행과 아래쪽 행이 서로 다른 시각에 찍힌다. 회전하는 spinning LiDAR가 한 바퀴를 도는 사이에도 차량은 계속 앞으로 나아간다. 게다가 IMU, 카메라, LiDAR는 제각기 다른 주기로 데이터를 쏟아 낸다. 2012년 ICRA에서 [Paul Furgale, Timothy Barfoot, Gabe Sibley](https://doi.org/10.1109/ICRA.2012.6225005)는 아예 로봇의 자세를 시간 $t$의 연속 함수로 세워 이 모든 비동기 측정을 하나의 확률적 batch 추정 문제로 엮었다. "Continuous-time batch estimation using temporal basis functions"라는 제목의 이 논문에서 세 사람은 유한한 개수의 시간 기저 함수(temporal basis function) 계수를 상태 변수로 추정했다.
 
-그 뒤 continuous-time trajectory는 rolling shutter 카메라, spinning LiDAR, event camera를 다루는 데 널리 쓰였다. 이 센서들은 한 프레임이나 한 scan 안에서도 측정 시각이 다르다. 앞 장의 visual-inertial 방법은 대부분 이산 keyframe을 바탕으로 했다.
-
----
-
-## 7c.1 Discrete-time의 한계
-
-Ch.7b의 preintegration은 IMU가 카메라보다 자주 측정한다는 문제를 다뤘다. 시간을 다루는 데에는 문제가 더 있다.
-
-**Rolling shutter.** 소비자용 CMOS 카메라는 한 프레임을 위에서 아래로 일정 시간에 걸쳐 읽는다. 카메라가 빠르게 움직이면 첫 행과 마지막 행은 서로 다른 자세에서 찍힌다. Ch.8의 DSO와 LSD-SLAM은 프레임마다 자세가 하나라고 가정하므로 이 왜곡을 모델에 넣지 않았다. continuous-time 궤적을 쓰면 행마다 실제 노출 시각의 자세를 구할 수 있다.
-
-**Spinning LiDAR의 motion distortion.** Ch.17에서 다루는 Velodyne HDL-64E는 기본 설정에서 10 Hz로 한 바퀴를 돈다. 차량이 10 m/s로 달리면 한 scan을 얻는 100 ms 동안 1 m를 이동한다. 그래서 한 scan의 점들은 저마다 다른 자세에서 찍힌다. LOAM은 이 왜곡을 odometry 루프 안에서 간접적으로 보정했다. 더 일반적인 방법은 점마다 그 점이 찍힌 순간의 자세를 구할 수 있는 궤적 표현이다.
-
-**Event camera.** Ch.18에서 다루는 DVS는 픽셀마다 μs 단위로 비동기 이벤트를 낸다. 이벤트에는 프레임이 없다. Mueggler, Gallego, Scaramuzza는 [RSS 2015 논문](https://www.roboticsproceedings.org/rss11/p36.pdf)에서 궤적을 SE(3) 위의 cubic B-spline으로 표현해 event 기반 궤적 추정을 정식화했다.
-
-**주기가 다른 여러 센서.** 고속 IMU를 측정 주기가 다른 여러 센서와 함께 쓸 때도 문제가 생긴다. 한 시스템에 200 Hz IMU, 20 Hz 카메라, 10 Hz LiDAR가 들어온다고 하자. 측정 시각마다 이산 상태 노드를 두면 상태 수가 측정 수만큼 늘고, factor graph가 지나치게 커진다.
-
-이 문제들에서 측정 시각 $t_i$는 센서가 정한다. 관측은 아무 때나 들어오고, 추정기는 그 시각의 자세를 알아야 한다. continuous-time 표현은 측정 시각과 추정 시각, 조회 시각을 서로 떼어 내 이 문제를 다룬다.
+이 발상은 이후 rolling shutter 카메라, spinning LiDAR, event camera처럼 한 프레임이나 한 scan 안에서도 측정 시각이 계속 변하는 센서들을 다루는 표준 도구로 번져 나갔다. 이산 keyframe을 중심에 둔 visual-inertial preintegration(→ 9장)과 나란히, 시간을 연속으로 모델링하는 또 하나의 축이 세워진 것이다.
 
 ---
 
-## 7c.2 Parametric spline
+## 10.1 Discrete-time의 한계
 
-Furgale·Barfoot·Sibley가 2012년에 고른 도구는 B-spline이었다. 궤적을 basis function의 합 $\mathbf{p}(t) = \sum_k \Psi_k(t)\,\mathbf{c}_k$로 쓰고, 계수 $\mathbf{c}_k$를 최적화 변수로 둔다. B-spline은 local support(국소 지지) 성질이 있다. 한 시점 t에서 0이 아닌 basis는 몇 개(보통 4개)뿐이다. 그래서 아무 시각 $t_i$의 자세든 일정한 비용으로 구할 수 있고, factor graph의 sparsity도 유지된다.
+preintegration이 해결한 것은 IMU가 카메라보다 훨씬 자주 측정값을 낸다는 주기 차이였다. 하지만 실제 다중 센서 SLAM에서 시간과 얽힌 골칫거리는 거기서 그치지 않는다.
 
-> 🔗 **차용.** B-spline의 수학은 [de Boor (1978) *A Practical Guide to Splines*](https://link.springer.com/book/10.1007/978-1-4612-6333-3)에 정리되어 있다. Furgale은 이를 로봇 자세 궤적에 쓰고, 계수를 최적화 변수로 두었다.
+고전적인 이산 SLAM은 추정기가 정한 keyframe 시각에 맞추어 상태 노드를 세운다. 그러나 **Rolling shutter** 카메라는 한 프레임을 위에서 아래로 훑으며 읽어 들이기 때문에 카메라가 빠르게 회전하면 첫 행과 마지막 행이 서로 다른 자세에서 노광된다. DSO나 LSD-SLAM처럼 프레임당 자세를 하나만 두는 모델은 이 왜곡을 담아내지 못한다(→ 11장). **Spinning LiDAR의 motion distortion**도 같은 뿌리에서 나온다. 예를 들어 Velodyne HDL-64E가 10 Hz로 회전할 때 차량이 10 m/s로 달리면, 한 scan을 채우는 100 ms 동안 차가 1 m를 이동해 점마다 찍힌 자세가 달라진다. LOAM은 odometry 루프 안에서 이 왜곡을 간접적으로 펴 주었지만, 더 일반적인 해법은 각 점의 측정 시각에 해당하는 자세를 직접 조회할 수 있는 연속 궤적이다.
 
-계수 간격을 좁게 잡으면 과적합이 생긴다. 넓게 잡으면 빠른 움직임을 놓친다. 간격은 경험으로 골랐다. 또 선형 B-spline을 SE(3)에 그대로 적용하면 보간 결과가 SE(3)를 벗어난다.
+아예 프레임이라는 개념이 없는 센서도 있다. **Event camera**(DVS)는 픽셀 밝기가 변할 때마다 μs 단위로 비동기 이벤트를 뿜어 낸다. Mueggler, Gallego, Scaramuzza가 [RSS 2015 논문](https://www.roboticsproceedings.org/rss11/p36.pdf)에서 궤적을 SE(3) 위의 cubic B-spline으로 세워 event 기반 궤적 추정을 정식화한 것도 프레임 단위가 통하지 않았기 때문이다. 여기에 200 Hz IMU, 20 Hz 카메라, 10 Hz LiDAR처럼 **주기가 다른 여러 센서**를 함께 묶는 상황까지 겹치면 이산 그래프는 한계에 부딪힌다. 측정이 들어오는 시각마다 상태 노드를 세우면 그래프가 감당할 수 없이 커지기 때문이다.
 
-2013년 BMVC에서 [Steven Lovegrove, Alonso Patron-Perez, Gabe Sibley](https://doi.org/10.5244/C.27.93)는 "Spline Fusion"이라는 이름으로 cumulative B-spline을 제안했다. basis를 누적 곱 꼴 $T(t) = \prod_k \exp\bigl(\tilde\Psi_k(t) \log(T_k T_{k-1}^{-1})\bigr) \cdot T_0$로 다시 쓰면 각 인자가 Lie group 안에 머문다. 이 꼴은 그 뒤 rolling shutter, event camera, VIO 논문에서 널리 쓰였다. Basalt와 Mueggler의 event 궤적 추정, [Kerl·Stückler·Cremers의 ICCV 2015 dense rolling shutter RGB-D 추적](https://doi.org/10.1109/ICCV.2015.261)이 cumulative B-spline을 사용했다.
-
-parametric spline은 계산이 가볍고 코드가 간단해서 실시간 VIO와 event 시스템에서 꾸준히 쓰였다. motion prior를 따로 두지 않으면, 관측이 드문 구간이 얼마나 매끄러운지는 basis와 제어점이 정한다. 계수나 미분에 prior를 더할 수도 있다. 다음 절의 GP 방식은 궤적의 사전 분포에서 출발한다.
+이 모든 문제의 본질은 같다. 측정 시각 $t_i$를 추정기가 아니라 센서가 결정한다는 점이다. 연속시간 표현은 측정 시각, 상태 추정 시각, 궤적 조회 시각을 서로 분리해 이 얽힘을 풀어낸다.
 
 ---
 
-## 7c.3 SDE 기반 GP와 STEAM
+## 10.2 Parametric spline
 
-2014년 Toronto의 Barfoot 그룹은 다른 방식을 내놓았다. [Barfoot, Tong, Särkkä의 RSS 2014 논문 "Batch Continuous-Time Trajectory Estimation as Exactly Sparse Gaussian Process Regression"](https://www.roboticsproceedings.org/rss10/p01.pdf)은 궤적을 Gaussian process(가우시안 과정)로 둔다. 궤적의 사전 분포는 kernel $\mathcal{K}(t, t')$로 주어진다. 관측이 들어오면 posterior를 조건부 Gaussian으로 구한다.
+2012년 Furgale·Barfoot·Sibley가 연속 궤적을 세우기 위해 꺼내 든 도구는 B-spline이었다. 궤적을 기저 함수의 합 $\mathbf{p}(t) = \sum_k \Psi_k(t)\,\mathbf{c}_k$로 표현하고, 제어점 계수 $\mathbf{c}_k$를 최적화 변수로 잡는 방식이다. B-spline의 가장 큰 무기는 local support(국소 지지) 성질이다. 임의의 시각 $t$에서 0이 아닌 값을 갖는 기저 함수가 보통 4개 안팎으로 제한되므로, 어느 시각 $t_i$의 자세든 상수 시간 비용으로 조회할 수 있을 뿐 아니라 factor graph의 희소성(sparsity)도 고스란히 지켜진다.
 
-GP를 그대로 쓰면 문제가 있다. 관측 수 $N$이 크면 kernel matrix $K$의 역행렬을 구하는 비용이 $O(N^3)$이다. Barfoot, Tong, Särkkä는 이 비용을 피할 수 있는 kernel 부류를 보였다. 궤적이 linear time-invariant stochastic differential equation(선형 시불변 확률 미분 방정식) $\dot{\mathbf{x}}(t) = A\mathbf{x}(t) + L\mathbf{w}(t)$의 해로 정의된다고 하자. 그러면 kernel $K$의 역행렬 $K^{-1}$은 block-tridiagonal이 된다. factor graph로 보면 연속한 상태 노드 사이에만 binary factor가 있고, 멀리 떨어진 노드 사이에는 factor가 없다.
+다만 제어점 간격을 사람이 경험적으로 골라야 한다는 부담이 있었다. 간격이 너무 좁으면 잡음에 과적합되고, 너무 넓으면 급격한 기동을 따라가지 못한다. 게다가 유클리드 공간의 선형 B-spline을 그대로 적용하면 보간된 자세가 SE(3) 다양체를 벗어나 버린다.
 
-> 🔗 **차용.** SDE와 GP의 관계는 [Särkkä 2013 *Bayesian Filtering and Smoothing*](https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf)에 정리되어 있다. Barfoot 그룹은 이 관계를 SLAM에 가져와, SDE에서 유도한 GP motion prior를 factor graph로 표현했다. Rasmussen-Williams의 GP 교과서는 kernel을 닫힌 꼴로 쓴다. 실시간 SLAM에는 희소한 역행렬이 필요하다. Särkkä의 SDE 표현으로 이 둘을 이을 수 있었다.
+이 걸림돌은 이듬해 BMVC 2013에서 해결됐다. [Steven Lovegrove, Alonso Patron-Perez, Gabe Sibley](https://doi.org/10.5244/C.27.93)는 "Spline Fusion"이라는 이름으로 cumulative B-spline을 제안했다. 기저 함수를 누적 곱 형태인 $T(t) = \prod_k \exp\bigl(\tilde\Psi_k(t) \log(T_k T_{k-1}^{-1})\bigr) \cdot T_0$로 다시 쓰면 각 항이 지수 사상을 통해 Lie group 안에 안전하게 머문다. 이 우아한 공식은 곧 rolling shutter, event camera, VIO 연구의 단골 도구가 됐다. Basalt와 Mueggler의 event 궤적 추정뿐 아니라 [Kerl·Stückler·Cremers의 ICCV 2015 dense rolling shutter RGB-D 추적](https://doi.org/10.1109/ICCV.2015.261)도 모두 이 cumulative B-spline 위에 세워졌다.
 
-이 연구는 **STEAM**(Simultaneous Trajectory Estimation and Mapping)으로 이어졌다. 2015년 IROS에서 [Sean Anderson과 Barfoot의 "Full STEAM Ahead"](https://doi.org/10.1109/IROS.2015.7353368)는 SE(3) 위의 constant-velocity prior로 STEAM을 정식화했다. 상태는 자세와 body-centric 속도로 이루어진다. 속도는 white noise를 적분한 만큼 변하고, 자세는 그 속도를 따라 움직인다. 같은 해 Anderson, Barfoot, Tong, Särkkä는 비선형 운동 모델로 넓힌 저널 논문 ["Batch nonlinear continuous-time trajectory estimation as exactly sparse Gaussian process regression"](https://doi.org/10.1007/s10514-015-9455-y)을 *Autonomous Robots*에 실었다.
+parametric spline은 계산이 가볍고 구현이 단순해 실시간 VIO와 event 시스템에서 오래 사랑받았다. 다만 별도의 motion prior를 얹지 않는 한 관측이 드문 구간의 매끄러움은 기저 함수와 제어점 배치에 맡겨야 한다(물론 계수나 미분에 prior를 추가할 수는 있다). 바로 이 지점에서 궤적의 사전 분포 자체를 출발점으로 삼는 Gaussian Process(GP) 방식과 갈라진다(→ §10.3).
 
-STEAM에서는 GP 보간도 쓸 수 있다. 제어점(control pose)을 몇 개만 두고, 제어점 사이 아무 시각의 자세를 posterior mean으로 구한다. spinning LiDAR의 한 scan 안에서 점 10,000개가 각자 다른 시각에 찍혀도 제어점은 scan당 하나만 둔다. 그래서 추정할 상태 수는 관측 수보다 훨씬 적다. 다만 관측마다 residual을 계산해 더하는 일은 여전히 해야 한다.
-
-[STEAM 오픈소스](https://github.com/utiasASRL/steam) 저장소는 2015년에 시작됐고, 커밋을 가장 많이 남긴 사람은 Sean Anderson이다. Dellaert 그룹의 GTSAM에는 2026년에 GP motion prior가 들어갔다.
+> 🔗 **차용.** B-spline의 수학적 기초는 [de Boor (1978) *A Practical Guide to Splines*](https://link.springer.com/book/10.1007/978-1-4612-6333-3)에 집대성되어 있다. Furgale 등은 이 고전적인 스플라인 보간을 로봇 자세 궤적으로 옮겨 와 제어점 계수를 상태 추정 변수로 삼았다.
 
 ---
 
-## 7c.4 Lie group 위의 continuous-time
+## 10.3 SDE 기반 GP와 STEAM
 
-parametric 방식이든 nonparametric 방식이든 SLAM에서는 SE(3) 위의 궤적이 필요하다. Euclidean 공간의 spline이나 GP를 SE(3)로 옮기려면 손을 더 써야 한다. 흔히 tangent space에서 선형 보간한 뒤 exponential map으로 SE(3)에 되돌린다.
+2014년 토론토 대학의 Barfoot 그룹은 spline과는 결이 다른 비모수적 해법을 들고 나왔다. [Barfoot, Tong, Särkkä의 RSS 2014 논문 "Batch Continuous-Time Trajectory Estimation as Exactly Sparse Gaussian Process Regression"](https://www.roboticsproceedings.org/rss10/p01.pdf)은 궤적 전체를 하나의 Gaussian Process(가우시안 과정)로 모델링했다. 커널 $\mathcal{K}(t, t')$로 궤적의 사전 분포를 깔아 두고, 센서 관측이 들어오면 조건부 가우시안 분포로 사후 궤적(posterior)을 구하는 접근이다.
 
-B-spline 쪽에서는 TUM의 Sommer, Usenko, Schubert, Demmel, Cremers가 Lie group cumulative B-spline의 시간 미분을 점화식으로 다시 유도했다. 논문은 ["Efficient Derivative Computation for Cumulative B-Splines on Lie Groups"(CVPR 2020)](https://arxiv.org/abs/1911.08860)이다. 기존 방식은 spline 차수 $k$에 대해 $O(k^2)$번의 행렬 연산이 필요했는데, 이 방식은 $O(k)$번으로 줄였다. SO(3) spline에서는 제어점으로 미분한 Jacobian도 해석적으로 구했다. 논문은 camera-IMU calibration 실험에서 계산 시간이 줄어드는 것을 보였다.
+원래 GP 회귀에는 치명적인 약점이 있다. 관측 수 $N$이 늘어나면 $N \times N$ 커널 행렬 $K$의 역행렬을 구하는 데 $O(N^3)$ 비용이 들어 실시간 SLAM에 쓸 수 없다는 점이다. Barfoot, Tong, Särkkä는 특정 조건을 만족하는 커널 부류가 이 병목을 완벽히 우회한다는 사실을 짚어 냈다. 궤적이 선형 시불변 확률 미분 방정식(linear time-invariant SDE) $\dot{\mathbf{x}}(t) = A\mathbf{x}(t) + L\mathbf{w}(t)$의 해로 정의되면, 정밀도 행렬 $K^{-1}$이 정확히 block-tridiagonal 형태를 띤다. 이를 factor graph 언어로 번역하면 인접한 상태 노드 사이에만 binary factor가 걸리고 멀리 떨어진 노드 사이에는 연결이 없는 희소한 사슬 구조가 된다.
 
-GP 쪽에서는 Anderson과 Barfoot이 "local variable" 방식을 썼다. 각 제어 자세 $T_k$ 근처에서 local perturbation $\xi_k(t) = \log(T(t)\,T_k^{-1})$를 정의하고, 이 변수에 GP를 둔다. SE(3) 전체에서 GP를 직접 정의하기는 어렵다. 제어점 근처의 tangent space에서는 Euclidean GP를 쓸 수 있다. 제어점 사이를 넘어갈 때 adjoint가 쓰이는데, 그 수학은 Ch.7b preintegration의 on-manifold 논의와 같다.
+이 이론은 곧 **STEAM**(Simultaneous Trajectory Estimation and Mapping)이라는 구체적인 프레임워크로 열매를 맺었다. 2015년 IROS에서 [Sean Anderson과 Barfoot이 발표한 "Full STEAM Ahead"](https://doi.org/10.1109/IROS.2015.7353368)는 SE(3) 위에서 constant-velocity prior를 세워 STEAM을 정식화했다. 상태는 자세와 body-centric 속도로 이루어지며, 속도는 백색 잡음의 적분만큼 흔들리고 자세는 그 속도를 따라 흘러간다. 같은 해 Anderson, Barfoot, Tong, Särkkä는 이 틀을 비선형 운동 모델로까지 넓힌 저널 논문 ["Batch nonlinear continuous-time trajectory estimation as exactly sparse Gaussian process regression"](https://doi.org/10.1007/s10514-015-9455-y)을 *Autonomous Robots*에 실었다.
 
-> 🔗 **차용.** [Anderson과 Barfoot의 IROS 2015 논문](https://doi.org/10.1109/IROS.2015.7353368)은 Lie group의 local variable에 GP를 적용하는 방법을 정리했다. 이웃한 두 제어점 사이에서만 GP를 쓰고, 제어점을 넘어갈 때 adjoint로 보정한다. 이 방법은 그 뒤 여러 continuous-time LiDAR·VIO 논문에서 쓰였다.
+STEAM의 또 다른 장점은 GP 보간이다. 몇 개의 제어점(control pose)만 상태 노드로 두고, 그 사이의 임의 시각 자세는 GP posterior mean으로 즉시 보간해 꺼내 쓸 수 있다. 예를 들어 spinning LiDAR 한 scan에 점 10,000개가 각기 다른 타임스탬프를 달고 들어와도 제어점은 scan당 하나만 세우면 된다(물론 10,000개 점 각각의 residual을 계산해 더하는 일은 여전히 필요하다).
 
-여기서 비교한 spline 구현과 GP 구현은 motion prior를 두는 방식이 다르다. spline에서는 계수를 직접 추정할 수도 있고, 계수나 미분에 별도 사전 분포를 줄 수도 있다. GP에는 SDE에서 유도한 constant-velocity나 white-jerk 같은 사전 분포가 들어 있어서, 관측이 드문 구간을 prior가 채운다. spline에서는 이웃한 관측과 basis가 그 구간의 모양을 정한다. 둘을 결합하려는 시도(Johnson et al. 2020)도 있었다. 실무에서는 응용에 따라 한쪽을 고른다.
+[STEAM 오픈소스](https://github.com/utiasASRL/steam) 저장소는 2015년에 문을 열었고 가장 많은 커밋을 남긴 주역은 Sean Anderson이었다. 한편 Dellaert 그룹의 GTSAM에도 2026년에 GP motion prior가 공식 통합됐다.
 
----
-
-## 7c.5 응용: LiDAR, VIO, event camera
-
-continuous-time 궤적은 처음에는 calibration에 주로 쓰였다. 2022년 무렵에는 다음 분야에서 자주 쓰였다.
-
-**LiDAR motion distortion.** MINES ParisTech와 Kitware의 Pierre Dellenbach 등은 [CT-ICP](https://arxiv.org/abs/2109.12979)(arXiv 2021, ICRA 2022)에서 scan마다 시작 자세와 끝 자세를 두고 그 사이를 보간했다. 회전은 slerp로, 위치는 선형으로 보간한다. 앞 scan의 끝 자세와 다음 scan의 시작 자세는 같지 않아도 되고, 둘이 가깝도록 하는 제약을 둔다. 간단한 continuous-time 모델이다. 논문은 KITTI, NCLT, Newer College를 포함한 일곱 개 데이터셋에서 실험했다. KITTI odometry leaderboard에서는 코드를 공개한 방법 가운데 1위(평균 상대 이동 오차 0.59%)라고 보고했다.
-
-> 🔗 **차용.** CT-ICP는 [Besl·McKay 1992 ICP](https://graphics.stanford.edu/courses/cs164-09-spring/Handouts/paper_icp.pdf)에서 이어진 ICP의 point-to-plane 목적함수에 scan 안의 보간을 더했다.
-
-같은 해 Toronto 그룹의 Keenan Burnett, Yuchen Wu 등은 ["Are We Ready for Radar to Replace Lidar in All-Weather Mapping and Localization?"](https://arxiv.org/abs/2203.10174)(RSS 2022)에서 radar만 쓰는 위치 추정, LiDAR만 쓰는 위치 추정, radar scan을 LiDAR 지도에 맞추는 위치 추정을 비교했다. 세 파이프라인의 odometry는 모두 Anderson과 Barfoot의 GP motion prior를 쓰는 continuous-time ICP였다. 같은 그룹의 Wu 등은 ["Picking up Speed"](https://doi.org/10.1109/LRA.2022.3226068)(RA-L 2023)에서 점마다 Doppler 속도를 함께 내는 Aeva FMCW LiDAR에 이 방법을 적용했고, [STEAM-ICP](https://github.com/utiasASRL/steam_icp) 코드를 공개했다. 이 속도 측정은 STEAM의 속도 상태와 바로 대응한다.
-
-**Rolling shutter VIO.** [Kerl 등의 rolling shutter RGB-D 추적](https://doi.org/10.1109/ICCV.2015.261)(ICCV 2015)은 이미지의 행마다 그 행이 찍힌 시각의 자세를 B-spline 궤적에서 구했다. [Ctrl-VIO](https://doi.org/10.1109/LRA.2022.3202349)(RA-L 2022)는 B-spline 궤적으로 같은 방식을 rolling shutter VIO에 썼다. 공개 저장소 README는 spline 모듈을 Basalt에서 가져와 고쳤다고 밝힌다. global shutter를 가정하는 VIO와 달리 rolling shutter를 모델 안에서 처리한다.
-
-**Event camera.** Ch.18에서 2010년대 event camera 연구의 어려움을 다룬다. 2020년대에는 continuous-time 궤적을 쓰는 event SLAM이 여럿 나왔다. 이 시스템들은 이벤트마다 μs 단위 타임스탬프로 B-spline이나 GP에서 그 순간의 자세를 구하고, event와 이미지의 일관성으로 residual을 계산한다.
+> 🔗 **차용.** SDE와 GP의 등가 관계는 [Särkkä 2013 *Bayesian Filtering and Smoothing*](https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf)에 정리되어 있었다. Rasmussen–Williams의 표준 GP 교과서가 닫힌 꼴의 커널을 주로 다루는 것과 달리, 실시간 SLAM에는 역행렬의 희소성이 절실했다. Barfoot 그룹은 Särkkä의 SDE 표현을 빌려와 GP motion prior를 곧장 희소 factor graph로 번역하는 다리를 놓았다.
 
 ---
 
-## 📜 예언 vs 실제
+## 10.4 Lie group 위의 continuous-time
 
-> 📜 **예언 vs 실제.** Furgale·Barfoot·Sibley의 2012년 ICRA 논문은 고속 IMU와 sweeping laser가 discrete-time state를 비대하게 만드는 문제를 출발점으로 삼았고, 기존 rolling-shutter 보간 연구도 관련 사례로 언급했다. 논문이 직접 검증한 것은 camera–IMU calibration이었다. 이후 Barfoot·Tong·Särkkä(2014)가 SDE 기반 sparse GP를 정식화했다. rolling-shutter VIO와 event SLAM에서도 continuous-time trajectory가 쓰였다. 이 둘은 2012년 논문의 Future Work와는 따로 이어진 연구다. 그동안 visual SLAM에서는 이산 keyframe 기반 ORB-SLAM이 주류가 됐고, continuous-time 궤적은 주로 특수 센서에 쓰였다.
+parametric spline을 쓰든 nonparametric GP를 쓰든, 실제 로봇 궤적을 다루려면 결국 SE(3) 다양체 위에서 계산해야 한다. 유클리드 공간의 보간 공식은 회전 군의 제약을 지키지 못하기 때문에, 대개 접공간(tangent space)에서 선형 연산을 수행한 뒤 지수 사상으로 SE(3)에 되돌리는 정교한 장치가 필요하다.
 
----
+B-spline 진영에서는 뮌헨 공대(TUM)의 Sommer, Usenko, Schubert, Demmel, Cremers가 ["Efficient Derivative Computation for Cumulative B-Splines on Lie Groups"(CVPR 2020)](https://arxiv.org/abs/1911.08860)을 통해 계산 병목을 뚫었다. Lie group cumulative B-spline의 시간 미분을 점화식으로 재유도해, spline 차수 $k$에 대해 $O(k^2)$번 들던 행렬 연산을 $O(k)$번으로 떨어뜨린 것이다. SO(3) spline에서는 제어점에 대한 미분 Jacobian까지 해석적으로 구해 내어 camera-IMU calibration 실험에서 눈에 띄는 속도 향상을 입증했다.
 
-## 🧭 아직 열린 것
+GP 진영에서는 Anderson과 Barfoot이 "local variable" 전략으로 해답을 내놓았다. 각 제어 자세 $T_k$ 근방에서 국소 섭동 $\xi_k(t) = \log(T(t)\,T_k^{-1})$를 정의하고, SE(3) 전체가 아닌 이 국소 접공간 위에서 유클리드 GP를 돌리는 방법이다. 인접한 두 제어점 구간을 건너갈 때는 adjoint 행렬로 좌표를 이어 주는데, 이 다양체 변환의 수학적 골격은 앞 장에서 본 on-manifold preintegration과 정확히 맞닿아 있다(→ 9장).
 
-**학습 기반 continuous-time prior.** SDE에서 얻는 motion prior에는 constant-velocity나 white-jerk 같은 물리 가정이 들어 있다. 실제 주행·보행·UAV 궤적은 이 가정을 어기는 경우가 많다. 2023–2024년에는 neural SDE나 neural ODE로 데이터 기반 prior를 학습해 continuous-time factor graph에 넣으려는 시도가 나왔다. 실시간으로 도는 희소 구조를 유지하면서 학습한 prior를 쓰는 일은 남은 과제다.
+결국 spline과 GP의 차이는 motion prior를 다루는 태도에서 가장 선명하게 드러난다. spline은 기저 함수와 제어점 간격, 혹은 별도로 얹은 정규화 항이 빈 구간의 형태를 정한다. 반면 GP는 SDE에서 직접 유도한 constant-velocity나 white-jerk 같은 물리적 사전 분포가 내장되어 있어 관측이 뜸한 구간을 확률적으로 메워 준다. 두 접근을 결합하려는 시도(Johnson et al. 2020)도 있었지만, 실제 현장에서는 구현의 단순함과 물리적 사전 분포의 엄밀함 사이에서 응용 목적에 맞게 한쪽을 택하는 편이다.
 
-**VIO와 continuous-time의 통합.** Ch.7b의 preintegration은 keyframe 기반 VIO의 사실상 표준이다. continuous-time 궤적이 preintegration을 대신할 수 있는지, 둘을 섞는 편이 나은지는 아직 가려지지 않았다. Le Gentil, Vidal-Calleja, Huang의 [GP 기반 preintegration](https://doi.org/10.1109/LRA.2020.2970940)(RA-L 2020)이 둘을 이으려 했다. 그러나 ORB-SLAM3나 VINS-Fusion처럼 널리 쓰이는 시스템은 여전히 이산 preintegration을 쓴다.
-
-**임베디드 장치용 온라인 sliding window.** STEAM과 B-spline 기반 시스템은 제어점이 쌓이면 최적화가 느려진다. marginalization으로 과거 제어점을 제거하면서 continuous-time posterior의 일관성을 유지하기는 까다롭다.
+> 🔗 **차용.** [Anderson과 Barfoot의 IROS 2015 논문](https://doi.org/10.1109/IROS.2015.7353368)은 Lie group의 국소 변수에 GP를 얹는 실용적 해법을 정립했다. 두 제어점 사이 구간에서만 국소 GP를 평가하고 경계를 넘을 때 adjoint로 변환을 잇는 이 기법은 이후 수많은 연속시간 LiDAR·VIO 시스템의 표준 패턴이 됐다.
 
 ---
 
-continuous-time 표현과 Ch.7b의 이산 preintegration은 함께 쓸 수 있다. 앞에서 본 Le Gentil 등의 GP 기반 preintegration이 그런 예다. Ch.8은 다시 카메라로 돌아가 direct photometric 방법과 DSO, VI-DSO를 다룬다.
+## 10.5 응용: LiDAR, VIO, event camera
+
+초기 연속시간 궤적 추정은 주로 오프라인 센서 calibration에 머물렀다. 그러나 2022년 무렵에 이르러서는 실시간 주행과 고속 비전이라는 거친 현장으로 무대를 넓혔다.
+
+**LiDAR motion distortion.** MINES ParisTech와 Kitware의 Pierre Dellenbach 등이 발표한 [CT-ICP](https://arxiv.org/abs/2109.12979)(arXiv 2021, ICRA 2022)는 복잡한 spline 대신 scan마다 시작 자세와 끝 자세 두 개만 두고 그 사이를 보간하는 영리한 타협을 택했다(회전은 slerp, 위치는 선형 보간). 앞 scan의 끝 자세와 다음 scan의 시작 자세를 굳이 딱 붙이지 않고 느슨한 근접 제약만 걸어 두는 이 간결한 연속시간 모델은 KITTI, NCLT, Newer College 등 7개 데이터셋에서 위력을 발휘했고, KITTI odometry 리더보드에서 코드 공개 방법 중 1위(평균 상대 이동 오차 0.59%)를 차지했다.
+
+같은 해 토론토 그룹의 Keenan Burnett, Yuchen Wu 등은 ["Are We Ready for Radar to Replace Lidar in All-Weather Mapping and Localization?"](https://arxiv.org/abs/2203.10174)(RSS 2022)에서 radar 단독, LiDAR 단독, 그리고 radar-to-LiDAR 지도 정합을 나란히 비교하며 세 파이프라인의 odometry 모두에 Anderson–Barfoot의 GP motion prior 기반 연속시간 ICP를 심었다. 이어 Wu 등은 ["Picking up Speed"](https://doi.org/10.1109/LRA.2022.3226068)(RA-L 2023)에서 점마다 Doppler 속도까지 함께 뱉어 내는 Aeva FMCW LiDAR에 이 틀을 적용하고 [STEAM-ICP](https://github.com/utiasASRL/steam_icp) 코드를 공개했는데, 센서가 재는 Doppler 속도가 STEAM 상태 벡터의 속도 변수와 정확히 맞물리는 묘미를 보여 주었다.
+
+**Rolling shutter VIO.** [Kerl 등의 rolling shutter RGB-D 추적](https://doi.org/10.1109/ICCV.2015.261)(ICCV 2015)이 B-spline 궤적으로 이미지 행별 노출 시각의 자세를 찾아낸 데 이어, [Ctrl-VIO](https://doi.org/10.1109/LRA.2022.3202349)(RA-L 2022)는 Basalt의 spline 모듈을 개조해 rolling shutter VIO를 구현했다. global shutter 가정이 깨지는 고속 기동에서도 rolling shutter 왜곡을 우회하지 않고 모델 내부에서 직접 풀어낸 사례다.
+
+**Event camera.** 2010년대에 센서의 난해함 때문에 고전하던 event camera 연구(→ 22장) 역시 2020년대에 접어들어 연속시간 궤적을 발판 삼아 활로를 열었다. 비동기 이벤트의 μs 단위 타임스탬프를 B-spline이나 GP에 그대로 질의해 순간 자세를 얻고, event와 영상 사이의 일관성으로 residual을 세우는 event SLAM이 잇따라 등장했다.
+
+> 🔗 **차용.** CT-ICP는 [Besl·McKay 1992 ICP](https://graphics.stanford.edu/courses/cs164-09-spring/Handouts/paper_icp.pdf)에서 물려받은 point-to-plane 정합 목적함수에 scan 내부의 연속 시간 보간을 얹어 고속 주행의 왜곡을 흡수했다.
+
+---
+
+## 예측과 실제
+
+> 📜 **예언 vs 실제.** Furgale·Barfoot·Sibley(2012)는 고속 IMU와 sweeping laser가 이산 상태 공간을 부풀리는 문제를 겨냥하며 rolling-shutter 보간 사례를 함께 언급했지만, 정작 논문에서 직접 검증한 것은 camera–IMU calibration이었다. 그 뒤 Barfoot·Tong·Särkkä(2014)가 SDE 기반 sparse GP로 이론을 가다듬고, rolling-shutter VIO와 event SLAM이 2012년 논문의 Future Work와 별개의 줄기에서 연속시간 궤적을 실전 도구로 끌어올렸다. 그럼에도 주류 visual SLAM 시장은 여전히 이산 keyframe 기반인 ORB-SLAM이 차지했고, 연속시간 궤적은 주로 LiDAR·event·rolling shutter처럼 시간 분해능이 핵심인 영역에서 힘을 발휘했다.
+
+---
+
+## 아직 열린 문제
+
+**학습 기반 연속시간 prior.** SDE에서 끌어온 motion prior는 constant-velocity나 white-jerk 같은 매끈한 물리 가정에 기댄다. 하지만 실제 도심 주행이나 보행, 드론 비행 궤적은 이런 이상적인 가정을 수시로 어긴다. 2023–2024년에는 neural SDE나 neural ODE로 실제 데이터에서 motion prior를 학습해 연속시간 factor graph에 넣으려는 시도가 나타났지만, 실시간 추정을 지탱하는 희소 블록 구조를 잃지 않으면서 학습된 prior를 결합하는 일은 아직 숙제로 남아 있다.
+
+**VIO와 continuous-time의 통합.** keyframe 기반 VIO에서는 preintegration이 사실상의 표준이다. 연속시간 궤적이 preintegration을 완전히 대체할 수 있을지, 아니면 둘의 장점을 섞는 편이 나을지는 아직 결론이 나지 않았다. Le Gentil, Vidal-Calleja, Huang의 [GP 기반 preintegration](https://doi.org/10.1109/LRA.2020.2970940)(RA-L 2020)이 두 진영을 이으려 했으나, 실제 현장에서 가장 널리 쓰이는 ORB-SLAM3나 VINS-Fusion은 여전히 이산 preintegration에 머물러 있다.
+
+**임베디드 장치용 온라인 sliding window.** STEAM이나 B-spline 기반 추정기는 시간이 흘러 제어점이 누적될수록 계산 부담이 커진다. 과거 제어점을 marginalization으로 덜어 내면서도 연속시간 사후 분포의 일관성을 해치지 않고 임베디드 보드 위에서 가볍게 돌리는 기법은 아직 다듬어야 할 부분이 많다.
+
+---
+
+Le Gentil 등의 GP 기반 preintegration이 보여 주듯, 연속시간 표현과 이산 preintegration은 배타적인 도구가 아니라 서로 맞물릴 수 있다. 지금까지 2부에서는 특징점 추적, 관성 사전적분, 연속시간 궤적, 그리고 certifiable backend에 이르기까지 SLAM의 뼈대를 이루는 기하적 추정 엔진을 살펴보았다. 이제 3부에서는 시선을 돌려, 아예 특징점을 뽑아 추상화하는 과정을 건너뛰고 카메라가 찍은 픽셀 밝기와 깊이 측정 자체를 지도로 빚어낸 직접법(direct method)과 조밀 재구성(dense reconstruction)의 흐름(→ 11장)으로 넘어간다.

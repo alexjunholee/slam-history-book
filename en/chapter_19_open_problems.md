@@ -1,120 +1,110 @@
-# Ch.19 — Today's Map and Tomorrow's Open Questions
+# Chapter 23. Open Problems
 
-By 2026, AR layers remained fixed to walls, indoor delivery robots distinguished kitchens from conference rooms without a supplied map, and DUSt3R-family models recovered 3D structure from a few photographs in seconds. These systems solved many of the problems that defined SLAM in 2003, but only under particular assumptions.
+By 2026, mobile AR layers stayed anchored to walls, indoor delivery robots told kitchens from conference rooms without a preloaded floor plan, and DUSt3R-family models recovered 3D geometry from a handful of snapshots in seconds. Those milestones genuinely resolved many of the challenges that defined SLAM in 2003—yet only inside carefully bounded operating regimes.
 
-The 2003 formulation assumed a static scene, stable lighting, bounded space, and the geometry of a single camera. Under those conditions, the EKF tracked state, graph SLAM closed loops, and ORB-SLAM managed keyframes. The solutions remain valid within the simplifying assumptions on which they were built. Each assumption was a carefully chosen simplification.
-
-Yet unresolved problems remain alongside what each lineage has claimed to solve. The problems identified in the preceding chapters reveal, when considered together, where different lineages face the same constraints. These are existing problems whose shared structure can be examined, not newly posed questions.
+The classic 2003 problem rested on four quiet premises: a static world, steady illumination, bounded space, and the optics of a single calibrated camera. Within those bounds, EKF-SLAM tracked landmarks, graph SLAM closed loops, and ORB-SLAM managed keyframes—achievements that remain completely sound wherever those assumptions hold. Once we gather the "Still open" sections left behind at the close of every preceding chapter, however, a deeper pattern surfaces: across twenty years and radically different representations, distinct lineages keep colliding with the same structural bottlenecks.
 
 ---
 
-## 19.1 Lighting and environmental change: reality the camera cannot handle
+## 23.1 Lighting and environmental change: reality the camera cannot handle
 
-Visual SLAM has struggled with environmental change since its first outdoor deployments. Field conditions repeatedly expose the limits of a camera's photometric model.
+Since its earliest outdoor trials, visual SLAM has struggled whenever real-world illumination refuses to obey a clean photometric model.
 
-Learned descriptors beat ORB inside the training domain but lose consistency on underwater, thermal, and low-light imagery; as of 2026 there is still no consensus on which is more robust (see Ch.2 §2.7). The low-light and dynamic-tracking failures recorded in Ch.5 explain why the 2007 PTAM paper bounded itself as "Small AR Workspaces." Most feature-based SLAM still assumes more stable conditions (see Ch.5 §🧭).
+Learned feature descriptors outperform ORB inside their training domains, yet lose repeatability in underwater, thermal, and low-light imagery—leaving no consensus by 2026 on which paradigm holds up better in the wild (→ Chapter 2 "Still open"). The tracking failures under dim lighting and rapid change documented in Chapter 5 help explain why the 2007 PTAM paper explicitly circumscribed itself to "Small AR Workspaces"; most feature-based systems still presume relatively cooperative illumination (→ Chapter 5 "Still open").
 
-The direct-method lineage faces a structural version of the problem. Brightness preservation fails under auto-exposure, strong backlight, and tunnel-to-outdoor transitions, and no complete method dynamically estimates the lighting model (see Ch.8 §🧭). Place recognition has faced a related limit for more than ten years. Even with [DINOv2](https://arxiv.org/abs/2304.07193)-based methods narrowing the gap, a single model does not yet maintain consistent precision and recall across the extreme seasonal and lighting conditions in [Nordland](https://nikosuenderhauf.github.io/projects/placerecognition/) and [Oxford RobotCar](https://robotcar-dataset.robots.ox.ac.uk/) (see Ch.10 §10.7).
-
-ORB-SLAM's long-term map reuse has the same limitation. Atlas made multi-map maintenance possible, but lighting changes can prevent recognition of the same place between morning and evening (see Ch.7 §🧭). Ch.2, 5, 7, 8, and 10 each encounter this problem through a different component of the pipeline.
+Direct methods encounter a structural twin of the same vulnerability: brightness constancy breaks down under auto-exposure, harsh backlighting, and tunnel exits, yet no complete system estimates a full dynamic illumination model online (→ Chapter 11 "Still open"). Visual place recognition faces an equally stubborn version of the problem; even as [DINOv2](https://arxiv.org/abs/2304.07193)-based descriptors narrowed the appearance gap, no single model sustained high precision and recall across the extreme seasonal and diurnal swings of [Nordland](https://nikosuenderhauf.github.io/projects/placerecognition/) and [Oxford RobotCar](https://robotcar-dataset.robots.ox.ac.uk/) (→ Chapter 13 "Still open"). Even ORB-SLAM3's multi-map Atlas architecture cannot guarantee that a map built at noon will relocalize reliably at dusk (→ Chapter 8 "Still open"). Across Chapters 2, 5, 8, 11, and 13, five separate pipeline stages hit the very same optical reality.
 
 ---
 
-## 19.2 Static-world assumption: the oldest simplification hits its limits
+## 23.2 Static-world assumption: the oldest simplification hits its limits
 
-The static-world assumption is one of SLAM's oldest simplifications and recurs across more lineages than any other.
+No simplification runs older or wider across SLAM than pretending the world stands still—and none exposes its limits across more lineages at once.
 
-In the SfM lineage dynamic objects are a shared weak point of every current system, COLMAP included, and as of 2026 no Dynamic SfM implementation has COLMAP-level generality (see Ch.3 §3.7). Everything in Ch.9 from KinectFusion through BundleFusion assumed a static scene, and while DynaSLAM, MaskFusion, and others coupled real-time segmentation into dense SLAM, neither cost nor robustness reached practical deployment (see Ch.9 §🧭).
+In offline Structure-from-Motion, moving objects remain an Achilles' heel across every mainstream pipeline, COLMAP included; as of 2026, no Dynamic SfM solver matched COLMAP's general-purpose reliability (→ Chapter 3 "Still open"). Across dense RGB-D mapping from KinectFusion through BundleFusion, the scene was assumed static, and although DynaSLAM, MaskFusion, and their peers bolted real-time segmentation onto dense SLAM, neither compute cost nor robustness cleared the bar for broad deployment (→ Chapter 12 "Still open").
 
-In monocular depth, self-supervised methods mask moving objects, avoiding rather than solving the problem (see Ch.11 §🧭). 3DGS SLAM still assumed a static world in 2025. [4DGS](https://arxiv.org/abs/2310.08528) and [Deformable 3DGS](https://arxiv.org/abs/2309.13101) add a time dimension, but no integrated SLAM system both represents and tracks dynamic objects (see Ch.15 §🧭). LiDAR SLAM is not exempt: dynamic-object handling remains a challenge distinct from LOAM's stated future work, while production autonomous-driving stacks are largely proprietary and difficult to compare directly with public research systems (see Ch.17 §🧭). Five chapters reach the same unresolved problem through different representations.
+Self-supervised monocular depth estimators sidestep the issue by masking dynamic pixels rather than modeling them (→ Chapter 14 "Still open"). Even 3DGS SLAM kept the static-world assumption through 2025: while [4DGS](https://arxiv.org/abs/2310.08528) and [Deformable 3DGS](https://arxiv.org/abs/2309.13101) introduced temporal deformation for offline rendering, no integrated SLAM pipeline yet represented and tracked moving objects jointly (→ Chapter 18 "Still open"). Nor did laser sensing escape: dynamic-object filtering remained a major open gap absent from LOAM's original future-work list, with commercial autonomous-driving stacks staying largely proprietary and beyond direct academic benchmarking (→ Chapter 21 "Still open"). Five distinct lineages thus hit the same ceiling through five different representations.
 
-The long-term dynamic and deformable problems in [Ch.15b](chapter_15b_dynamic.md) are related. **Absence vs evidence of absence**, whether an object vanished or was occluded, received a partial answer through the active submaps of [Schmid's Panoptic Multi-TSDF](https://doi.org/10.1109/LRA.2022.3148854) (2022). The Handbook treats occlusion above 70% as an extreme-environment case that remains difficult, but does not report it as a universal error threshold for Panoptic Multi-TSDF. **Floating Map Ambiguity**, separating rigid camera motion from rigid object motion, is constrained only through isometric and visco-elastic priors; identification without a prior remains unresolved. No system performs Khronos-level change-aware integration online from monocular RGB, and medical MIS systems lose robustness when moving from phantom and ex vivo data to surgical conditions. All four items from Ch.15b remain open.
-
----
-
-## 19.3 Scale and representational memory: the problem changes when the size does
-
-Scaling a SLAM system from one room to a building, and from a building to a city, exposes related limits in several representations.
-
-Monocular scale is a geometric ambiguity established in 1980s SfM theory. Without an IMU, depth sensor, or another metric cue, projective geometry in monocular imagery alone cannot determine the metric scale of the trajectory and scene (see Ch.5 §🧭). [Metric3D v2](https://arxiv.org/abs/2404.15506) and [Depth Anything v2](https://arxiv.org/abs/2406.09414) produce metric depth when camera intrinsics are known, yet smartphones, CCTV footage, archives, and satellite imagery often lack them. Foundation-scale training has not removed this constraint (see Ch.11 §🧭).
-
-In the TSDF lineage, memory became a limit of the representation. [Voxblox](https://arxiv.org/abs/1611.03631) and [OctoMap](https://octomap.github.io/) reduced the cost, but memory for a dense representation still rises rapidly with mapped volume and voxel resolution, and no general adaptive-resolution policy has been established (see Ch.9 §🧭). NeRF-SLAM also remains open at city scale (see Ch.14 §🧭). In Gaussian Splatting, the required number of Gaussians rises with scene extent and detail; the [Compact 3DGS](https://arxiv.org/abs/2311.13681) (Lee et al. 2024) family explores compression, but no approach has become standard (see Ch.15 §🧭). Foundation 3D moves the limit into the transformer: attention across all image tokens has quadratic memory cost in the token count, making long sequences difficult, and Spann3R provides only a partial incremental solution (see Ch.16 §🧭). The representations differ, but each reaches a scale-dependent memory limit.
-
-Scale also raises **data movement cost**, the energy needed to move bits between processor and memory rather than the capacity of the representation alone. In Handbook Ch.18 §18.8, Davison proposes "on-device data movement, measured in bits × millimetres" as the 12th SLAM performance metric. Handbook Ch.16 distinguishes three representation costs: a flat voxel map storing labels requires $O(L\cdot V/\delta^3)$ (Eq. 16.34); a metric-semantic hierarchy requires $O(V/\delta^3+N_\text{objects}+N_\text{rooms}+\cdots)$ (Eq. 16.35); and a representation with a more compact sub-symbolic layer, such as a topological 3D scene graph, requires $O(N_\text{sub-sym}+N_\text{objects}+N_\text{rooms}+\cdots)$ (Eq. 16.36). The last reduction changes the geometric representation and can be lossy. It remains unclear whether mainstream evaluations will adopt data movement as a metric.
+Long-term change and non-rigid deformation, traced in [Chapter 19](chapter_15b_dynamic.md), sharpen those limits further. **Absence vs evidence of absence**—deciding whether an object genuinely disappeared or was merely occluded—found a partial mechanism in the active submaps of [Schmid's Panoptic Multi-TSDF](https://doi.org/10.1109/LRA.2022.3148854) (2022), while the Handbook singles out extreme occlusion above 70% as an enduringly hard regime without treating that figure as a universal error threshold specific to Panoptic Multi-TSDF. **Floating Map Ambiguity**—disentangling rigid camera motion from rigid motion of a deforming object—still relies on isometric and visco-elastic priors rather than general observability conditions. Meanwhile, online Khronos-level change detection from monocular RGB remains out of computational reach, and surgical MIS systems still lose stability when leaving ex vivo phantoms for real operating rooms. All four open problems of Chapter 19 remain unresolved.
 
 ---
 
-## 19.4 Uncertainty calibration for learning-based systems
+## 23.3 Scale and representational memory: the problem changes when the size does
 
-Since Julier and Uhlmann established the EKF's inconsistency in Ch.4, SLAM researchers have had to ask whether a system's reported uncertainty matches its actual localization error.
+Expanding a SLAM map from a single room to a multistory building, and onward to a city district, exposes interlocking scale limits—some geometric, others computational.
 
-Non-Gaussian uncertainty violates a central EKF assumption. Real sensor errors are often multimodal or heavy-tailed; Stein particles, normalizing flows, and learned uncertainty have been tested, but their real-time validation remains limited (see Ch.4 §4.8). In graph SLAM, robust-cost selection still relies heavily on judgment because no principled method determines in advance whether Huber, Cauchy, or Geman-McClure fits a particular sensor and environment (see Ch.6 §🧭). [Ch.6b](chapter_06b_certifiable.md) raises a related issue of tightness bounds. SE-Sync's exact-recovery theorem gives the sufficient condition "noise below $\beta$" without a way to compute $\beta$ in advance for an actual instance. Extending certifiable methods to Visual SLAM and VIO, and re-solving the SDP online as measurements arrive, also remain open.
+At the geometric end sits monocular scale ambiguity, proven in 1980s SfM theory: without an IMU, depth sensor, or known physical baseline, projective geometry alone cannot fix metric scale (→ Chapter 5 "Still open"). Although [Metric3D v2](https://arxiv.org/abs/2404.15506) and [Depth Anything v2](https://arxiv.org/abs/2406.09414) infer metric depth given known camera intrinsics, smartphones, security feeds, web archives, and aerial imagery frequently lack calibration—proving that foundation-scale pretraining has not dissolved a physical constraint (→ Chapter 14 "Still open").
 
-Learning-based methods make the calibration problem harder to observe. After Bayesian PoseNet, uncertainty under out-of-distribution input remained unresolved (see Ch.12 §🧭). DROID-SLAM and related systems showed that learned priors can degrade outside the training domain without an explicit failure signal. [TartanAir](https://arxiv.org/abs/2003.14338)-style synthetic training still leaves a sim-to-real gap (see Ch.13 §🧭).
+At the computational end, every dense representation hits a memory ceiling as environments grow. Volumetric TSDF pipelines eased pressure via [Voxblox](https://arxiv.org/abs/1611.03631) and [OctoMap](https://octomap.github.io/), yet memory still balloons with volume and voxel resolution without a universal adaptive-resolution policy (→ Chapter 12 "Still open"). NeRF-SLAM has yet to solve city-scale mapping with loop closure (→ Chapter 17 "Still open"). In 3DGS, primitive counts climb steadily with scene extent and detail; compression lines such as [Compact 3DGS](https://arxiv.org/abs/2311.13681) (Lee et al. 2024) shrink footprints without yet producing an industry standard (→ Chapter 18 "Still open"). Foundation 3D shifts that bottleneck straight into transformer memory, where global attention scales quadratically with token count—limiting long sequences even with Spann3R's incremental memory (→ Chapter 20 "Still open").
 
-Foundation 3D adds the question of how to propagate a loop-closure correction through a pointmap. MASt3R-SLAM uses existing methods, but whether this is a principled solution is unknown (see Ch.16 §🧭). Autonomous driving and medical robotics need calibrated uncertainty, yet few systems address it at that level.
-
-Davison frames the issue with a question: *"If a network has built a 3D model from 100 images, does adding one more image require running the whole thing again"* (Handbook Ch.18, p.528). Long-term representation and fusion bring probabilistic state estimation and modular scene representations back into the system. The [GBP Learning](https://arxiv.org/abs/2312.14294) lineage (Nabarro et al.) represents network weights as random variables in a factor graph, reducing the distinction between *"training time"* and *"test time"* (p.543). Whether this formulation resolves the problem or moves it into another set of assumptions remains unclear.
+Crucially, scale also drives **data movement cost**—the energy burned shuttling bits between memory and compute rather than static storage size alone. In Handbook Ch.18 §18.8, Davison proposes "on-device data movement, measured in bits × millimetres" as SLAM's twelfth core performance metric. Handbook Ch.16 contrasts three asymptotic map footprints: a flat semantic voxel grid demands $O(L\cdot V/\delta^3)$ (Eq. 16.34); a metric-semantic hierarchy requires $O(V/\delta^3+N_\text{objects}+N_\text{rooms}+\cdots)$ (Eq. 16.35); and replacing the dense grid with a compact sub-symbolic layer such as a topological 3D scene graph cuts storage to $O(N_\text{sub-sym}+N_\text{objects}+N_\text{rooms}+\cdots)$ (Eq. 16.36)—at the price of a lossier geometric substrate. Whether standard benchmarks will adopt data-movement energy alongside ATE and fps remains to be seen.
 
 ---
 
-## 19.5 Sensor fusion and new modalities: integration unfinished
+## 23.4 Uncertainty calibration for learning-based systems
 
-Visual SLAM and LiDAR SLAM addressed localization and mapping with different measurements and algorithms. Their lineages have not yet merged into a common architecture.
+Ever since Julier and Uhlmann exposed the EKF's inconsistency, SLAM researchers have had to ask a hard question: do a system's reported error bars actually match its true localization error?
 
-LVI-SAM combines visual-inertial and lidar-inertial subsystems through factor graphs; its authors describe it as tightly coupled. The subsystems exchange information while retaining the ability to operate independently when needed. Algorithm design and calibration remain difficult in autonomous-driving conditions such as fog and rain (see Ch.17 §🧭). Solid-state LiDAR poses a related problem. Limited fields of view and non-repetitive patterns differ from the original LOAM's 360° scan-line assumptions. FAST-LIO2 and Livox LOAM address parts of this setting, but generalization across sensor families remains limited (see Ch.17 §🧭).
+Even in classical filtering, non-Gaussian, multimodal, or heavy-tailed sensor errors violate EKF assumptions; Stein particles, normalizing flows, and learned covariances have all been explored, yet real-time field validation remains sparse (→ Chapter 4 "Still open"). In graph SLAM, picking an M-estimator—Huber, Cauchy, or Geman-McClure—remains largely empirical, with no principled rule selecting the right kernel ahead of time for a given sensor and scene (→ Chapter 6 "Still open"). [Chapter 7](chapter_06b_certifiable.md) uncovers a parallel theoretical gap: SE-Sync's exact-recovery theorem guarantees global optimality whenever noise stays below a threshold $\beta$, yet offers no way to compute $\beta$ in advance for a live problem instance, and extending certifiable SDP solvers to online incremental Visual SLAM and VIO remains open.
 
-Wide-baseline matching presents a related integration problem. Large viewpoint changes can degrade hand-crafted local features such as Harris and ORB; the methods do not establish a universal 45-degree cutoff across datasets. DUSt3R bypasses a traditional sparse-matching stage, but it is too early to know whether this resolves the descriptor problem or changes the formulation (see Ch.2 §2.7). Place recognition and metric localization also remain separate pipeline stages. Work from 2023–2025 sought to unify them in one representation, while the trade-off between metric accuracy and processing speed remained a practical concern (see Ch.10 §10.7).
+Deep learning makes uncertainty far harder to audit. From Bayesian PoseNet onward, out-of-distribution uncertainty calibration has stayed unsolved (→ Chapter 15 "Still open"). DROID-SLAM and its peers showed that learned priors can fail quietly outside their training domain without flagging trouble, and synthetic suites like [TartanAir](https://arxiv.org/abs/2003.14338) narrow—but do not eliminate—the sim-to-real gap (→ Chapter 16 "Still open"). Foundation 3D adds the puzzle of propagating loop-closure corrections and calibrated covariances across dense pointmaps; MASt3R-SLAM leans on classical graph machinery, leaving open whether a more principled formulation exists (→ Chapter 20 "Still open"). For safety-critical autonomous driving or surgical robotics, well-calibrated uncertainty remains a prerequisite few learned systems meet.
 
-Event cameras show the lag between new hardware and mature algorithms. Commercial high-resolution event cameras spread after 2022, while integration with frame-based pipelines, event representations, and real-world benchmarks all remained under development (see Ch.18 §🧭). Kinect followed a similar sequence: the sensor launched in 2010 and KinectFusion arrived a year later.
-
-Two modalities fall outside this account: **4D imaging radar** and **legged/proprioceptive SLAM**. Radar can complement cameras and LiDAR in conditions such as fog and rain, where both optical modalities may degrade. Oxford Radar RobotCar (2019), the radar channel in NuScenes, and 4D imaging radar development by companies including Arbe and Mobileye broadened this modality's role in autonomous-driving research and products. Legged SLAM formed a separate lineage that fused kinematic and contact priors for outdoor deployment of ANYmal, Spot, and Unitree in the 2020s. Both have distinct origins and benchmarks from the visual, LiDAR, and foundation-3D lineages and warrant separate histories.
+Davison distills the underlying architectural tension into a pointed question: *"If a network has built a 3D model from 100 images, does adding one more image require running the whole thing again"* (Handbook Ch.18, p.528)? Answering it brings probabilistic state estimation and modular representations right back to center stage. Approaches like [GBP Learning](https://arxiv.org/abs/2312.14294) (Nabarro et al.) treat neural weights themselves as random variables inside a factor graph, blurring the boundary between *"training time"* and *"test time"* (p.543)—though whether that unifies learning and inference or simply trades one set of assumptions for another remains open.
 
 ---
 
-## 19.6 Recoupling compute structure and hardware
+## 23.5 Sensor fusion and new modalities: integration unfinished
 
-Davison's Handbook Ch.18 emphasizes a topic rarely covered in SLAM histories: matching the graph structure of an algorithm to the graph structure of the silicon.
+Visual SLAM and LiDAR SLAM evolved around distinct physics and software stacks, and their convergence remains a work in progress.
 
-Dennard scaling broke, and single-core CPU clock speed stalled near 4 GHz in the mid-2000s; *"this has stopped being true"* (Handbook Ch.18, p.528). Wearable Spatial AI still has to fit into glasses weighing 65 g and consuming less than 1 W. The gap favors heterogeneous, specialized, parallel hardware.
+LVI-SAM links visual-inertial and LiDAR-inertial subsystems via factor graphs in what its authors term tight coupling, yet in practice the VIS and LIS branches still run largely as parallel trackers that lean on each other during dropouts; building a genuinely unified estimator that survives fog, rain, and cross-sensor miscalibration remains challenging (→ Chapter 21 "Still open"). Solid-state LiDARs compound the engineering gap with narrower fields of view and non-repetitive scan patterns that violate classic 360° LOAM assumptions, leaving FAST-LIO2 and Livox LOAM as partial solutions rather than a single cross-vendor standard (→ Chapter 21 "Still open").
 
-Several hardware examples appeared by the mid-2020s. [Apple Vision Pro R1](https://www.apple.com/apple-vision-pro/specs/) (2023) is a dedicated chip for 12 ms sensor processing; [Meta Aria Gen 2](https://ai.meta.com/blog/aria-gen-2-research-glasses-under-the-hood-reality-labs/) (2025) carries custom silicon for "ultra low power and on-device machine perception." The [Graphcore IPU](https://www.graphcore.ai/products/ipu) has thousands of independent cores with local memory communicating by message passing. Manchester's [SCAMP5](https://personalpages.manchester.ac.uk/staff/p.dudek/papers/carey-iscas2013.pdf) implements 256×256 per-pixel in-plane processing at 1.2 W, while [SpiNNaker](https://apt.cs.manchester.ac.uk/projects/SpiNNaker/) connects up to one million ARM cores in a neuromorphic structure. Each supports a different graph topology, and no systematic theory maps Spatial AI algorithms to these architectures.
+On the camera side, wide-baseline matching across large viewpoint shifts still defeats classical local descriptors such as Harris and ORB—even though no universal 45-degree cutoff holds across all datasets—and whether DUSt3R truly resolves descriptor fragility or simply reframes it remains too early to call (→ Chapter 2 "Still open"). Similarly, visual place recognition and metric pose estimation remain split across separate stages; 2023–2025 attempts to unify them inside one representation still grapple with accuracy-versus-speed trade-offs (→ Chapter 13 "Still open").
 
-Davison's later work on **Gaussian Belief Propagation** addresses this hardware structure. [Ortiz et al.](https://arxiv.org/abs/2203.11618) (2022) accelerated bundle adjustment on the IPU with GBP by 30× over a CPU, and [Murai et al. Robot Web](https://arxiv.org/abs/2306.04620) (2024) demonstrated multi-robot SLAM in which robots shared factor-graph fragments over Wi-Fi and converged through asynchronous message passing. The motivation was that *"we must get away from the idea that a 'god's eye view' of the whole structure of the graph will ever be available"* (Handbook Ch.18, p.541). The factor graph becomes the main representation, and local messages replace full-posterior computation. Whether this approach will combine with transformer-based systems such as MASt3R-SLAM remains unanswered.
+Meanwhile, event cameras underscore how slowly algorithms catch up to novel silicon. Although commercial high-resolution event sensors widened access after 2022, unified event-frame pipelines, standard event encodings, and mature benchmarks were still taking shape in 2026 (→ Chapter 22 "Still open")—a far slower convergence than Kinect's one-year leap from 2010 hardware launch to 2011 KinectFusion.
 
-Among Davison's twelve metrics, number 11 is "power usage" and number 12 is "on-device data movement." Both extend evaluation beyond accuracy to power consumption and the bit volume and physical distance of data movement within the device. TUM, KITTI, and EuRoC do not yet include these measures, and no consensus exists on how to add them to mainstream benchmarks.
-
----
-
-## 19.7 The return of semantic representation and Open-World
-
-Semantic objects did recede from SLAM's landmark representation, as [Ch.18 §18.4](chapter_18_dead_ends.md#184-semantic-slam--the-shrinking-of-the-object-as-landmark-path) describes. Neither ORB-SLAM3 nor MASt3R-SLAM uses object-level primitives. Over the same period, however, semantics moved to an upper layer of the map and produced practical systems.
-
-[Kimera](https://doi.org/10.1109/ICRA40945.2020.9196885) (2020) combined a metric-semantic mesh with a 3D scene graph, and [Hydra](https://doi.org/10.15607/RSS.2022.XVIII.050) (2022) extended it into the *"first online system to produce fully hierarchical scene graphs that included objects, places, and rooms"* (Handbook Ch.16, §16.4.2). Foundation features were then added to this layer. [ConceptFusion](https://arxiv.org/abs/2302.07241) and [VLMaps](https://arxiv.org/abs/2210.05714) (2023) placed CLIP features in dense maps; [ConceptGraphs](https://doi.org/10.1109/ICRA57147.2024.10610243) (2024) used open-vocabulary object nodes; [Clio](https://doi.org/10.1109/LRA.2024.3451395) (2024) built task-driven hierarchies; and [LERF](https://arxiv.org/abs/2303.09553) and [LangSplat](https://arxiv.org/abs/2312.16084) attached language to radiance fields and Gaussian splatting. Semantic representation persisted above the geometric map rather than as its landmarks.
-
-This work introduced unresolved questions of its own. Hughes and Carlone identify one directly: *"performing uncertainty quantification in hierarchical representations mixing discrete and continuous variables is still a largely unexplored problem"* (p.488). Uncertainty propagation remains insufficiently explored when discrete variables such as object category and room ID share a graph with continuous variables such as pose and surface. Scene graphs also remain difficult to extend into outdoor and unstructured environments, while Clio's task-driven hierarchy (Handbook Ch.17 Eq. 17.8) has not generalized broadly.
-
-A broader question is whether a system still needs an explicit map. Paull and the editors address it in Handbook Ch.17 §17.4.2, "Revisiting the Question of the Need for Maps." A long-context VLM might plan from past frames without an explicit scene graph. [OpenEQA](https://open-eqa.github.io/) and [Mobility VLA](https://arxiv.org/abs/2407.07775) (2024) show that map-free methods work on short, simple tasks but degrade as spatial and temporal horizons lengthen. *"the need for an explicit map representation ... largely depend[s] on the spatial and temporal horizons of the considered tasks and remains an active area of research"* (p.515). The evidence supports neither universal map use nor universal map-free operation.
-
-The relation between SLAM and generative robot policies raises the same question. VLA models such as [RT-2](https://robotics-transformer2.github.io/) (2023), [OpenVLA](https://arxiv.org/abs/2406.09246) (2024), and [π₀](https://www.physicalintelligence.company/blog/pi0) (2024) might replace SLAM or operate above it. The Handbook's final sentence argues that *"true generalization and scalability to compositional tasks ... could be achieved through some form of explicit structure that is learned through a process such as SLAM. ... these two paradigms ... are entirely complementary"* (Paull/Carlone, Handbook Ch.17, p.520). The architecture implied by "complementary" remains open.
+Two thriving sensor domains also sit deliberately outside this book's camera-and-LiDAR narrative: **4D imaging radar** and **legged/proprioceptive SLAM**. Radar keeps working through heavy rain, fog, and smoke where optical sensors fail—anchored by Oxford Radar RobotCar (2019), NuScenes radar sweeps, and 4D imaging radars from companies such as Arbe and Mobileye—while legged SLAM fuses joint kinematics and foot-contact priors for robots like ANYmal, Spot, and Unitree in rugged outdoor terrain. Both rest on distinct estimation lineages and benchmarks that merit histories of their own.
 
 ---
 
-## 19.8 The shape of the open questions
+## 23.6 Recoupling compute structure and hardware
 
-The open problems differ in both age and kind.
+In Handbook Ch.18, Davison spotlights a dimension most SLAM histories overlook: aligning an algorithm's communication graph with the physical topology of silicon.
 
-The monocular scale ambiguity of Ch.5 is a geometric fact established in SfM theory and retains the same formulation in 2026. The limits of the static-world assumption, by contrast, have returned in changing forms over twenty years: SfM in Ch.3, dense SLAM in Ch.9, Gaussian maps in Ch.15, and LiDAR in Ch.17. Loop closure for foundation 3D and calibration of learned uncertainty are newer formulations that emerged only in the preceding few years.
+With Dennard scaling ended and single-core CPU clocks stalled near 4 GHz since the mid-2000s—as Davison puts it, *"this has stopped being true"* (Handbook Ch.18, p.528)—wearable Spatial AI must still fit inside 65 g smart glasses sipping less than 1 W. That envelope forces algorithms onto heterogeneous, massively parallel, specialized chips.
 
-Ch.0 described a period in which SLAM is often treated as solved. The five editors of the 2026 SLAM Handbook offer the internal counterpoint in their epilogue: *"If someone tells you 'SLAM is solved,' don't listen to them."* New methods repeatedly relax one assumption and expose another problem. Particle filters addressed limits in the EKF's local linearization and single-Gaussian approximation, while dense methods retained image information discarded by sparse features. Neither transition invalidated the earlier method; each changed the assumptions under which the system operated.
+By the mid-2020s, diverse hardware experiments pointed in competing directions: [Apple Vision Pro R1](https://www.apple.com/apple-vision-pro/specs/) (2023) dedicated custom silicon to 12 ms sensor-to-photon processing, [Meta Aria Gen 2](https://ai.meta.com/blog/aria-gen-2-research-glasses-under-the-hood-reality-labs/) (2025) integrated bespoke "ultra low power and on-device machine perception" chips, the [Graphcore IPU](https://www.graphcore.ai/products/ipu) arrayed thousands of local-memory cores communicating via message passing, Manchester's [SCAMP5](https://personalpages.manchester.ac.uk/staff/p.dudek/papers/carey-iscas2013.pdf) executed 256×256 per-pixel focal-plane computation at 1.2 W, and neuromorphic [SpiNNaker](https://apt.cs.manchester.ac.uk/projects/SpiNNaker/) wired up to a million ARM cores. Each platform implies a different communication topology, yet no systematic theory maps Spatial AI algorithms onto them.
 
-Methods regarded as solved in 2026 remain conditional in the same way. Their next open problem will appear when one of those conditions no longer holds.
+Davison's own **Gaussian Belief Propagation (GBP)** program directly targets that mismatch. [Ortiz et al.](https://arxiv.org/abs/2203.11618) (2022) ran GBP-based bundle adjustment 30× faster on an IPU than on a CPU, and [Murai et al. Robot Web](https://arxiv.org/abs/2306.04620) (2024) demonstrated multi-robot SLAM where agents exchange factor-graph fragments over Wi-Fi and converge asynchronously—driven by the conviction that *"we must get away from the idea that a 'god's eye view' of the whole structure of the graph will ever be available"* (Handbook Ch.18, p.541). Making factor graphs and local message passing primary—and seeing whether they can fuse with transformer architectures like MASt3R-SLAM—remains an open frontier. Reflecting that shift, Davison's eleventh and twelfth metrics, "power usage" and "on-device data movement," look beyond raw trajectory error to energy and bit transport, though TUM, KITTI, and EuRoC have yet to standardize how to measure them.
 
 ---
 
-## 19.9 Lineage map
+## 23.7 The return of semantic representation and Open-World
 
-Years refer to the conference or journal publication, or the earlier public release, discussed in each chapter. SE-Sync (2019), VINS-Mono (2018), and FAST-LIO (2021) use journal publication years; ORB-SLAM3 (2020) and MASt3R-SLAM (2024) use earlier release dates. The labels therefore do not provide a uniform comparison of first-publication dates.
+As [Chapter 22 §22.4](chapter_18_dead_ends.md#224-semantic-slam--the-shrinking-of-the-object-as-landmark-path) traced, semantic objects vanished from SLAM's core landmark layer—neither ORB-SLAM3 nor MASt3R-SLAM tracks chairs as primitive state nodes—yet semantics roared back one tier higher, atop the geometric map.
+
+[Kimera](https://doi.org/10.1109/ICRA40945.2020.9196885) (2020) paired a metric-semantic mesh with a 3D scene graph, and [Hydra](https://doi.org/10.15607/RSS.2022.XVIII.050) (2022) scaled it into the *"first online system to produce fully hierarchical scene graphs that included objects, places, and rooms"* (Handbook Ch.16, §16.4.2). Open-vocabulary foundation models soon transformed that upper layer: [ConceptFusion](https://arxiv.org/abs/2302.07241) and [VLMaps](https://arxiv.org/abs/2210.05714) (2023) projected CLIP embeddings onto dense geometry, [ConceptGraphs](https://doi.org/10.1109/ICRA57147.2024.10610243) (2024) linked open-vocabulary object nodes via VLMs and LLMs, [Clio](https://doi.org/10.1109/LRA.2024.3451395) (2024) pruned scene graphs around natural-language tasks, and [LERF](https://arxiv.org/abs/2303.09553) alongside [LangSplat](https://arxiv.org/abs/2312.16084) bound language directly to neural radiance fields and Gaussian splats.
+
+That semantic revival introduced tough problems of its own. As Hughes and Carlone observe directly, *"performing uncertainty quantification in hierarchical representations mixing discrete and continuous variables is still a largely unexplored problem"* (p.488): propagating error rigorously when discrete class labels or room IDs sit alongside continuous poses and surfaces remains uncharted. Scene graphs also struggle in open outdoor or unstructured settings, and Clio's task-driven bottleneck (Handbook Ch.17 Eq. 17.8) has yet to generalize widely.
+
+Even deeper is an existential question taken up by Paull and the editors in Handbook Ch.17 §17.4.2 ("Revisiting the Question of the Need for Maps"): if a long-context Vision-Language Model can reason straight from frame history, do embodied agents still need an explicit map at all? Evaluations on [OpenEQA](https://open-eqa.github.io/) and [Mobility VLA](https://arxiv.org/abs/2407.07775) (2024) suggest that map-free policies handle short, local tasks well enough before breaking down over longer spatial and temporal horizons—leading the authors to conclude that *"the need for an explicit map representation ... largely depend[s] on the spatial and temporal horizons of the considered tasks and remains an active area of research"* (p.515).
+
+The same question confronts generalist Vision-Language-Action (VLA) policies such as [RT-2](https://robotics-transformer2.github.io/) (2023), [OpenVLA](https://arxiv.org/abs/2406.09246) (2024), and [π₀](https://www.physicalintelligence.company/blog/pi0) (2024). Rather than rendering SLAM obsolete, the Handbook closes by arguing that *"true generalization and scalability to compositional tasks ... could be achieved through some form of explicit structure that is learned through a process such as SLAM. ... these two paradigms ... are entirely complementary"* (Paull/Carlone, Handbook Ch.17, p.520)—leaving the concrete architecture of that synthesis as one of robotics' defining next problems.
+
+---
+
+## 23.8 The shape of the open questions
+
+Taken together, SLAM's unresolved challenges differ sharply in both age and character. Monocular scale ambiguity is an unchanging geometric theorem proven in 1980s SfM that holds identically in 2026. The static-world assumption, by contrast, is a shapeshifting boundary that keeps reappearing across eras—first in SfM (Chapter 3), then dense RGB-D (Chapter 12), Gaussian splatting (Chapter 18), and LiDAR (Chapter 21). Loop closure across foundation-model pointmaps and calibrated uncertainty in deep networks are younger puzzles born only within the past few years.
+
+Back in Chapter 0, we noted how easily SLAM is mistaken for a finished commodity. The five editors of the 2026 *SLAM Handbook* answer that impression bluntly in their epilogue: *"If someone tells you 'SLAM is solved,' don't listen to them."* Every generational leap in SLAM worked by relaxing one restrictive assumption and immediately exposing the next constraint underneath. Particle filters bypassed the EKF's local linearization and single-Gaussian hypothesis; dense methods reclaimed the pixel information sparse features threw away. Neither shift invalidated what came before—each simply redrew the boundary of where a solver held true.
+
+What counts as "solved" in 2026 is conditional in the exact same way. And the next chapter of SLAM history will begin the moment one of today's quiet conditions gives way.
+
+---
+
+## 23.9 Lineage map
+
+In the lineage diagram below, dates reflect either the conference/journal publication year or the earlier public preprint discussed in each chapter—for instance, journal years for SE-Sync (2019), VINS-Mono (2018), and FAST-LIO (2021) versus initial release years for ORB-SLAM3 (2020) and MASt3R-SLAM (2024)—so nodes capture conceptual ancestry rather than a strict priority timeline.
 
 ```mermaid
 graph TD
@@ -191,44 +181,44 @@ graph TD
   MASt --> MASlam
   Kimera --> Hydra --> Clio
 
-  click PM "#chapter-1" "Ch.1 Prehistory — Photogrammetry"
-  click BA "#chapter-1" "Ch.1 Prehistory — Bundle Adjustment"
-  click SfM "#chapter-3" "Ch.3 Structure from Motion"
-  click COLMAP "#chapter-3" "Ch.3 SfM — COLMAP"
-  click SC "#chapter-4" "Ch.4 EKF-SLAM — Smith-Cheeseman"
-  click Mono "#chapter-5" "Ch.5 MonoSLAM·PTAM"
-  click PTAM "#chapter-5" "Ch.5 MonoSLAM·PTAM"
-  click ORB "#chapter-7" "Ch.7 ORB-SLAM family"
-  click ORB3 "#chapter-7" "Ch.7 ORB-SLAM3"
-  click LSD "#chapter-8" "Ch.8 Direct Methods — LSD-SLAM"
-  click DSO "#chapter-8" "Ch.8 Direct Methods — DSO"
-  click VIDSO "#chapter-8" "Ch.8 Direct Methods — VI-DSO"
-  click LM "#chapter-6" "Ch.6 Graph SLAM — Lu-Milios"
-  click FG "#chapter-6" "Ch.6 Graph SLAM — Factor Graph"
-  click iSAM "#chapter-6" "Ch.6 Graph SLAM — iSAM"
-  click iSAM2 "#chapter-6" "Ch.6 Graph SLAM — iSAM2"
-  click g2o "#chapter-6" "Ch.6 Graph SLAM — g2o"
-  click Forster "#chapter-7" "Ch.7b IMU Preintegration (after Ch.7)"
-  click VINS "#chapter-7" "Ch.7 — VINS-Mono"
-  click Kinect "#chapter-9" "Ch.9 RGB-D — KinectFusion"
-  click Elastic "#chapter-9" "Ch.9 RGB-D — ElasticFusion"
-  click SESync "#chapter-6" "Ch.6b Certifiable (after Ch.6)"
-  click TEASER "#chapter-6" "Ch.6b Certifiable — TEASER"
-  click LOAM "#chapter-17" "Ch.17 LiDAR — LOAM"
-  click FAST "#chapter-17" "Ch.17 LiDAR — FAST-LIO"
-  click NeRF "#chapter-14" "Ch.14 NeRF-SLAM"
-  click iMAP "#chapter-14" "Ch.14 NeRF-SLAM — iMAP"
-  click NICE "#chapter-14" "Ch.14 NeRF-SLAM — NICE-SLAM"
-  click GS3D "#chapter-15" "Ch.15 Gaussian Splatting"
-  click Spla "#chapter-15" "Ch.15 — SplaTAM"
-  click MonoGS "#chapter-15" "Ch.15 — MonoGS"
-  click DROID "#chapter-13" "Ch.13 Hybrid — DROID-SLAM"
-  click DPV "#chapter-13" "Ch.13 — DPV-SLAM"
-  click DUSt3R "#chapter-16" "Ch.16 Foundation 3D — DUSt3R"
-  click MASt "#chapter-16" "Ch.16 — MASt3R"
-  click VGGT "#chapter-16" "Ch.16 — VGGT"
-  click MASlam "#chapter-16" "Ch.16 — MASt3R-SLAM"
-  click Kimera "#chapter-16" "Ch.16 — Kimera"
-  click Hydra "#chapter-16" "Ch.16 §16.6 Semantic Foundation"
-  click Clio "#chapter-16" "Ch.16 §16.6 — Clio"
+  click PM "#chapter-1" "Chapter 1 Prehistory — Photogrammetry"
+  click BA "#chapter-1" "Chapter 1 Prehistory — Bundle Adjustment"
+  click SfM "#chapter-3" "Chapter 3 Structure from Motion"
+  click COLMAP "#chapter-3" "Chapter 3 SfM — COLMAP"
+  click SC "#chapter-4" "Chapter 4 EKF-SLAM — Smith-Cheeseman"
+  click Mono "#chapter-5" "Chapter 5 MonoSLAM·PTAM"
+  click PTAM "#chapter-5" "Chapter 5 MonoSLAM·PTAM"
+  click ORB "#chapter-8" "Chapter 8 ORB-SLAM family"
+  click ORB3 "#chapter-8" "Chapter 8 ORB-SLAM3"
+  click LSD "#chapter-11" "Chapter 11 Direct Methods — LSD-SLAM"
+  click DSO "#chapter-11" "Chapter 11 Direct Methods — DSO"
+  click VIDSO "#chapter-11" "Chapter 11 Direct Methods — VI-DSO"
+  click LM "#chapter-6" "Chapter 6 Graph SLAM — Lu-Milios"
+  click FG "#chapter-6" "Chapter 6 Graph SLAM — Factor Graph"
+  click iSAM "#chapter-6" "Chapter 6 Graph SLAM — iSAM"
+  click iSAM2 "#chapter-6" "Chapter 6 Graph SLAM — iSAM2"
+  click g2o "#chapter-6" "Chapter 6 Graph SLAM — g2o"
+  click Forster "#chapter-8" "Chapter 9 IMU Preintegration (after Chapter 8)"
+  click VINS "#chapter-8" "Chapter 8 — VINS-Mono"
+  click Kinect "#chapter-12" "Chapter 12 RGB-D — KinectFusion"
+  click Elastic "#chapter-12" "Chapter 12 RGB-D — ElasticFusion"
+  click SESync "#chapter-6" "Chapter 7 Certifiable (after Chapter 6)"
+  click TEASER "#chapter-6" "Chapter 7 Certifiable — TEASER"
+  click LOAM "#chapter-21" "Chapter 21 LiDAR — LOAM"
+  click FAST "#chapter-21" "Chapter 21 LiDAR — FAST-LIO"
+  click NeRF "#chapter-17" "Chapter 17 NeRF-SLAM"
+  click iMAP "#chapter-17" "Chapter 17 NeRF-SLAM — iMAP"
+  click NICE "#chapter-17" "Chapter 17 NeRF-SLAM — NICE-SLAM"
+  click GS3D "#chapter-18" "Chapter 18 Gaussian Splatting"
+  click Spla "#chapter-18" "Chapter 18 — SplaTAM"
+  click MonoGS "#chapter-18" "Chapter 18 — MonoGS"
+  click DROID "#chapter-16" "Chapter 16 Hybrid — DROID-SLAM"
+  click DPV "#chapter-16" "Chapter 16 — DPV-SLAM"
+  click DUSt3R "#chapter-20" "Chapter 20 Foundation 3D — DUSt3R"
+  click MASt "#chapter-20" "Chapter 20 — MASt3R"
+  click VGGT "#chapter-20" "Chapter 20 — VGGT"
+  click MASlam "#chapter-20" "Chapter 20 — MASt3R-SLAM"
+  click Kimera "#chapter-20" "Chapter 20 — Kimera"
+  click Hydra "#chapter-20" "Chapter 20 §20.6 Semantic Foundation"
+  click Clio "#chapter-20" "Chapter 20 §20.6 — Clio"
 ```

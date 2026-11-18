@@ -1,137 +1,127 @@
-# Ch.9 — Dense/RGB-D: From KinectFusion to BundleFusion
+# Chapter 12. RGB-D Dense Reconstruction
 
-When Richard Newcombe of Imperial College London presented KinectFusion at ISMAR in November 2011, its demo video drew more attention than the paper. A single handheld Kinect reconstructed an entire room as a 3D mesh in real time. DTAM, which Newcombe had released earlier that year, had pursued the same goal with a monocular camera; KinectFusion achieved it with an RGB-D sensor. The system combined the TSDF representation devised by Curless and Levoy for graphics in 1996, the ICP tracker introduced to robotics by Besl and McKay in 1992, and Microsoft's $150 Kinect sensor from 2010. Their combination began a brief, intense period of dense SLAM research. Davison's MonoSLAM (Ch.5) had used real-time, CPU-only processing to track sparse landmarks from a monocular camera. Newcombe's DTAM (Ch.8) then used a GPU for dense reconstruction through direct photometric optimization, while KinectFusion used the GPU with an RGB-D depth stream.
-
----
-
-## 9.1 Dense reconstruction before Kinect
-
-Dense 3D reconstruction was possible before 2011, but not in *real time*.
-
-Offline pipelines could merge point clouds acquired by stereo or structured-light scanners, but indoor scanning rigs cost hundreds of thousands of dollars and saw little use outside laboratories. The SLAM community was already obtaining practical results from sparse landmarks, while dense reconstruction remained largely a graphics problem.
-
-[Curless and Levoy's 1996 SIGGRAPH paper, "A Volumetric Method for Building Complex Models from Range Images"](https://graphics.stanford.edu/papers/volrange/volrange.pdf) introduced the **TSDF (Truncated Signed Distance Function)** to this graphics pipeline. The method partitions 3D space into a uniform voxel grid and accumulates at each voxel the signed distance to the nearest surface. Moving from the sensor toward the surface, the sign convention assigns a positive value to the free space in front of the surface and a negative value to the solid behind it. Truncation clips the absolute value at a threshold $t$, giving $\text{TSDF}(x) = \text{clip}(d(x), -t, +t)$. Each incoming depth frame updates the value by a weighted average, reducing noise and sharpening the surface over time. Marching cubes then extracts the surface at the TSDF's zero-crossing.
-
-The method was accurate, but the voxel grid consumed substantial memory, and the available hardware could not update it in real time. For the next fifteen years, Curless and Levoy's paper remained primarily part of the graphics literature.
-
-During those fifteen years, GPUs entered the GPGPU era and Kinect appeared.
+When Richard Newcombe of Imperial College London presented KinectFusion at ISMAR in November 2011, its live demonstration overshadowed the paper itself: a single handheld Kinect sweeping across a room and sculpting it into a dense 3D mesh in real time. Earlier that same year, Newcombe's DTAM had pursued dense reconstruction from monocular video alone; KinectFusion achieved it cleanly by switching to an RGB-D sensor. By fusing Curless and Levoy's 1996 TSDF volumetric representation from computer graphics, Besl and McKay's 1992 ICP surface tracker from robotics, and Microsoft's $150 Kinect sensor released in 2010, the system sparked a brief, intense era of dense SLAM. Where Davison's MonoSLAM (Chapter 5) had tracked sparse landmarks on a CPU and Newcombe's DTAM (Chapter 11) had turned to GPUs to optimize monocular photometry, KinectFusion paired GPU parallelism directly with an active depth stream.
 
 ---
 
-## 9.2 KinectFusion and TSDF
+## 12.1 Dense reconstruction before Kinect
 
-Microsoft released Kinect for the Xbox 360 at about $150 in 2010. The sensor measured depth through structured light and streamed VGA-resolution depth maps at 30 Hz. Its precision was below that of research-grade ToF (Time-of-Flight) cameras, but its price was also far lower. Hackers responded first: open-source drivers appeared within weeks of the launch, followed by research applications.
+Dense 3D scanning certainly existed before 2011—just not in *real time*.
 
-Newcombe had by then moved to Microsoft Research Cambridge, where he was developing GPU-based dense SLAM with Shahram Izadi's team. They already had the outline of a pipeline when Kinect launched, and its depth stream supplied the remaining input. The result, presented at ISMAR 2011, was [Newcombe et al. 2011. KinectFusion](https://doi.org/10.1109/ISMAR.2011.6092378).
+Offline pipelines routinely registered point clouds from stereo rigs or structured-light scanners, yet dedicated indoor scanning hardware cost hundreds of thousands of dollars and rarely left specialized labs. In the 2000s, SLAM researchers already had reliable sparse-landmark tracking, leaving dense geometry largely to the computer graphics community.
 
-> 🔗 **Borrowed.** KinectFusion's core representation, the TSDF, was devised by Curless & Levoy (1996) for offline 3D scanning. Newcombe's team made it real-time via GPU parallel voxel updates.
+In that graphics literature, [Curless and Levoy's 1996 SIGGRAPH paper, "A Volumetric Method for Building Complex Models from Range Images"](https://graphics.stanford.edu/papers/volrange/volrange.pdf), introduced the **TSDF (Truncated Signed Distance Function)**. The method carves 3D space into a uniform voxel grid, storing at each voxel the signed distance to the nearest observed surface: positive in free space in front of the surface, negative inside the solid behind it. Truncating the absolute distance at a threshold $t$ gives $\text{TSDF}(x) = \text{clip}(d(x), -t, +t)$, and each incoming depth frame updates every voxel via a running weighted average that suppresses sensor noise and sharpens geometry over time; marching cubes then extracts the clean mesh at the zero-crossing.
 
-The pipeline has four stages.
+Despite its elegance, a dense voxel grid devoured memory, and 1990s hardware stood nowhere near updating millions of voxels at video rates. For fifteen years, Curless and Levoy's algorithm stayed confined to offline scanning—until programmable GPGPU compute and the consumer Kinect arrived together.
 
-First, depth preprocessing denoises the raw depth map with a bilateral filter and computes surface normals.
+---
 
-Second, ICP tracking aligns the current frame's point cloud with the virtual surface ray-cast from the previous TSDF. A point-to-plane variant of **ICP (Iterative Closest Point)** from [Besl & McKay (1992)](https://graphics.stanford.edu/courses/cs164-09-spring/Handouts/paper_icp.pdf) runs thousands of iterations on the GPU. Its output is the camera's 6-DoF pose.
+## 12.2 KinectFusion and TSDF
 
-The point-to-plane ICP objective transforms the current frame's point $\mathbf{p}_i$ by $T = (R, \mathbf{t})$ and matches it to $\hat{\mathbf{p}}_i$ on the ray-cast surface, whose normal is $\hat{\mathbf{n}}_i$. It then minimizes
+Microsoft launched the Xbox 360 Kinect in 2010 at roughly $150. Using structured infrared light, it streamed VGA depth maps at 30 Hz; while noisier than research-grade Time-of-Flight (ToF) cameras, its consumer price point invited immediate experimentation. Hobbyists released open-source drivers within weeks, and robotics labs followed close behind.
+
+By then Newcombe had moved to Microsoft Research Cambridge, working on GPU-accelerated dense SLAM with Shahram Izadi's team. They already had the architecture sketched out when Kinect hit store shelves; plugging in its depth stream produced [Newcombe et al. 2011. KinectFusion](https://doi.org/10.1109/ISMAR.2011.6092378) at ISMAR 2011.
+
+> 🔗 **Borrowed.** KinectFusion's map representation, the TSDF, came straight from Curless & Levoy (1996) in offline 3D graphics; Newcombe's team unlocked real-time operation by parallelizing voxel updates on the GPU.
+
+The pipeline executes four GPU-accelerated stages per frame.
+
+First, bilateral filtering smooths raw depth noise while preserving sharp edges, and surface normals are computed across the depth map.
+
+Second, camera tracking aligns the live point cloud against a synthetic surface ray-cast from the current TSDF model via a GPU-parallel point-to-plane **ICP (Iterative Closest Point)** solver descended from [Besl & McKay (1992)](https://graphics.stanford.edu/courses/cs164-09-spring/Handouts/paper_icp.pdf). Transforming each live point $\mathbf{p}_i$ by candidate pose $T = (R, \mathbf{t})$ toward its corresponding surface point $\hat{\mathbf{p}}_i$ and unit normal $\hat{\mathbf{n}}_i$ minimizes the normal-projected distance
 
 $$E(R, \mathbf{t}) = \sum_i \bigl(\hat{\mathbf{n}}_i^\top (R\,\mathbf{p}_i + \mathbf{t} - \hat{\mathbf{p}}_i)\bigr)^2$$
 
-Unlike the original Besl-McKay point-to-point cost ($\|R\mathbf{p}_i + \mathbf{t} - \hat{\mathbf{p}}_i\|^2$), this objective measures only the error along the normal and is therefore less sensitive to motion along the surface. With the small-rotation approximation $R \approx I + [\boldsymbol{\omega}]_\times$, $E$ becomes a linear least-squares problem in the 6-DoF vector $(\boldsymbol{\omega}, \mathbf{t})$. The GPU solves it through parallel reduction.
+Unlike Besl and McKay's original point-to-point residual ($\|R\mathbf{p}_i + \mathbf{t} - \hat{\mathbf{p}}_i\|^2$), penalizing only error along the surface normal allows smooth surfaces to slide freely without spurious drag. Under the small-angle approximation $R \approx I + [\boldsymbol{\omega}]_\times$, $E$ reduces to a linear least-squares system in the 6-DoF increment $(\boldsymbol{\omega}, \mathbf{t})$, solved rapidly on the GPU via parallel tree reduction.
 
-> 🔗 **Borrowed.** KinectFusion's tracking stage directly inherits ICP from Besl & McKay (1992), applying a classical robotics technique at GPU-scale density.
+> 🔗 **Borrowed.** KinectFusion's tracker directly inherits ICP from Besl & McKay (1992), scaling a classical registration algorithm up to dense per-pixel GPU execution.
 
-Third, TSDF integration projects the depth map into the voxel grid at the estimated pose and updates the TSDF values. The paper's main configuration uses a 512³ voxel grid covering a room-scale volume about 3 m on a side (§4.2, Fig. 13).
+Third, TSDF integration projects the depth map into the volume at the tracked pose and updates each voxel's weighted average. In the paper's canonical setup (§4.2, Fig. 13), a 512³ voxel grid spans a roughly 3 m room-scale cube.
 
-Fourth, surface rendering finds the TSDF's zero-crossing by ray marching to produce vertex and normal maps of the surface. The result becomes the reference surface for the next ICP step.
+Fourth, ray marching extracts the TSDF's zero-crossing surface to render predicted vertex and normal maps, supplying a clean, noise-averaged reference model for the next frame's ICP alignment.
 
-Newcombe presented the monocular dense SLAM system DTAM in the same year. The two projects were closely related: DTAM used the GPU to optimize monocular photometric consistency, while KinectFusion used it for depth integration. Several researchers worked on both.
+Because Newcombe led both DTAM and KinectFusion in 2011 with overlapping collaborators, the two systems stood as siblings: DTAM pushed monocular photometric optimization onto the GPU, whereas KinectFusion harnessed the GPU for active depth alignment and volumetric fusion.
 
-> 🔗 **Borrowed.** The same researchers presented KinectFusion and DTAM in the same year. They share the use of a GPU for dense processing, but DTAM's photometric optimization and KinectFusion's depth alignment and TSDF fusion also differ in map representation and objective.
+> 🔗 **Borrowed.** The same research group unveiled KinectFusion and DTAM in the same year. Both leveraged GPUs for real-time dense processing, yet DTAM's passive photometric energy and KinectFusion's depth-driven TSDF fusion diverged sharply in both map structure and objective.
 
-The 512³ TSDF updated at 30 Hz, and a single indoor room could be reconstructed as a dense mesh within minutes. Within a fixed room-scale volume, dense model-to-frame ICP used many surface measurements and produced low tracking drift. The model was still built from earlier pose estimates, however, and was not an absolute reference surface.
-
-A 512³ voxel grid covers only a fixed spatial extent; once the camera leaves the room, voxels saturate or overwrite one another. The system had no loop closure, and Kinect's IR structured light did not work in sunlight. Outdoor use was therefore outside its scope from the outset.
+Updating a 512³ TSDF at 30 Hz allowed a user to sweep out a room-scale mesh in minutes, and dense model-to-frame ICP suppressed local drift effectively inside that volume—though because the reference model itself accumulated from prior pose estimates, global drift could still creep in. More fundamentally, a fixed 512³ volume capped spatial range: walking out of the room exhausted the grid, no loop-closure mechanism existed to correct accumulated error, and sunlight washed out Kinect's infrared structured-light pattern, confining the system strictly indoors.
 
 ---
 
-## 9.3 Kintinuous — rolling volume
+## 12.3 Kintinuous — rolling volume
 
-Soon after KinectFusion appeared, Whelan at Imperial College addressed this limitation by moving the fixed-size TSDF volume with the camera.
+Shortly after KinectFusion appeared, Thomas Whelan at Imperial College tackled its fixed-volume ceiling by letting the TSDF volume travel with the camera.
 
-In July 2012, at the RSS workshop (RGB-D: Advanced Reasoning with Depth Cameras, Sydney), [Whelan et al. presented Kintinuous](https://www.cs.cmu.edu/~kaess/pub/Whelan12rssw.pdf), which introduced a "rolling TSDF volume." As the camera approached the boundary of the volume, slices on the far side were extracted as mesh and released, while new slices were attached in front. Memory stayed constant while the camera could move indefinitely.
+At the July 2012 RSS workshop on RGB-D perception in Sydney, [Whelan et al. presented Kintinuous](https://www.cs.cmu.edu/~kaess/pub/Whelan12rssw.pdf), introducing a **rolling TSDF volume**. As the camera moved toward the boundary of the active grid, trailing voxel slices were meshed out and freed from GPU memory while fresh slices were allocated ahead—keeping memory bounded while permitting arbitrarily long trajectories.
 
-A demo that traversed an entire indoor corridor exceeded KinectFusion's fixed spatial range, but loop closure was still missing. After a long corridor traversal returned to its origin, the mismatch between the two ends remained unresolved. This misalignment limited global map consistency independently of the level of surface detail.
+Demos traversing entire indoor corridors proved that dense RGB-D SLAM could outgrow a single room, yet loop closure remained missing. When a long corridor loop closed back to its starting doorway, the accumulated mismatch between the two ends stayed frozen in place, undermining global geometric consistency regardless of local mesh detail.
 
 ---
 
-## 9.4 ElasticFusion: Surfels and non-rigid deformation
+## 12.4 ElasticFusion: Surfels and non-rigid deformation
 
-After Kintinuous, Whelan replaced TSDF voxels with surfels.
+To make dense maps globally deformable for loop closure, Whelan abandoned regular voxel grids altogether in favor of **surfels**.
 
-A **surfel (surface element)** is a point with a position, normal, radius, and color. In computer graphics, [Pfister et al. (2000)](https://www.merl.com/publications/docs/TR2000-10.pdf) proposed the concept as a rendering representation. Unlike a regular voxel grid, a surfel structure follows the observed surface.
+A **surfel (surface element)** represents a small oriented disk carrying a 3D position, surface normal, radius, and color—introduced to computer graphics as a lightweight rendering primitive by [Pfister et al. (2000)](https://www.merl.com/publications/docs/TR2000-10.pdf). Unlike a dense voxel array, surfels allocate memory only along observed surfaces.
 
-> 🔗 **Borrowed.** ElasticFusion adapted the surfel rendering technique of Pfister et al. (2000) as a SLAM map representation.
+> 🔗 **Borrowed.** ElasticFusion repurposed the surfel rendering primitive of Pfister et al. (2000) as a mutable SLAM map representation.
 
-[Whelan et al. 2016. ElasticFusion](https://doi.org/10.1177/0278364916669237) combined a surfel-based dense map with loop closure through *non-rigid deformation*.
+In [Whelan et al. 2016. ElasticFusion](https://doi.org/10.1177/0278364916669237), Whelan paired a surfel map with loop closure via *non-rigid space deformation*. Updating a global mesh or TSDF grid whenever a loop closes had always been prohibitively slow; ElasticFusion instead overlaid an embedded deformation graph onto the surfel cloud so loop constraints could warp the entire map smoothly in place.
 
-Loop closure had been difficult in earlier dense SLAM systems because updating a global mesh or voxel grid to satisfy a loop-closure constraint was expensive. ElasticFusion connected the surfel set to a deformation graph. When it detected a loop closure, it deformed the graph to distribute the error across the entire map, producing a non-rigid correction at the surfel-map level.
-
-Concretely, each node $g_k$ of the deformation graph carries a position $\mathbf{v}_k$ and a rotation $R_k$ and translation $\mathbf{t}_k$. A surfel $s$ lies within the influence of its $K$ nearest nodes, and the surfel's deformed position is computed as
+Each deformation node $g_k$ holds a spatial anchor $\mathbf{v}_k$ together with a rotation $R_k$ and translation $\mathbf{t}_k$. Every surfel $s$ blends the transforms of its $K$ nearest graph nodes via distance-decaying weights $w_k$, yielding its deformed position
 
 $$\tilde{\mathbf{p}}_s = \sum_{k \in \mathcal{N}(s)} w_k \bigl(R_k (\mathbf{p}_s - \mathbf{v}_k) + \mathbf{v}_k + \mathbf{t}_k\bigr)$$
 
-The weight $w_k$ decreases with distance. When a loop-closure constraint is added, Gauss-Newton optimizes the graph nodes' $(R_k, \mathbf{t}_k)$ to distribute the error globally. The method can therefore correct the entire dense map consistently without rebuilding a TSDF from scratch.
+When loop closure detects a revisit, Gauss-Newton optimizes the node transforms $(R_k, \mathbf{t}_k)$ to reconcile overlapping surfaces and spread residual error smoothly across the trajectory—restoring global consistency without rebuilding a volumetric grid from scratch.
 
-The ElasticFusion paper reported strong indoor reconstruction results on the ICL-NUIM synthetic dataset. Sequences kt0·kt1·kt2 recorded ATE RMSE below 1.4 cm, with kt0·kt1 at 0.9 cm; kt3, in which global loop closure activates, was an unusually large exception. These figures apply to the paper's ICL-NUIM setting rather than to KITTI or TUM RGB-D.
-
----
-
-## 9.5 BundleFusion: offline-SfM quality, online
-
-In 2017, Dai, Nießner, Zollhöfer, Izadi, and Theobalt published [Dai et al. 2017. BundleFusion](https://doi.org/10.1145/3072959.3054739) in ACM Transactions on Graphics. KinectFusion and its successors had sought higher quality while preserving real-time operation. BundleFusion instead devoted extensive GPU computation to running SfM-grade bundle adjustment within an online system.
-
-BundleFusion used hierarchical optimization. At the fastest layer, dense depth alignment between the current and previous frames provides an initial pose. The next layer corrects it through sparse frame-to-frame alignment with SIFT features. At the third layer, hierarchical global bundle adjustment re-optimizes the poses of accumulated frames, including earlier poses. This "retroactive pose correction" sought to approach online the result that an offline SfM pipeline obtains by aligning all data after collection. The system back-projects updated pose sequences into the TSDF for reintegration, preventing tracking errors from remaining embedded in the map.
-
-Dai's team reported better results than ElasticFusion on TUM RGB-D. Its visual reconstruction quality approached that of the offline COLMAP pipeline by the standards of the time.
-
-> 📜 **Prediction vs. outcome.** BundleFusion claimed real-time online global bundle adjustment at "unprecedented speed," proposing a way to bring offline SfM quality into online operation. GPU performance continued to increase, but from 2021 one major research path instead used COLMAP for camera poses and NeRF for scene representation. This was less a direct successor to online TSDF mapping than a turn toward novel-view synthesis and neural scene representation.
+On the synthetic ICL-NUIM indoor benchmark, ElasticFusion achieved sub-1.4 cm ATE RMSE across sequences kt0·kt1·kt2 (and 0.9 cm on kt0·kt1), with kt3 acting as an unusually large outlier where global loop closure engaged. Those figures reflect ICL-NUIM's controlled synthetic indoor setup rather than outdoor or handheld datasets like KITTI or TUM RGB-D.
 
 ---
 
-## 9.6 Co-evolution of hardware and algorithm
+## 12.5 BundleFusion: offline-SfM quality, online
 
-The six years from KinectFusion to BundleFusion reflect changes in both algorithms and hardware.
+In 2017, Angela Dai, Matthias Nießner, Michael Zollhöfer, Shahram Izadi, and Christian Theobalt raised the computational stakes further with [Dai et al. 2017. BundleFusion](https://doi.org/10.1145/3072959.3054739) in *ACM Transactions on Graphics*. Rather than trading accuracy for speed, BundleFusion threw massive GPU parallelism at running SfM-grade global bundle adjustment continuously online.
 
-The first-generation Kinect used structured light. Its depth precision was a few millimeters at meter-scale range, but sunlight obscured the IR pattern. Kinect 2, released in 2013, switched to ToF, improving both precision and dynamic range. Intel's RealSense series followed. As sensor options expanded, algorithms could make different assumptions about depth quality, and researchers explored methods that either exploited lower noise or tolerated higher noise.
+Its architecture layers three optimization tiers: fast dense frame-to-frame depth alignment supplies an initial pose, sparse SIFT feature matching refines local alignment, and hierarchical global bundle adjustment continuously re-optimizes the full history of frame poses. Whenever this retroactive optimization shifts earlier poses, BundleFusion de-integrates the stale frame contributions from the TSDF and re-integrates them at the corrected poses—preventing early tracking drift from fossilizing in the map.
 
-The CUDA ecosystem also matured. Between KinectFusion in 2011 and BundleFusion in 2017, GPU throughput and memory performance also improved. Any numerical comparison requires specifying the GPU models and arithmetic precision. The increasingly expensive real-time optimization in Whelan's ElasticFusion and Dai's BundleFusion depended on this hardware progress as well as on algorithm design.
+On TUM RGB-D, Dai's team outperformed ElasticFusion, delivering visual surface fidelity that rivaled offline COLMAP reconstructions by 2017 standards.
 
-Had Kinect been priced like research instrumentation rather than a consumer device, this line of work would probably have spread more slowly. A mass-market sensor helped set its pace.
-
-> 📜 **Prediction vs. outcome.** The spatial range, drift, and outdoor limitations of KinectFusion's fixed 512³ volume shaped the research that followed. Kintinuous, ElasticFusion, and BundleFusion addressed volume extension in turn. Outdoor operation followed a different path because sunlight obscures IR structured-light patterns. Early Kinect-based dense SLAM remained largely indoors, while LiDAR became a main sensor for outdoor dense mapping. This limitation does not apply uniformly to every RGB-D sensing technology.
+> 📜 **Prediction vs. outcome.** BundleFusion touted real-time global bundle adjustment at "unprecedented speed," pointing toward online systems matching offline SfM quality. While GPU horsepower did keep climbing, the post-2021 wave largely bypassed online TSDF fusion altogether—pairing offline COLMAP poses with NeRF or neural scene representations aimed at photorealistic view synthesis rather than real-time voxel mapping.
 
 ---
 
-## 9.7 Why dense-only systems receded
+## 12.6 Co-evolution of hardware and algorithm
 
-Between 2011 and 2017, dense RGB-D SLAM appeared likely to become the main direction of Visual SLAM, but it did not.
+The rapid arc from KinectFusion (2011) to BundleFusion (2017) reflects tight co-evolution between consumer depth hardware and GPU compute.
 
-Sparse backends continued to dominate. Practical SLAM systems after 2015, represented by [ORB-SLAM2](https://arxiv.org/abs/1610.06475) and [VINS-Mono](https://arxiv.org/abs/1708.03852), did not use dense maps by default. Several constraints reinforced this choice. A 512³ TSDF requires more than 512 MB, a substantial cost for mobile and embedded systems. [Voxblox](https://arxiv.org/abs/1611.03631), which stores TSDF values in hashed blocks, and [OctoMap](https://www.hrl.uni-bonn.de/papers/wurm10octomap.pdf), which stores occupancy probabilities in an octree, reduced memory use with different map representations but did not match sparse representations in efficiency. Real-time dense processing also required a GPU, making a KinectFusion-grade pipeline difficult to run on an autonomous vehicle's embedded processor or a lightweight drone platform. Kinect's IR depth sensing also failed outdoors, while commercially important applications such as autonomous driving and drones operated largely in outdoor environments.
+The original Kinect relied on structured infrared light, delivering millimeter-scale precision at close range while washing out in sunlight. Kinect 2 (2013) switched to Time-of-Flight (ToF) sensing with cleaner range accuracy and dynamic range, followed by Intel's RealSense family; as depth noise profiles changed, algorithms adapted accordingly.
 
-During the same period, dense map data structures extended KinectFusion's fixed 512³ volume in several directions. [Museth's VDB (2013)](https://doi.org/10.1145/2487228.2487235) combined block hashing with an internal tree, leaving sparse regions empty while refining only the neighborhood of a surface. Released as OpenVDB, it became a major infrastructure for large sparse volumetric data and provides a useful comparison with the nvblox lineage in Ch.17. [Reijgwart et al. (2023)'s wavemap](https://arxiv.org/abs/2306.08125) compressed occupancy with a wavelet transform to adjust the trade-off between resolution and memory. Ramos and Ott pursued continuous-function representations. [O'Callaghan and Ramos (2012)'s GPOM (Gaussian Process Occupancy Map)](https://doi.org/10.1177/0278364911435991) used Gaussian Process regression to relate depth measurements and assign probabilities even to unmeasured voxels. [Ramos and Ott (2016)'s Hilbert Map](https://doi.org/10.1177/0278364916684382) learned Hilbert-space features with logistic regression to provide streamable probabilistic occupancy. [Behley and Stachniss (2018)'s SuMa](https://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/behley2018rss.pdf) adapted ElasticFusion's indoor RGB-D surfel representation to outdoor LiDAR, producing a surfel-based SLAM system that operated on KITTI (→ Ch.17). These approaches extended dense mapping from a single room to outdoor and city-scale environments while incorporating probabilistic uncertainty.
+At the same time, CUDA matured rapidly, multiplying GPU arithmetic throughput and memory bandwidth between 2011 and 2017. Because real-time execution in ElasticFusion and BundleFusion depended heavily on those hardware gains, any quantitative benchmark comparison must specify both the GPU model and numerical precision. Without consumer pricing on the original Kinect—bringing depth sensing from specialized instrumentation down to a mass-market game peripheral—this entire subfield would have grown far more slowly.
 
-After NeRF appeared around 2020, high-quality dense reconstruction shifted toward NeRF and 3D Gaussian Splatting. The map representation changed, but measured RGB-D depth continued to constrain both tracking and the learned map geometry.
-
-The period of dense RGB-D SLAM was brief, but its components persisted. TSDF representations entered occupancy mapping for autonomous driving, and ICP became a standard tracking method in LiDAR SLAM. Dense-only systems receded while their techniques spread into other architectures.
+> 📜 **Prediction vs. outcome.** KinectFusion's fixed 512³ volume, drift, and indoor confinement set the agenda for its immediate successors: Kintinuous, ElasticFusion, and BundleFusion solved volume expansion and global consistency indoors, while outdoor dense mapping gravitated toward LiDAR because sunlight blinds IR structured light—a hardware boundary specific to active IR emitters rather than to every depth modality.
 
 ---
 
-## 🧭 Still open
+## 12.7 Why dense-only systems receded
 
-Large-scale outdoor dense reconstruction. Sunlight interference with IR structured light is a general limitation of active depth sensors. LiDAR operates at longer range but captures color and fine surface detail poorly. As of 2026, RGB-D still cannot densely process large outdoor environments. Learned stereo depth estimation has improved, but limitations in dark regions, on reflective surfaces, and at long range remain unresolved.
+Between 2011 and 2017, dense RGB-D SLAM looked poised to overtake visual SLAM; yet within a few years, sparse pipelines reclaimed the mainstream.
 
-Dense reconstruction of dynamic scenes. Every system from KinectFusion to BundleFusion was designed for static scenes. Dense reconstruction in spaces occupied by moving people requires separating dynamic objects, using semantic segmentation, geometric residuals, or other motion-separation methods. [DynaSLAM](https://arxiv.org/abs/1806.05620) and [MaskFusion](https://arxiv.org/abs/1804.09194) attempted this, but their computational cost and robustness remained unsuitable for practical deployment.
+Practical systems deployed after 2015—led by [ORB-SLAM2](https://arxiv.org/abs/1610.06475) and [VINS-Mono](https://arxiv.org/abs/1708.03852)—opted for sparse landmarks by default, driven by hard engineering constraints. A raw 512³ TSDF consumes over 512 MB of memory, and while hashed-block TSDFs like [Voxblox](https://arxiv.org/abs/1611.03631) and octree occupancy maps like [OctoMap](https://www.hrl.uni-bonn.de/papers/wurm10octomap.pdf) trimmed that footprint, neither matched the lean efficiency of sparse graphs. Worse, dense pipelines required desktop-class GPUs unavailable on lightweight drones and embedded vehicles, and active IR depth sensors failed outdoors where commercial autonomous driving and aerial robotics operated.
 
-Memory efficiency of voxel maps. Voxblox stores TSDF values in hashed blocks, while OctoMap stores occupancy probabilities in an octree; the two reduce memory use for different map representations. Dense representations at the scale of a building floor or city block nevertheless require tens of gigabytes. No general adaptive-resolution method automatically determines the appropriate resolution for each region. Implicit neural representations such as [Instant-NGP](https://arxiv.org/abs/2201.05989) address this problem, but real-time updates still trade off against query speed.
+Nevertheless, the volumetric and surfel data structures pioneered around KinectFusion branched outward into large-scale mapping. On the sparse volumetric side, [Museth's VDB (2013)](https://doi.org/10.1145/2487228.2487235)—released as OpenVDB—paired block hashing with a shallow internal tree to allocate detail strictly near surfaces (a foundation directly comparable to Chapter 21's nvblox), while [Reijgwart et al.'s (2023) wavemap](https://arxiv.org/abs/2306.08125) compressed 3D occupancy via wavelet transforms to trade resolution against memory dynamically. Seeking continuous probabilistic occupancy, [O'Callaghan and Ramos's (2012) GPOM (Gaussian Process Occupancy Map)](https://doi.org/10.1177/0278364911435991) and [Ramos and Ott's (2016) Hilbert Map](https://doi.org/10.1177/0278364916684382) replaced discrete voxels with kernel regression and streamable Hilbert-space features capable of inferring occupancy even in unobserved gaps. Meanwhile, [Behley and Stachniss's (2018) SuMa](https://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/behley2018rss.pdf) ported ElasticFusion's indoor surfel concept outdoors onto spinning LiDAR scans, operating across city-scale KITTI routes (→ Chapter 21).
 
-While dense SLAM reconstructed individual rooms as meshes, another lineage addressed the problem of recognizing a return to the same room. Place recognition, which asks whether a system has seen a place before, had developed at Oxford since 2003 independently of dense mapping. KinectFusion had no loop closure; the researchers working on that problem focused on recognizing locations rather than constructing denser maps.
+By the early 2020s, high-fidelity dense reconstruction itself had shifted toward NeRF and 3D Gaussian Splatting—changing the scene representation even as measured RGB-D depth continued anchoring tracking and surface geometry. Dense-only RGB-D SLAM had a brief heyday, yet its core building blocks endured: TSDF grids entered autonomous-driving occupancy networks, and GPU ICP became a staple of LiDAR odometry.
+
+---
+
+## Still open
+
+**Large-scale outdoor dense reconstruction.** Sunlight interference remains a physical barrier for active IR structured light, while LiDAR offers long range without dense color or fine texture. As of 2026, RGB-D sensors still cannot deliver dense outdoor mapping at large scale, and even learned stereo depth falters in deep shadow, on specular surfaces, and at long range.
+
+**Dense reconstruction of dynamic scenes.** Every milestone from KinectFusion to BundleFusion assumed a static world. Mapping spaces filled with moving people demands separating dynamic objects via semantic segmentation, motion residuals, or explicit tracking; systems like [DynaSLAM](https://arxiv.org/abs/1806.05620) and [MaskFusion](https://arxiv.org/abs/1804.09194) demonstrated prototypes, yet compute cost and robustness continue to block practical deployment.
+
+**Memory efficiency of voxel maps.** While hashed blocks in Voxblox and octrees in OctoMap cut memory overhead relative to dense arrays, building- or city-block-scale volumetric maps still swell to tens of gigabytes, and no universal scheme adapts voxel resolution automatically to geometric complexity. Neural hash encodings like [Instant-NGP](https://arxiv.org/abs/2201.05989) offer compact alternatives, but balancing real-time updates against fast queries remains an engineering trade-off.
+
+---
+
+While dense RGB-D SLAM focused on sculpting every surface inside a room, an independent lineage had been tackling a complementary question since 2003: how does a robot know it has *returned* to that room in the first place? KinectFusion launched without loop closure altogether; answering "have I been here before?" was the domain of place recognition—whose arc from Oxford's visual words to foundation-model descriptors is traced next in Chapter 13.

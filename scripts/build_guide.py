@@ -2,16 +2,61 @@
 """
 Build script: assemble chapter_*.md files into a single guide.html.
 Adapted from sensor-fusion-guide/scripts/build_guide.py — Korean-only,
-20-chapter structure (Ch.0-19) with 7 narrative parts.
+24-chapter structure (KO: 0장-23장, explicit ORDER below) with a preface and 5 parts.
+KO H1 format: "# N장 제목". EN (en/) H1 format: "# Chapter N. Title" (same numbers and groups).
 Usage: python3 scripts/build_guide.py
 """
 
 import os
 import glob
+import re
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EN_DIR = os.path.join(PROJECT_ROOT, "en")
 OUTPUT = os.path.join(PROJECT_ROOT, "guide.html")
+
+
+# Explicit KO reading order (file names kept; display numbers 0장-23장).
+ORDER = [
+    "chapter_00_prologue.md",            # 0장
+    "chapter_01_photogrammetry.md",      # 1장
+    "chapter_02_classical_cv.md",        # 2장
+    "chapter_03_sfm.md",                 # 3장
+    "chapter_04_ekf_slam.md",            # 4장
+    "chapter_05_monoslam_ptam.md",       # 5장
+    "chapter_06_graph_slam.md",          # 6장
+    "chapter_06b_certifiable.md",        # 7장
+    "chapter_07_orb_slam.md",            # 8장
+    "chapter_07b_preintegration.md",     # 9장
+    "chapter_07c_continuous_time.md",    # 10장
+    "chapter_08_direct.md",              # 11장
+    "chapter_09_rgbd.md",                # 12장
+    "chapter_10_place_recognition.md",   # 13장
+    "chapter_11_monodepth.md",           # 14장
+    "chapter_12_end_to_end.md",          # 15장
+    "chapter_13_hybrid.md",              # 16장
+    "chapter_14_nerf_slam.md",           # 17장
+    "chapter_15_gaussian_splatting.md",  # 18장
+    "chapter_15b_dynamic.md",            # 19장
+    "chapter_16_foundation_3d.md",       # 20장
+    "chapter_17_lidar.md",               # 21장
+    "chapter_18_dead_ends.md",           # 22장
+    "chapter_19_open_problems.md",       # 23장
+]
+
+
+def rewrite_internal_links(text):
+    """In the single-page guide, turn links to other chapter files into in-page anchors.
+    chapter_X.md#anchor -> #anchor (dash runs collapsed, cut to 60 chars, matching the JS heading ids);
+    chapter_X.md -> #chapter-N."""
+    def sub(m):
+        name, anchor = m.group(1), m.group(2)
+        if anchor:
+            return "](#" + re.sub(r"-+", "-", anchor)[:60] + ")"
+        if name in ORDER:
+            return "](#chapter-%d)" % ORDER.index(name)
+        return m.group(0)
+    return re.sub(r"\]\((chapter_[0-9a-z_]+\.md)(?:#([^)\s]+))?\)", sub, text)
 
 
 def read_chapters(lang="ko"):
@@ -21,10 +66,20 @@ def read_chapters(lang="ko"):
     else:
         pattern = os.path.join(EN_DIR, "chapter_*.md")
     files = sorted(glob.glob(pattern))
+    root = PROJECT_ROOT if lang == "ko" else EN_DIR
+    if files:
+        base = [os.path.join(root, n) for n in ORDER]
+        missing = [n for n in ORDER if not os.path.exists(os.path.join(root, n))]
+        extra = sorted(set(map(os.path.basename, files)) - set(ORDER))
+        if missing or extra:
+            raise SystemExit("ORDER mismatch: missing=%s extra=%s" % (missing, extra))
+        files = base
     parts = []
     for f in files:
         with open(f, "r", encoding="utf-8") as fh:
-            parts.append(fh.read())
+            text = fh.read()
+        text = rewrite_internal_links(text)
+        parts.append(text)
     return "\n\n---\n\n".join(parts)
 
 
@@ -106,7 +161,17 @@ OVERVIEW_JS = r"""
     var chapters = {};
 
     h1s.forEach(function(h1) {
-      var m = h1.textContent.trim().match(/(?:Chapter|Ch\.?)\s*(\d+[a-z]?)\s*[\u2014\u2013-]\s*(.+)/i);
+      var t1 = h1.textContent.trim();
+      var m = t1.match(/^(\d+)장\s+(.+)$/);
+      var numLabel = m ? m[1] + '장' : null;
+      if (!m) {
+        m = t1.match(/^Chapter\s+(\d+)\.\s+(.+)$/);
+        if (m) numLabel = 'Chapter ' + m[1];
+      }
+      if (!m) {
+        m = t1.match(/(?:Chapter|Ch\.?)\s*(\d+[a-z]?)\s*[\u2014\u2013-]\s*(.+)/i);
+        if (m) numLabel = 'Ch.' + m[1].toLowerCase();
+      }
       if (!m) return;
       var chKey = m[1].toLowerCase();
       if (!h1.id) h1.id = 'chapter-' + chKey;
@@ -124,7 +189,7 @@ OVERVIEW_JS = r"""
         node = node.nextElementSibling;
       }
 
-      chapters[chKey] = { title: m[2].trim(), id: h1.id, sections: sections };
+      chapters[chKey] = { title: m[2].trim(), id: h1.id, num: numLabel, sections: sections };
     });
 
     var total = Object.keys(chapters).length;
@@ -163,7 +228,7 @@ OVERVIEW_JS = r"""
         chLink.href = '#' + ch.id;
         var numSpan = document.createElement('span');
         numSpan.className = 'overview-chapter-num';
-        numSpan.textContent = 'Ch.' + chKey;
+        numSpan.textContent = ch.num;
         chLink.appendChild(numSpan);
         chLink.appendChild(document.createTextNode(ch.title));
         chWrap.appendChild(chLink);
@@ -806,13 +871,12 @@ mark.search-highlight {{
       noResults: '검색 결과 없음',
       loading: '가이드 렌더링 중...',
       groups: [
-        {{ label: '0 · 서문',        chapters: [0] }},
-        {{ label: '1 · 선사시대',    chapters: [1, 2, 3] }},
-        {{ label: '2 · 고전 SLAM',   chapters: [4, 5, 6, '6b'] }},
-        {{ label: '3 · 성숙기',      chapters: [7, '7b', '7c', 8, 9, 10] }},
-        {{ label: '4 · 러닝 융합기', chapters: [11, 12, 13] }},
-        {{ label: '5 · 표현의 혁명', chapters: [14, 15, '15b', 16] }},
-        {{ label: '6 · 옆길과 결론', chapters: [17, 18, 19] }}
+        {{ label: '서문',                    chapters: [0] }},
+        {{ label: '1부 고전 기하',           chapters: [1, 2, 3] }},
+        {{ label: '2부 필터와 그래프',       chapters: [4, 5, 6, 7, 8, 9, 10] }},
+        {{ label: '3부 직접법과 조밀 재구성', chapters: [11, 12] }},
+        {{ label: '4부 학습 기반 방법',      chapters: [13, 14, 15, 16, 17, 18, 19, 20] }},
+        {{ label: '5부 LiDAR와 남은 문제',   chapters: [21, 22, 23] }}
       ]
     }},
     en: {{
@@ -823,13 +887,12 @@ mark.search-highlight {{
       noResults: 'No results',
       loading: 'Rendering guide...',
       groups: [
-        {{ label: '0 · Preface',            chapters: [0] }},
-        {{ label: '1 · Prehistory',         chapters: [1, 2, 3] }},
-        {{ label: '2 · Classical SLAM',     chapters: [4, 5, 6, '6b'] }},
-        {{ label: '3 · Maturity',           chapters: [7, '7b', '7c', 8, 9, 10] }},
-        {{ label: '4 · Learning fusion',    chapters: [11, 12, 13] }},
-        {{ label: '5 · Representation',     chapters: [14, 15, '15b', 16] }},
-        {{ label: '6 · Sidetracks & close', chapters: [17, 18, 19] }}
+        {{ label: 'Preface',                                  chapters: [0] }},
+        {{ label: 'Part 1. Classical Geometry',               chapters: [1, 2, 3] }},
+        {{ label: 'Part 2. Filters and Graphs',               chapters: [4, 5, 6, 7, 8, 9, 10] }},
+        {{ label: 'Part 3. Direct Methods and Dense Reconstruction', chapters: [11, 12] }},
+        {{ label: 'Part 4. Learning-Based Methods',           chapters: [13, 14, 15, 16, 17, 18, 19, 20] }},
+        {{ label: 'Part 5. LiDAR and Open Problems',          chapters: [21, 22, 23] }}
       ]
     }}
   }};
@@ -1062,6 +1125,11 @@ mark.search-highlight {{
 
     headings.forEach(function(heading) {{
       var baseId = heading.id;
+      var chM = null;
+      if (heading.tagName === 'H1') {{
+        chM = heading.textContent.trim().match(/^(\d+)장\s/) || heading.textContent.trim().match(/^Chapter\s+(\d+)\./) || heading.textContent.trim().match(/^Ch\.?\s*(\d+[a-z]?)/i);
+        if (chM && !baseId) baseId = 'chapter-' + chM[1].toLowerCase();
+      }}
       if (!baseId) {{
         baseId = heading.textContent
           .toLowerCase()
@@ -1081,7 +1149,7 @@ mark.search-highlight {{
       heading.id = uniqueId;
 
       if (heading.tagName === 'H1') {{
-        var m = heading.textContent.trim().match(/Ch\.?\s*(\d+[a-z]?)/i);
+        var m = chM;
         if (m) {{
           var chKey = m[1].toLowerCase();
           if (GROUP_FIRST[chKey]) {{

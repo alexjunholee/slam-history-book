@@ -1,133 +1,113 @@
-# Ch.13 — The Hybrid Victory: From CodeSLAM to DROID-SLAM
+# Chapter 16. Combining Learning and Geometry: From CodeSLAM to DROID-SLAM
 
-When Michael Bloesch presented CodeSLAM at CVPR 2018, he was affiliated with the Dyson Robotics Lab at Imperial College London and advised by Andrew Davison. Richard Newcombe had built DTAM in the same lab in 2011. Jan Czarnowski would release DeepFactors there in 2020, and Edgar Sucar and Tristan Laidlow would continue related work. Bloesch combined Davison's view of SLAM as probabilistic inference, developed since 2002, with the mid-2010s premise that representations could be learned.
+When Michael Bloesch presented CodeSLAM at CVPR 2018, he was working under Andrew Davison at Imperial College London's Dyson Robotics Lab—the very group where Richard Newcombe had built DTAM in 2011 and where Jan Czarnowski (DeepFactors, 2020), Edgar Sucar, and Tristan Laidlow would soon carry dense learned mapping forward. Bloesch's system bridged two traditions that had rarely spoken the same language: Davison's view of SLAM as probabilistic inference, honed since 2002, and the mid-2010s conviction that visual scene representations could be learned from data.
 
 ---
 
-## 13.1 CodeSLAM — latent code and the map
+## 16.1 CodeSLAM — latent code and the map
 
-Traditional monocular SLAM estimated depth as an optimization variable, whether for a few hundred sparse landmarks or, as in [DTAM](https://www.doc.ic.ac.uk/~ajd/Publications/newcombe_etal_iccv2011.pdf) (Newcombe et al. 2011), for every pixel. The dimension of this variable space grew with image resolution. A 640×480 dense depth map for one keyframe contains 307,200 independent variables, making optimization expensive, initialization sensitive, and prior information difficult to incorporate.
+Traditional monocular SLAM treated depth directly as an optimization variable, whether across a few hundred sparse landmarks or, as in [DTAM](https://www.doc.ic.ac.uk/~ajd/Publications/newcombe_etal_iccv2011.pdf) (Newcombe et al. 2011), at every pixel. That choice meant the state space scaled with image resolution: a single 640×480 dense depth map packed 307,200 independent variables, inflating compute, sharpening sensitivity to initialization, and leaving little room to enforce prior structure.
 
-[Bloesch et al. 2018. CodeSLAM](https://doi.org/10.1109/CVPR.2018.00271) optimized a low-dimensional **latent code** that generated the depth map rather than optimizing each depth value directly. A variational autoencoder (VAE) trained on real depth distributions learned a bottleneck space that approximated the manifold of realistic depth maps. Restricting optimization to this manifold reduced the number of variables from hundreds of thousands to hundreds.
+Rather than optimizing each pixel's depth directly, [Bloesch et al. 2018. CodeSLAM](https://doi.org/10.1109/CVPR.2018.00271) optimized a compact **latent code** that generated the entire depth map. Trained on real depth distributions, a variational autoencoder (VAE) learned a low-dimensional bottleneck approximating the manifold of plausible depth maps. Restricting inference to that manifold compressed the optimization space from hundreds of thousands of per-pixel depths to a few hundred latent variables.
 
-> 🔗 **Borrowed.** CodeSLAM's latent depth representation uses the encoder-decoder latent-space structure established in [Kingma & Welling 2013. VAE](https://arxiv.org/abs/1312.6114). Training follows the VAE framework, but during SLAM inference, **z** becomes a MAP optimization variable without stochastic sampling. A representation developed for generative image models became, a decade later, a low-dimensional space for SLAM optimization.
+> 🔗 **Borrowed.** CodeSLAM's latent depth representation builds on the encoder-decoder bottleneck introduced in [Kingma & Welling 2013. VAE](https://arxiv.org/abs/1312.6114). Although training follows the standard VAE objective, during SLAM inference **z** becomes a deterministic MAP optimization variable without stochastic sampling. A framework conceived for generative image modeling was thus repurposed, years later, as a compact parameterization for geometric SLAM optimization.
 
-For each keyframe, a VAE encoder extracts a latent code **z** from the image, and a decoder reconstructs a dense depth map from that code. The system jointly optimizes the camera pose and **z**. A photometric loss enforces consistency, while a latent prior regularizes **z** toward its prior distribution.
-
-Written as an equation, the objective is:
+In operation, the VAE encoder extracts an initial latent code **z** from each keyframe image, and the decoder reconstructs a dense depth map from **z**. The system then jointly optimizes camera poses and latent codes by minimizing photometric inconsistency across views alongside a prior penalty that pulls **z** toward a standard normal distribution:
 
 $$E(\mathbf{z}, T) = \sum_{i,j} \rho\bigl(I_j(\pi(T_{ij}, D_\mathbf{z}(u_i), u_i)) - I_i(u_i)\bigr) + \lambda \|\mathbf{z}\|^2$$
 
-$D_\mathbf{z}$ is the decoder, $\pi$ is the projection, $\rho$ is a robust cost, and $T_{ij}$ is the relative pose between keyframes. The latent-prior term $\lambda\|\mathbf{z}\|^2$ corresponds to the negative log-likelihood of the standard normal prior $p(\mathbf{z}) = \mathcal{N}(0, I)$ and arises directly from MAP inference under a Gaussian prior.
+Here $D_\mathbf{z}$ denotes the decoder, $\pi$ the camera projection, $\rho$ a robust cost function, and $T_{ij}$ the relative pose between keyframes. The regularization term $\lambda\|\mathbf{z}\|^2$ corresponds to the negative log-likelihood of the standard normal prior $p(\mathbf{z}) = \mathcal{N}(0, I)$, arising directly from MAP inference under a Gaussian prior.
 
-> 🔗 **Borrowed.** Dellaert and Kaess's [GTSAM](https://gtsam.org/tutorials/intro.html) factor graph provided the backend structure for DeepFactors. Czarnowski reformulated CodeSLAM's joint pose-latent optimization as an explicit factor graph in which a learned latent variable appeared alongside conventional pose nodes. Graph edges expressed the coupling between learned and geometric variables.
+> 🔗 **Borrowed.** Dellaert and Kaess's [GTSAM](https://gtsam.org/tutorials/intro.html) factor graph would later provide the backend structure for DeepFactors (§16.2). Czarnowski reformulated CodeSLAM's joint pose-latent optimization as an explicit factor graph in which a learned latent variable appeared alongside conventional pose nodes, letting graph edges capture the coupling between learned and geometric states.
 
-CodeSLAM surpassed earlier methods in reconstructing geometry from sparse input, but it did not operate in real time. Both VAE inference and the optimization loop were slow, a limitation the paper stated explicitly.
+CodeSLAM outperformed earlier methods at recovering dense geometry from sparse views, yet it could not run in real time—both VAE evaluation and the iterative optimization loop were too slow, a limitation the authors acknowledged openly.
 
-> 📜 **Prediction vs. outcome.** CodeSLAM showed that dense SLAM could incorporate a compact learned representation, but remained limited in speed and scale. DeepFactors (2020), from the same Imperial group, moved closer to real-time operation without reaching deployment-grade performance. Teed and Deng at Princeton later achieved broader support for monocular, stereo, and RGB-D inputs through a different design: a learned frontend combined with Dense Bundle Adjustment (DBA).
-
----
-
-## 13.2 DeepFactors — Imperial Dyson Lab, factor graph integration
-
-In 2020, Jan Czarnowski, also supervised by Davison at the Imperial Dyson Robotics Lab, released [Czarnowski et al. 2020. DeepFactors](https://doi.org/10.1109/LRA.2020.2969036). He sought to integrate CodeSLAM's approach into a complete SLAM pipeline.
-
-DeepFactors extended CodeSLAM's latent-depth representation and joint optimization into an explicit factor graph, explicitly separated tracking from mapping, and introduced a keyframe-selection criterion. On an NVIDIA GTX 1080, tracking against keyframes ran at about 250 Hz, but computing the network Jacobian took several hundred milliseconds per keyframe and became the pipeline's bottleneck. The system demonstrated the approach without achieving deployment-grade real-time performance.
-
-DeepFactors placed a learned representation in a factor graph as a node and applied geometric optimization in its latent space. Czarnowski's result favored replacing selected pipeline components with learnable modules rather than replacing the full pipeline end to end.
-
-Around the same time, Daniel Cremers's group at TU Munich arrived at the same design principle from a different starting point. The Davison group paired CodeSLAM's VAE latent variables with a factor graph, whereas the Cremers group inserted neural predictions into its 2016 direct sparse odometry system, [DSO](https://arxiv.org/abs/1607.02565). [Yang, Wang, Stückler, Cremers 2018. DVSO](https://arxiv.org/abs/1807.02570) added neural depth to monocular DSO as "virtual stereo," synthesizing a second camera observation in a monocular setting. [Yang, von Stumberg, Wang, Cremers 2020. D3VO](https://arxiv.org/abs/2003.01060) incorporated depth, pose, and uncertainty as three self-supervised predictions and additional factors in DSO's factor graph. [Wimbauer et al. 2021. MonoRec](https://arxiv.org/abs/2011.11814) and [Wimbauer et al. 2023. Behind the Scenes](https://arxiv.org/abs/2301.07668) extended the approach to dense reconstruction of dynamic scenes and single-view density fields. Although the Cremers and Imperial groups were institutionally separate, both integrated neural predictions into classical optimization.
-
-Princeton produced another form of the same hybrid design in 2021.
+> 📜 **Prediction vs. outcome.** CodeSLAM proved that dense SLAM could embed a compact learned representation inside geometric optimization, even though speed and scale remained bottlenecks. DeepFactors (2020), from the same Imperial group, pushed closer to real-time operation without reaching deployment-grade throughput. Teed and Deng at Princeton later achieved broad support across monocular, stereo, and RGB-D inputs via a different architecture altogether: pairing a learned correspondence frontend with Dense Bundle Adjustment (DBA).
 
 ---
 
-## 13.3 RAFT — recurrent optical flow
+## 16.2 DeepFactors — Imperial Dyson Lab, factor graph integration
 
-Zachary Teed and Jia Deng at Princeton presented [Recurrent All-Pairs Field Transforms (RAFT)](https://arxiv.org/abs/2003.12039) at ECCV 2020. RAFT addressed optical-flow estimation rather than SLAM.
+Two years after CodeSLAM, Jan Czarnowski—also advised by Davison at the Imperial Dyson Robotics Lab—released [Czarnowski et al. 2020. DeepFactors](https://doi.org/10.1109/LRA.2020.2969036) in an effort to turn CodeSLAM's core idea into a complete SLAM pipeline.
 
-RAFT's design later became the core of DROID-SLAM and consists of three parts.
+DeepFactors embedded CodeSLAM's latent-depth parameterization and joint optimization inside an explicit factor graph, separated tracking from mapping, and added a keyframe-selection policy. On an NVIDIA GTX 1080, frame-to-keyframe tracking ran at roughly 250 Hz, yet computing the network Jacobian took several hundred milliseconds per keyframe and stalled the mapping loop. Even so, DeepFactors proved the design's viability and pointed toward a broader lesson: rather than replacing the entire SLAM stack end to end, learning could be injected selectively into modular geometric optimization.
 
-1. Feature encoder: a CNN extracts feature maps from two images.
-2. Correlation volume: the method stores similarities between all pixel pairs in a 4D volume with a four-level pyramid.
-3. Update operator: a Gated Recurrent Unit (GRU) iteratively queries the correlation volume and refines the flow field.
+Around the same time, Daniel Cremers's group at TU Munich reached that same architectural principle from the opposite direction. Where Davison's lab embedded VAE latent codes into a factor graph, Cremers's team injected neural predictions into its 2016 direct sparse odometry framework, [DSO](https://arxiv.org/abs/1607.02565). [Yang, Wang, Stückler, Cremers 2018. DVSO](https://arxiv.org/abs/1807.02570) fed monocular neural depth into DSO as "virtual stereo" observations, and [Yang, von Stumberg, Wang, Cremers 2020. D3VO](https://arxiv.org/abs/2003.01060) went further by adding self-supervised predictions of depth, pose, and uncertainty as extra factors in DSO's graph. Subsequent systems—[Wimbauer et al. 2021. MonoRec](https://arxiv.org/abs/2011.11814) and [Wimbauer et al. 2023. Behind the Scenes](https://arxiv.org/abs/2301.07668)—carried this direct-plus-learned paradigm into dynamic dense reconstruction and single-view density fields. Despite having no institutional overlap with Imperial, Munich arrived at the same hybrid principle: keeping classical optimization intact while feeding it learned priors.
 
-The phrase "all-pairs" describes the method's distinguishing feature. Rather than examining only selected neighboring pixels, RAFT considers every candidate location and progressively refines the flow field at a fixed resolution. Unlike earlier coarse-to-fine methods such as PWC-Net, it keeps the flow field at one-eighth of the input width and height while querying the correlation pyramid, then upsamples the output. Against the best published results available at the time, the RAFT paper reported a 16% relative reduction in KITTI F1-all error and a 30% reduction in Sintel final-pass endpoint error.
-
-RAFT did not originate in SLAM, but Teed recognized a structural similarity between its update operator and iterative bundle adjustment. A GRU refining a flow field could play a role analogous to an optimization step that refines pose and depth.
+Across the Atlantic, a 2020 optical-flow network from Princeton soon supplied the building block for a very different hybrid SLAM architecture in 2021.
 
 ---
 
-## 13.4 DROID-SLAM — the update operator and BA
+## 16.3 RAFT — recurrent optical flow
 
-At NeurIPS 2021, Teed and Deng presented [DROID-SLAM](https://arxiv.org/abs/2108.10869). DROID stands for "Differentiable Recurrent Optimization-Inspired Design."
+At ECCV 2020, Zachary Teed and Jia Deng at Princeton introduced [Recurrent All-Pairs Field Transforms (RAFT)](https://arxiv.org/abs/2003.12039). Although built purely for optical-flow estimation rather than SLAM, RAFT's architecture soon became the engine behind DROID-SLAM. Its pipeline rests on three components:
 
-Its architecture makes the hybrid design explicit.
+1. **Feature encoder:** a convolutional network extracts dense feature maps from each input image.
+2. **Correlation volume:** pixel-to-pixel similarities across all pairs are compiled into a 4D correlation volume organized as a four-level pyramid.
+3. **Update operator:** a Gated Recurrent Unit (GRU) repeatedly queries the correlation pyramid and refines the predicted flow field.
 
-The frontend has the same structure as RAFT. A CNN encoder extracts feature maps, an all-pairs correlation volume is built, and a GRU update operator iteratively estimates dense flow. The difference is that flow is estimated not between a single pair of images but simultaneously on every edge of a keyframe graph.
+The phrase "all-pairs" captures what set RAFT apart. Rather than restricting search to a local neighborhood or relying on coarse-to-fine warping as PWC-Net had done, RAFT evaluates every candidate correspondence and refines the flow field at a fixed one-eighth image resolution before upsampling. Against the strongest published baselines of the time, RAFT cut KITTI F1-all error by 16% and Sintel final-pass endpoint error by 30%.
 
-The backend performs DBA with pose and inverse depth as optimization variables. It uses the 2D correspondences from flow estimation as constraints for their joint optimization and solves the linear system efficiently with the Schur complement.
-
-The **DBA layer** connects the two components. Flow and uncertainty estimates from the GRU enter DBA; the updated pose and depth then provide the reference for the next GRU iteration, forming a recurrent loop.
-
-> 🔗 **Borrowed.** The idea behind DBA reaches back ten years to Newcombe's DTAM (2011), a precursor of photometric bundle adjustment over every pixel. DROID-SLAM combined that approach with the more robust correspondences supplied by learned flow, despite the separate institutional lineages of Newcombe and Teed.
-
-> 🔗 **Borrowed.** Teed and Deng adapted DROID-SLAM's update operator directly from their work on RAFT. All-pairs recurrent refinement, originally designed for optical flow, proved structurally compatible with the iterative optimization of bundle adjustment.
-
-On the EuRoC MAV dataset, DROID-SLAM recorded a lower RMSE ATE than ORB-SLAM3, then the state of the art. Evaluation covered synthetic TartanAir data as well as real indoor and outdoor sequences. The method was particularly robust to lighting changes and scarce texture compared with feature-based systems. In his later Handbook retrospective, Teed reported that on EuRoC V1_02, global optimization reduced the frontend-only ATE from 16.5 cm to 1.2 cm. Classical BA reached single-digit-centimeter accuracy using constraints supplied by learned correspondences.
-
-DROID-SLAM differed from the end-to-end methods in Ch.12 by separating the roles of learning and geometry. PoseNet regressed pose directly without geometric constraints and did not generalize. Teed and Deng instead used learning for dense correspondence estimation and BA for enforcing geometric constraints. Neural networks handled feature extraction and dense matching, while geometric optimization maintained consistency and propagated uncertainty. The system replaced hand-designed features but retained the optimization structure, distinguishing the 2021 hybrid from the 2015 end-to-end approach.
+RAFT originated outside SLAM, yet Teed noticed a striking structural parallel between its recurrent update operator and iterative bundle adjustment: a GRU incrementally refining a pixel flow field looked remarkably like an optimizer iteratively refining camera poses and scene depth.
 
 ---
 
-## 13.5 The Imperial Dyson Lab lineage
+## 16.4 DROID-SLAM — the update operator and BA
 
-The Imperial Dyson Robotics Lab connected CodeSLAM with several later hybrid systems.
+At NeurIPS 2021, Teed and Deng turned that insight into [DROID-SLAM](https://arxiv.org/abs/2108.10869)—short for "Differentiable Recurrent Optimization-Inspired Design"—making the division of labor between learning and geometry explicit.
 
-Andrew Davison led SLAM research at Imperial for twenty years after MonoSLAM in 2002. His students and collaborators developed several related lines of work.
+Its frontend mirrors RAFT: a CNN encoder extracts feature maps, builds an all-pairs correlation volume, and runs a GRU update operator to refine dense optical flow. Unlike RAFT, however, DROID-SLAM estimates flow simultaneously across every edge of a keyframe graph rather than between a single isolated image pair. Its backend then runs Dense Bundle Adjustment (DBA) over keyframe poses and per-pixel inverse depths, taking the GRU's 2D flow correspondences as geometric constraints and solving the resulting linear system via the Schur complement. What binds the two halves together is the **DBA layer**: flow estimates and confidence weights from the GRU flow into DBA, and the updated poses and depths feed back to re-anchor the next GRU iteration in a tightly coupled recurrent loop.
+
+> 🔗 **Borrowed.** The core idea behind DBA dates back a decade to Newcombe's DTAM (2011), an early milestone in per-pixel photometric bundle adjustment. DROID-SLAM paired that dense optimization structure with far more resilient correspondences from learned flow, despite having no direct institutional lineage connecting Teed to Newcombe.
+
+> 🔗 **Borrowed.** Teed and Deng carried DROID-SLAM's update operator straight over from RAFT. All-pairs recurrent refinement, originally crafted for two-frame optical flow, proved naturally compatible with the iterative updates of bundle adjustment.
+
+On the EuRoC MAV benchmark, DROID-SLAM achieved a lower RMSE ATE than ORB-SLAM3, the reigning state of the art, while demonstrating strong accuracy on synthetic TartanAir sequences and real indoor and outdoor scenes—especially under lighting shifts and low-texture surfaces where sparse feature matchers falter. In a later Handbook retrospective, Teed noted that on EuRoC `V1_02`, global optimization dropped frontend-only ATE from 16.5 cm to 1.2 cm: classical bundle adjustment reached single-centimeter precision once fed with learned dense correspondences.
+
+That division of labor separated the 2021 hybrid architecture from the 2015 end-to-end wave. Whereas PoseNet tried to regress camera pose directly from pixels without geometric constraints—and failed to generalize—Teed and Deng assigned dense feature extraction and correspondence matching to neural networks while leaving geometric consistency and uncertainty propagation to bundle adjustment. Neural modules replaced hand-crafted descriptors, not the underlying optimization geometry.
+
+---
+
+## 16.5 The Imperial Dyson Lab lineage
+
+How did one laboratory end up bridging so many of these steps? Over the two decades following MonoSLAM in 2002, Andrew Davison's Dyson Robotics Lab at Imperial College London served as an incubator for successive waves of dense and learned SLAM:
 
 - **Richard Newcombe** (Davison advisee, Imperial): DTAM (2011), [KinectFusion](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/ismar2011.pdf) (2011); later Oculus → Meta Reality Labs.
-- **Michael Bloesch** (Davison advisee, Imperial): CodeSLAM (2018), touch and inertial SLAM research.
+- **Michael Bloesch** (Davison advisee, Imperial): CodeSLAM (2018), tactile and inertial SLAM research.
 - **Jan Czarnowski** (Davison advisee, Imperial): DeepFactors (2020).
-- **Edgar Sucar** (Davison group, Imperial): [iMAP](https://arxiv.org/abs/2103.12352) (2021), later extended to the NeRF-SLAM lineage.
-- **Tristan Laidlow** (Davison group, Imperial): dense 3D reconstruction, later extended to the neural implicit SLAM lineage.
+- **Edgar Sucar** (Davison group, Imperial): [iMAP](https://arxiv.org/abs/2103.12352) (2021), launching the NeRF-SLAM lineage.
+- **Tristan Laidlow** (Davison group, Imperial): dense 3D reconstruction, later contributing to neural implicit SLAM.
 
-The group retained its emphasis on factor graphs and uncertainty as representations changed from sparse monocular landmarks to dense latent variables and then to implicit fields. In [FutureMapping](https://arxiv.org/abs/1803.11288) (2018) and [FutureMapping 2](https://arxiv.org/abs/1910.14139) (2019, with Ortiz), Davison proposed that a Spatial AI map should include both computational structure and multiple representations. The papers argued for combining diverse geometric and semantic representations in one probabilistic graph. CodeSLAM and DeepFactors were early experiments in that program.
+Across those shifts—from sparse monocular landmarks to dense latent codes and neural implicit fields—the lab held fast to factor graphs and probabilistic uncertainty. In [FutureMapping](https://arxiv.org/abs/1803.11288) (2018) and [FutureMapping 2](https://arxiv.org/abs/1910.14139) (2019, with Ortiz), Davison articulated a vision of Spatial AI in which a map combines multiple geometric and semantic representations inside a single probabilistic graph; CodeSLAM and DeepFactors were early testbeds for that program.
 
-Teed and Deng developed DROID-SLAM independently at Princeton. Nevertheless, DTAM by Newcombe and Davison was a conceptual predecessor of DROID-SLAM's DBA, showing that technical lineages need not follow direct institutional connections.
-
----
-
-## 13.6 2023–2025 — extensions after DROID
-
-After DROID-SLAM, researchers both extended its design and pursued alternatives.
-
-[GO-SLAM](https://arxiv.org/abs/2309.02436) (Zhang et al. 2023) extended DROID-SLAM's tracking with online loop closure and full bundle adjustment, while mapping with an Instant-NGP-style neural implicit representation based on multi-resolution hash encoding. It combined DROID-family dense flow and BA for tracking with an implicit map, adding another hybrid layer.
-
-[NICER-SLAM](https://arxiv.org/abs/2302.03594) (Zhu et al. 2023) followed a different design. Rather than building on DROID, it solved tracking and mapping jointly over a single hierarchical neural implicit representation. It pursued the same goal of RGB-only dense SLAM from outside the DROID lineage.
-
-[SplaTAM](https://arxiv.org/abs/2312.02126) (Keetha et al. 2024) replaced the map representation with 3D Gaussian Splatting and based tracking on silhouette-guided differentiable rendering rather than DROID-style dense flow. It belongs more directly to the 3DGS lineage than to the DROID lineage.
-
-[DPV-SLAM](https://arxiv.org/abs/2408.01654) (Lipson, Teed, Deng 2024) came from the same Princeton group as DROID-SLAM. Built on [DPVO](https://github.com/princeton-vl/DPVO) (Deep Patch Visual Odometry) rather than DROID, it added proximity-based loop closure and CUDA block-sparse BA. The resulting system was roughly 2.5× faster and used less memory than DROID-SLAM. Its main change was a patch-based sparse representation combined with efficient loop closure rather than a simple feature replacement.
-
-Outside the DROID lineage, work in 2024–2025 followed Naver Labs' [DUSt3R](https://arxiv.org/abs/2312.14132) (Wang et al. 2023). DUSt3R changed the conventional SfM procedure by directly predicting pointmaps from two images, as Ch.16 discusses in detail. The same Revaud group then added symmetric multi-view processing and working memory in [Cabon et al. 2025. MUSt3R](https://arxiv.org/abs/2503.01661), extending the image-pair formulation to many frames in an attempt to support both offline SfM and online VO/SLAM with one network. DROID-family components also appeared in this ecosystem. [Li et al. 2024. MegaSAM](https://arxiv.org/abs/2412.04463) extended DROID-SLAM's differentiable DBA to dynamic scenes and uncalibrated video, jointly optimizing camera intrinsics at inference time. NVIDIA's [Huang et al. 2025. ViPE](https://arxiv.org/abs/2508.10934) combined DROID-SLAM's dense-flow network, cuvslam's sparse points, and a monocular depth network as three constraints in one DBA, producing a large-scale annotation pipeline for unconstrained video at YouTube scale. These systems applied DROID's learned-frontend, classical-backend design to the harder conditions of calibration-free and dynamic scenes.
-
-Several approaches developed in parallel: GO-SLAM placed a neural map above DROID tracking; DPV-SLAM redesigned the system around lightweight patch odometry; NICER-SLAM and SplaTAM based tracking on implicit or splatting representations; and MegaSAM and ViPE extended DROID's DBA to uncalibrated and dynamic settings. Teed and Deng's 2021 combination of a learned frontend and classical backend supplied a starting point for several successors, while NICER-SLAM and SplaTAM pursued the same broader problem through separate representations.
-
-> 📜 **Prediction vs. outcome.** DROID-SLAM established a reference architecture that combined differentiable DBA with end-to-end learning. Three years later, the same group improved efficiency with DPV-SLAM. GO-SLAM, NICER-SLAM, and SplaTAM instead replaced the map with implicit or Gaussian-splatting representations. As of 2026, these variations on DROID's "learned frontend plus classical backend" design had not converged on a general-purpose solution.
+By contrast, Teed and Deng built DROID-SLAM independently at Princeton. Yet Newcombe and Davison's DTAM stood as a clear conceptual precursor to DROID-SLAM's DBA—a reminder that technical lineages often cross-pollinate even without direct institutional ties.
 
 ---
 
-## 🧭 Still open
+## 16.6 2023–2025 — extensions after DROID
 
-Generalization of learned priors beyond the training distribution remains a primary problem. The VAEs in CodeSLAM and DeepFactors learn the depth distribution of their training data. In substantially different environments, including open outdoor scenes, non-uniform textures, and nighttime conditions, a learned prior can direct optimization toward an incorrect solution. DROID-SLAM's flow estimator also performs worse outside its training domain. As of 2026, no learned SLAM system operated reliably in every environment. Training on diverse synthetic data such as TartanAir helps, but a sim-to-real gap remains.
+After DROID-SLAM, researchers pushed the hybrid paradigm along several distinct tracks—some swapping out its map representation, others accelerating its backend, and still others extending its DBA machinery to unconstrained video.
 
-Real-time operation remains another constraint. DROID-SLAM averages about 10–15 fps on an NVIDIA RTX 2080Ti and slows as the keyframe graph grows, with DBA as the bottleneck. As of 2026, it was still impractical for low-power applications requiring at least 30 Hz, such as mobile robots and AR/VR. Attempts to reduce computation through fewer keyframes or approximate BA incur performance trade-offs.
+Several groups targeted the map representation itself. [GO-SLAM](https://arxiv.org/abs/2309.02436) (Zhang et al. 2023) kept DROID-SLAM's dense-flow tracking and augmented it with online loop closure, full bundle adjustment, and an Instant-NGP-style multi-resolution hash-encoded implicit map. [NICER-SLAM](https://arxiv.org/abs/2302.03594) (Zhu et al. 2023) pursued RGB-only dense SLAM from outside the DROID lineage altogether, optimizing tracking and mapping jointly over a single hierarchical neural implicit field. [SplaTAM](https://arxiv.org/abs/2312.02126) (Keetha et al. 2024) shifted to 3D Gaussian Splatting for the map and drove tracking via silhouette-guided differentiable rendering rather than dense optical flow, aligning it more closely with the 3DGS trajectory.
 
-Integrating learned loop closure also remains unresolved. DROID-SLAM does not handle loop closure explicitly. In his later Handbook retrospective, Teed wrote that "DROID-SLAM doesn't include any relocalization module, so large loops with lots of drift cannot be closed." Unlike the local frontend, the backend performs global BA over the keyframes. Without a separate relocalization module, however, it can fail to recover the correspondences needed to close large loops after substantial drift. Some efforts have attempted to integrate learned loop closure, including the place-recognition work in Ch.10, into DROID's factor graph, but they have not converged on a single system. The connection between the NetVLAD lineage in Ch.10 and the DROID lineage in Ch.13 remains open.
+Within Princeton, the original DROID team focused instead on speed and memory. [DPV-SLAM](https://arxiv.org/abs/2408.01654) (Lipson, Teed, Deng 2024), built atop [DPVO](https://github.com/princeton-vl/DPVO) (Deep Patch Visual Odometry), replaced dense pixel grids with sparse learned patches and added proximity-based loop closure plus CUDA block-sparse BA, running roughly 2.5× faster with substantially lower memory than DROID-SLAM.
+
+Meanwhile, a broader 2024–2025 wave emerged around Naver Labs' [DUSt3R](https://arxiv.org/abs/2312.14132) (Wang et al. 2023), which bypassed classical SfM pipelines by predicting 3D pointmaps directly from image pairs (examined in detail in Chapter 20). The same Revaud group extended pairwise inference to multi-view sequences with working memory in [Cabon et al. 2025. MUSt3R](https://arxiv.org/abs/2503.01661), aiming to handle both offline SfM and online VO/SLAM within one network. Even within this foundation-model ecosystem, DROID-style components resurfaced: [Li et al. 2024. MegaSAM](https://arxiv.org/abs/2412.04463) adapted DROID-SLAM's differentiable DBA to dynamic scenes and uncalibrated video by jointly optimizing camera intrinsics at inference time, and NVIDIA's [Huang et al. 2025. ViPE](https://arxiv.org/abs/2508.10934) fused DROID-SLAM's dense flow, cuvslam's sparse keypoints, and monocular depth predictions inside a single DBA backend to annotate YouTube-scale video. Together, these developments showed that Teed and Deng's 2021 separation of learned correspondence from geometric optimization had become a versatile template—even as parallel lineages like NICER-SLAM and SplaTAM tested whether implicit or Gaussian maps could replace it outright.
+
+> 📜 **Prediction vs. outcome.** DROID-SLAM established an influential reference architecture by coupling differentiable DBA with end-to-end learned correspondence. Three years later, its creators streamlined the design in DPV-SLAM, while GO-SLAM, NICER-SLAM, and SplaTAM swapped the map representation for neural fields or Gaussian splats. By 2026, however, none of these variants on the "learned frontend plus classical backend" recipe had coalesced into a single general-purpose standard.
 
 ---
 
-DROID-SLAM used an inverse-depth map, a strong dense representation in 2021, but [NeRF](https://arxiv.org/abs/2003.08934) (Neural Radiance Field) had proposed a different option in 2020: representing a scene as a continuous function rather than as points, lines, planes, or meshes. Differentiable rendering offered another way to enforce photometric consistency.
+## Still open
 
-At Imperial College in 2021, Edgar Sucar treated this as a SLAM problem rather than a rendering task: could an MLP replace the TSDF voxel grid entirely? His answer, iMAP, followed after fourteen months of work.
+**Out-of-distribution generalization.** Learned priors remain tethered to their training distributions. When environments diverge sharply from training data—in wide outdoor spaces, irregular textures, or nighttime scenes—the VAEs in CodeSLAM and DeepFactors can bias optimization toward wrong depths, and DROID-SLAM's flow estimator degrades as well. Diverse synthetic benchmarks such as TartanAir narrow the gap, yet a persistent sim-to-real divide meant that as of 2026 no learned SLAM system worked reliably across all environments.
+
+**Real-time throughput at scale.** On an NVIDIA RTX 2080Ti, DROID-SLAM averages 10–15 fps and slows further as the keyframe graph expands, bottlenecked by DBA. As of 2026, that compute footprint remained out of reach for low-power mobile robots or AR/VR headsets demanding 30 Hz or more, and thinning keyframes or approximating BA inevitably trades away accuracy.
+
+**Learned loop closure.** DROID-SLAM has no dedicated relocalization module; in his Handbook retrospective, Teed noted explicitly that "DROID-SLAM doesn't include any relocalization module, so large loops with lots of drift cannot be closed." Although its backend runs global BA across keyframes, severe accumulated drift prevents it from recovering the correspondences needed to snap large loops shut. Bridging the learned place-recognition lineage of Chapter 13 (such as NetVLAD) with DROID-style factor graphs in Chapter 16 remains an open integration challenge.
+
+---
+
+DROID-SLAM relied on inverse-depth keyframes—a potent dense representation in 2021—just as [NeRF](https://arxiv.org/abs/2003.08934) (Neural Radiance Field) was proposing a radically different alternative from computer graphics: encoding the entire 3D scene as a continuous function rather than as points, lines, planes, or meshes, and enforcing photometric consistency via differentiable rendering.
+
+At Imperial College in 2021, Edgar Sucar reframed that graphics breakthrough as a SLAM problem: could a single MLP replace KinectFusion's TSDF voxel grid altogether? Fourteen months of work produced his answer—iMAP.
