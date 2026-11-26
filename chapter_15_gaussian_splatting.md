@@ -1,6 +1,6 @@
 # 18장 3D Gaussian Splatting 기반 SLAM
 
-iMAP과 NICE-SLAM은 신경망과 격자가 3D 공간을 저장할 수 있음을 입증했지만, 그 지도는 손대기 까다로운 블랙박스였다. iMAP에서는 새 관측으로 MLP를 조금만 고쳐도 다른 영역의 기억이 함께 무너졌고, NICE-SLAM은 지역 feature grid로 망각은 줄였지만 RTX 3090 Ti에서 잰 Replica 처리 속도가 1 fps에도 미치지 못해 실시간 SLAM이라 부르기 민망했다. 장면 전체가 네트워크 파라미터 속에 잠겨 있어 사람이 지도를 열어 보고 직접 다듬기도 어려웠다.
+iMAP과 NICE-SLAM은 신경망과 격자가 3D 공간을 저장할 수 있음을 입증했지만, 그 지도는 손대기 까다로운 블랙박스였다. iMAP에서는 새 관측으로 MLP를 조금만 고쳐도 다른 영역의 기억이 함께 무너졌다. NICE-SLAM은 지역 feature grid로 망각은 줄였지만, RTX 3090 Ti에서 잰 Replica 처리 속도가 1 fps에도 미치지 못해 실시간 SLAM이라 부르기 민망했다. 장면 전체가 네트워크 파라미터 속에 잠겨 있어 사람이 지도를 열어 보고 직접 다듬기도 어려웠다.
 
 2023년 8월 SIGGRAPH에서 전환점이 찾아왔다. Bernhard Kerbl(Inria), Georgios Kopanas, Thomas Leimkühler, George Drettakis가 내놓은 3D Gaussian Splatting(3DGS) [논문](https://arxiv.org/abs/2308.04079)은 MLP도 복셀 격자도 버리고, 공간에 띄운 작은 반투명 타원체—Gaussian primitive 수백만 개—로 장면을 명시적으로 조립했다. 렌더링 기법은 Matthias Zwicker 등의 EWA splatting(2001)에서 빌렸고, 최적화 방식은 NeRF처럼 미분 가능한 렌더링(differentiable rendering)을 따랐다. 논문이 나오자마자 불과 6개월 사이에 이 표현을 심장으로 삼은 SLAM 논문들이 쏟아졌다.
 
@@ -12,11 +12,11 @@ iMAP과 NICE-SLAM은 신경망과 격자가 3D 공간을 저장할 수 있음을
 
 $$\boldsymbol{\Sigma} = \mathbf{R}\mathbf{S}\mathbf{S}^\top\mathbf{R}^\top$$
 
-장면을 그릴 때는 3D Gaussian들을 화면에 투영해 2D 타원으로 만든 뒤, 카메라로부터 가까운 순서대로 알파 블렌딩(alpha-blending)으로 포갠다. 각 Gaussian의 유효 불투명도 $\alpha_i$는 학습한 불투명도 $o_i$에 픽셀 좌표에서의 2D Gaussian 값 $G_i(\mathbf{x})$를 곱해 구하며, 최종 픽셀 색 $C$는 다음 식을 따른다.
+장면을 그릴 때는 3D Gaussian들을 화면에 투영해 2D 타원으로 만든 뒤, 카메라에서 가까운 순서대로 알파 블렌딩(alpha-blending)으로 포갠다. 각 Gaussian의 유효 불투명도 $\alpha_i$는 학습한 불투명도 $o_i$에 픽셀 좌표에서의 2D Gaussian 값 $G_i(\mathbf{x})$를 곱해 구하며, 최종 픽셀 색 $C$는 다음 식을 따른다.
 
 $$C = \sum_{i \in N} c_i \alpha_i \prod_{j<i}(1 - \alpha_j), \quad \alpha_i = o_i G_i(\mathbf{x})$$
 
-속도의 비결은 GPU 래스터화(rasterization)에 있다. NeRF처럼 픽셀마다 쏜 광선을 따라 수십 개의 샘플을 찍고 MLP를 통과시키는 ray marching 적분이 아예 없다. Kerbl 등은 화면을 타일로 쪼개는 타일 기반 래스터라이저의 forward와 backward 패스를 모두 CUDA 커널로 직접 짰고, 그 결과 A6000 GPU에서 1080p 영상을 30 fps 이상으로 그려 냈다. 물론 이 수치는 이미 학습이 끝난 장면에서 새 시점을 그리는 렌더링 속도이므로, tracking과 지도 갱신을 함께 돌리는 NICE-SLAM의 전체 처리 속도와 같은 선에서 비교할 값은 아니다.
+속도의 비결은 GPU 래스터화(rasterization)에 있다. NeRF처럼 픽셀마다 쏜 광선을 따라 수십 개의 샘플을 찍어 MLP에 통과시키는 ray marching 적분이 아예 없다. Kerbl 등은 화면을 타일로 쪼개는 타일 기반 래스터라이저의 forward와 backward 패스를 모두 CUDA 커널로 직접 짰고, 그 결과 A6000 GPU에서 1080p 영상을 30 fps 이상으로 그려 냈다. 물론 이 수치는 이미 학습이 끝난 장면에서 새 시점을 그리는 렌더링 속도이므로, tracking과 지도 갱신을 함께 돌리는 NICE-SLAM의 전체 처리 속도와 같은 선상에서 비교할 값은 아니다.
 
 지도는 보통 SfM이 뱉어 낸 sparse point cloud로 첫 발을 뗀다. 학습이 진행되는 동안 3DGS는 **densification**이라 부르는 분열·복제·가지치기(splitting, cloning, pruning) 절차를 주기적으로 밟는다. 뷰 공간(view-space) 위치 그래디언트가 임계치를 넘겨 아직 모양이 덜 잡힌 것으로 판명된 영역 가운데, 작은 Gaussian이 빈틈을 채워야 할 곳에서는 같은 크기로 복제해 그래디언트 방향으로 밀어 놓고, 분산이 큰 덩어리 Gaussian이 세밀함을 뭉개고 있는 곳에서는 작은 Gaussian 둘로 쪼갠다. 반대로 불투명도가 바닥난 유령 Gaussian은 주기적으로 도려낸다.
 
@@ -36,13 +36,13 @@ NeRF 기반 SLAM이 겪던 두 가지 고질병을 떠올리면 3DGS가 왜 그�
 
 이 표현을 가장 먼저 SLAM의 tracking과 mapping 양쪽에 들이민 초기 시스템 가운데 하나가 Shanghai AI Laboratory와 HKUST의 Chi Yan 등이 2023년 11월 arXiv에 올린 [GS-SLAM](https://arxiv.org/abs/2311.11700)(CVPR 2024)이다.
 
-GS-SLAM은 고전 SLAM의 이분 구조를 그대로 뼈대로 삼아, tracking이 현재 프레임의 카메라 자세를 풀고 mapping이 Gaussian 지도를 다듬는다. 여기에 두 가지 장치를 얹었다. 하나는 새 관측 영역에는 Gaussian을 보태되 표면 앞에 어정쩡하게 떠 있는 잡음 Gaussian의 불투명도를 과감히 낮추는 adaptive expansion이고, 다른 하나는 성기게 뽑은 픽셀로 먼저 대략의 자세를 잡은 뒤 신뢰할 만한 Gaussian만 추려 정밀 최적화로 들어가는 coarse-to-fine tracking이다.
+GS-SLAM은 고전 SLAM의 이분 구조를 그대로 뼈대로 삼아, tracking이 현재 프레임의 카메라 자세를 풀고 mapping이 Gaussian 지도를 다듬는다. 여기에 두 가지 장치를 얹었다. 하나는 adaptive expansion이다. 새 관측 영역에는 Gaussian을 보태되, 표면 앞에 어정쩡하게 떠 있는 잡음 Gaussian의 불투명도는 과감히 낮춘다. 다른 하나는 coarse-to-fine tracking이다. 성기게 뽑은 픽셀로 먼저 대략의 자세를 잡은 뒤, 신뢰할 만한 Gaussian만 추려 정밀 최적화로 들어간다.
 
 tracking 단계에서는 렌더링한 영상과 실제 관측 영상의 픽셀 색 차이를 줄이는 photometric 손실로 자세를 푼다. 샘플링한 픽셀에 대한 손실 식은 다음과 같다.
 
 $$\mathcal{L}_{track} = \sum_m \|\mathbf{C}_m - \hat{\mathbf{C}}_m\|_1$$
 
-mapping 단계에서는 depth L1 오차와 color L1 오차의 가중합을 쓰며, 3DGS 원 논문에서 정립된 손실 $(1-\lambda)\mathcal{L}_1 + \lambda\mathcal{L}_{D\text{-}SSIM}$ ($\lambda=0.2$)은 이후 Gaussian 기반 SLAM 지도를 학습하는 거의 모든 시스템의 기본 공식이 됐다. 이 모든 손실의 그래디언트를 카메라 자세까지 되돌려 보낼 수 있는 것은 rasterizer가 미분 가능하기 때문이다.
+mapping 단계에서는 depth L1 오차와 color L1 오차의 가중합을 쓰며, 3DGS 원 논문에서 정립된 손실 $(1-\lambda)\mathcal{L}_1 + \lambda\mathcal{L}_{D\text{-}SSIM}$ ($\lambda=0.2$)은 이후 Gaussian 기반 SLAM 지도를 학습하는 거의 모든 시스템의 기본 공식이 됐다. rasterizer가 미분 가능하기 때문에 이 모든 손실의 그래디언트를 카메라 자세까지 되돌려 보낼 수 있다.
 
 Replica 데이터셋에서 GS-SLAM은 렌더링 PSNR을 차선책보다 1.52 dB 끌어올렸고, 전체 파이프라인이 RTX 4090에서 8.34 fps로 돌아갔다. 다만 저자들은 양질의 깊이 센서에 기대고 있다는 점과 장면이 커질수록 메모리가 가파르게 불어나는 점을 한계로 짚었다.
 
@@ -70,7 +70,7 @@ $$\mathcal{L}_{iso} = \sum_k \| \mathbf{s}_k - \bar{s}_k \mathbf{1} \|_1$$
 
 여기서 $\mathbf{s}_k \in \mathbb{R}^3$는 $k$번째 Gaussian의 스케일 벡터이고 $\bar{s}_k = \frac{1}{3}\sum_j s_{k,j}$는 세 축 스케일의 평균이다. 그럼에도 단안 궤적 자체의 절대 scale 모호성은 남는다.
 
-tracking은 GS-SLAM·SplaTAM과 같이 렌더링 영상과 관측 영상의 photometric loss로 카메라 자세를 직접 최적화한다. 깊이 센서가 없는 상태에서 새 Gaussian을 심을 때는, 기존 지도가 렌더링해 낸 깊이가 있는 픽셀에서는 그 깊이 주변에 작은 분산으로 초기화하고, 아직 지도가 없는 픽셀에서는 렌더링된 깊이들의 중앙값 주변에 큰 분산으로 띄워 둔 뒤 여러 시점의 관측이 쌓이면서 제자리를 찾아가게 했다.
+tracking은 GS-SLAM·SplaTAM과 같이 렌더링 영상과 관측 영상의 photometric loss로 카메라 자세를 직접 최적화한다. 깊이 센서가 없는 상태에서 새 Gaussian을 심을 때, 기존 지도가 깊이를 렌더링해 낸 픽셀에서는 그 깊이 주변에 작은 분산으로 초기화했다. 반면 아직 지도가 없는 픽셀에서는 렌더링된 깊이들의 중앙값 주변에 큰 분산으로 띄워 둔 뒤, 여러 시점의 관측이 쌓이면서 제자리를 찾아가게 했다.
 
 [MonoGS의 2023년 첫 arXiv 원고](https://arxiv.org/abs/2312.06741v1)에 따르면 TUM-RGBD 데이터셋의 평균 ATE RMSE는 단안 설정에서 4.44 cm(정답 궤적에 scale을 맞춘 뒤 측정), RGB-D 설정에서는 1.58 cm(rigid alignment만 적용)였다. RGB-D 설정의 Replica 렌더링 품질은 평균 PSNR(peak signal-to-noise ratio, 높을수록 원본에 가깝다) 37.50 dB를 기록했다.
 
@@ -80,9 +80,9 @@ tracking은 GS-SLAM·SplaTAM과 같이 렌더링 영상과 관측 영상의 phot
 
 ## 18.6 RTG-SLAM과 실시간 처리
 
-표현 품질이 입증되자 다음 화두는 자연스레 속도와 메모리로 옮겨 갔다. Zhejiang University의 Zhexi Peng 등이 발표한 [RTG-SLAM (SIGGRAPH 2024)](https://arxiv.org/abs/2404.19706)은 거실 수준을 넘어선 큰 장면을 실시간으로 RGB-D 재구성하는 데 초점을 맞췄다.
+표현 품질이 입증되자 다음 화두는 자연스레 속도와 메모리로 옮겨 갔다. Zhejiang University의 Zhexi Peng 등이 발표한 [RTG-SLAM (SIGGRAPH 2024)](https://arxiv.org/abs/2404.19706)은 거실 수준을 넘어선 큰 장면의 실시간 RGB-D 재구성에 초점을 맞췄다.
 
-해법은 Gaussian의 역할을 극단적으로 가르는 것이었다. 모든 Gaussian을 애매한 반투명 상태로 여럿 겹쳐 놓는 대신, 각 Gaussian이 완전히 불투명하거나 거의 투명하도록 강제했다. 불투명한 Gaussian 하나가 표면 한 조각과 대표 색상을 딱 덮어 버리면 그 뒤에 다른 Gaussian을 겹쳐 쌓을 필요가 없으므로, 전체 Gaussian 개수와 연산량이 뚝 떨어진다. 여기에 Gaussian을 안정 상태와 불안정 상태로 나누어 불안정한 것만 최적화하고 그들이 덮는 픽셀만 선택적으로 렌더링한 결과, 논문은 동시대 최신 NeRF 기반 RGB-D SLAM보다 약 2배 빠르면서 메모리 사용량은 절반 수준으로 줄였다고 보고했다.
+해법은 Gaussian의 역할을 극단적으로 가르는 것이었다. 모든 Gaussian을 애매한 반투명 상태로 여럿 겹쳐 놓는 대신, 각 Gaussian이 완전히 불투명하거나 거의 투명하도록 강제했다. 불투명한 Gaussian 하나가 표면 한 조각과 대표 색상을 딱 덮어 버리면 그 뒤에 다른 Gaussian을 겹쳐 쌓을 필요가 없으므로, 전체 Gaussian 개수와 연산량이 뚝 떨어진다. 여기에 Gaussian을 안정 상태와 불안정 상태로 나누어 불안정한 것만 최적화하고, 이 Gaussian들이 덮는 픽셀만 선택적으로 렌더링했다. 그 결과 동시대 최신 NeRF 기반 RGB-D SLAM보다 약 2배 빠르면서 메모리 사용량은 절반 수준으로 줄었다고 논문에서 보고됐다.
 
 ---
 
@@ -106,4 +106,4 @@ tracking은 GS-SLAM·SplaTAM과 같이 렌더링 영상과 관측 영상의 phot
 
 **Dynamic scene.** 4DGS나 Deformable 3DGS처럼 Gaussian에 시간 축을 붙이는 오프라인 기법은 나왔지만, 정작 GS-SLAM(Yan et al. 2024), SplaTAM(Keetha et al. 2024), MonoGS(Matsuki et al. 2024)를 비롯한 초기 3DGS SLAM 시스템은 예외 없이 세계가 꼼짝 않고 정지해 있다고 가정한다(→ 19장).
 
-여기에 더해 초기 Gaussian을 어디서 구할 것인가 하는 문제도 시스템마다 제각각이었다. RGB-D 방식은 센서가 찍어 준 깊이에 기대고, MonoGS는 시스템 내부에서 추정한 깊이로 더듬어 나갔으며, 뒷장에서 볼 DUSt3R 계열은 아예 이미지에서 기하를 직접 출력하는 네트워크를 학습했다. 그러나 표현이 explicit하든 implicit하든, 16장에서 18장까지 살펴본 시스템들은 하나같이 "카메라만 움직이고 세상은 멈춰 있다"는 오랜 가정 위에 서 있었다. 이제 그 가장 오래된 전제가 깨지는 현장을 들여다볼 차례다.
+여기에 더해 초기 Gaussian을 어디서 구할지도 시스템마다 제각각이었다. RGB-D 방식은 센서가 찍어 준 깊이에 기대고, MonoGS는 시스템 내부에서 추정한 깊이로 더듬어 나갔으며, 뒷장에서 볼 DUSt3R 계열은 아예 이미지에서 기하를 직접 출력하는 네트워크를 학습했다. 그러나 표현이 explicit하든 implicit하든, 16장에서 18장까지 살펴본 시스템들은 하나같이 "카메라만 움직이고 세상은 멈춰 있다"는 오랜 가정 위에 서 있었다. 이제 그 가장 오래된 전제가 깨지는 현장을 들여다볼 차례다.

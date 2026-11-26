@@ -8,7 +8,7 @@
 
 ## 6.1 레이저 스캔에서 포즈 그래프로: Lu-Milios 1997
 
-[Lu & Milios (1997), "Globally Consistent Range Scan Alignment for Environment Mapping"](https://doi.org/10.1023/A:1008854305733) 이전의 레이저 지도 작성은 대개 인접한 두 스캔을 ICP(Iterative Closest Point) 같은 국소 정합으로 차례차례 이어 붙이는 데 머물렀다. ICP는 코앞의 두 스캔을 맞추는 데는 능숙했지만, 한 번 붙인 스캔의 오차를 되돌릴 수 없기에 수십 미터만 주행해도 누적 오차(drift)가 쌓이고, 루프를 돌아 처음 위치로 복귀하면 벽이 두 겹으로 갈라지곤 했다.
+[Lu & Milios (1997), "Globally Consistent Range Scan Alignment for Environment Mapping"](https://doi.org/10.1023/A:1008854305733) 이전의 레이저 지도 작성은 대개 인접한 두 스캔을 ICP(Iterative Closest Point) 같은 국소 정합으로 차례차례 이어 붙이는 데 머물렀다. ICP는 코앞의 두 스캔을 맞추는 데는 능숙했지만, 한 번 붙인 스캔의 오차를 되돌릴 수 없기에 수십 미터만 주행해도 누적 오차(drift)가 커지고, 루프를 돌아 처음 위치로 복귀하면 벽이 두 겹으로 갈라지곤 했다.
 
 Lu와 Milios는 시야를 뒤집어 지도 작성을 그래프 위의 최적화 문제로 번역했다. 로봇이 스캔을 찍은 각 자세 $x_1, x_2, \ldots, x_n$을 그래프의 **노드**로 세우고, 두 자세 사이에서 얻은 상대 위치 측정값 $\hat{z}_{ij}$와 그 측정의 확신도(정보 행렬 $\Omega_{ij} = \Sigma_{ij}^{-1}$)를 **엣지**로 연결한 것이다. 그러면 일관된 지도를 찾는 일은 그래프 위 모든 엣지의 불일치 비용을 최소화하는 문제가 된다.
 
@@ -16,7 +16,7 @@ $$F = \sum_{(i,j) \in \mathcal{E}} e_{ij}^T \Omega_{ij} e_{ij}, \quad e_{ij} = z
 
 여기서 $h(x_i, x_j)$는 현재 추정된 두 자세로부터 계산한 예측 상대변환이고, $z_{ij}$는 실제 센서(오도메트리나 스캔 매칭)로 관측한 상대변환이다.
 
-이 그래프 표현의 진가는 **loop closure** 순간에 빛을 발했다. 로봇이 예전에 지나온 장소를 다시 알아봤을 때, 해야 할 일은 그 두 자세 사이에 새로운 엣지 하나를 덧붙이는 것뿐이다. 그런 뒤 전체 그래프를 다시 최적화하면 loop closure 제약이 엣지를 타고 흐르며 루프 위의 모든 과거 자세를 한꺼번에 바로잡는다. 매 스텝 거대한 공분산 행렬 전체를 $O(N^2)$으로 갱신해야 했던 EKF와는 구조 자체가 달랐다. 다만 Lu와 Milios의 1997년 원형은 모든 자세를 매번 처음부터 한꺼번에 푸는 배치(batch) 선형 시스템이었기에, 스캔 수가 늘어나면 계산이 무거워져 큰 환경에 곧장 쓰기는 버거웠다. 하지만 최적화로 지도 전체의 전역 일관성을 세울 수 있음을 보인 이 한 발이, 이후 Gutmann·Konolige의 증분 계산, Folkesson·Christensen의 강건한 data association, Thrun 그룹의 대규모 실외 매핑으로 이어지는 거대한 흐름을 열었다.
+이 그래프 표현의 진가는 **loop closure** 순간에 빛을 발했다. 로봇이 예전에 지나온 장소를 다시 알아봤을 때는 그 두 자세 사이에 새로운 엣지 하나만 덧붙이면 된다. 그런 뒤 전체 그래프를 다시 최적화하면 loop closure 제약이 엣지를 타고 흐르며 루프 위의 모든 과거 자세를 한꺼번에 바로잡는다. 매 스텝 거대한 공분산 행렬 전체를 $O(N^2)$으로 갱신해야 했던 EKF와는 구조 자체가 달랐다. 다만 Lu와 Milios의 1997년 원형은 모든 자세를 매번 처음부터 한꺼번에 푸는 배치(batch) 선형 시스템이었기에, 스캔 수가 늘어나면 계산이 무거워져 큰 환경에 곧장 쓰기는 버거웠다. 하지만 최적화로 지도의 전역 일관성을 세울 수 있음을 보인 이 한 발이, 이후 Gutmann·Konolige의 증분 계산, Folkesson·Christensen의 강건한 data association, Thrun 그룹의 대규모 실외 매핑으로 이어지는 거대한 흐름을 열었다.
 
 > 🔗 **차용.** 포즈 그래프 최적화는 수학적으로 비선형 최소자승 문제다. [Levenberg(1944)](https://www.ams.org/qam/1944-02-02/S0033-569X-1944-10666-0/)와 [Marquardt(1963)](https://doi.org/10.1137/0111030)가 반세기 전 비선형 파라미터 추정을 위해 빚어 둔 댐핑 최소자승 해법이(→ §1.3), 레이저 로봇 지도의 backend 심장으로 고스란히 이식됐다.
 
@@ -46,7 +46,7 @@ $$p(X) \propto \prod_k f_k(X_k)$$
 
 가장 그럴듯한 지도와 궤적 $X^*$를 찾는 MAP(Maximum A Posteriori) 추정은 이 곱을 최대화하는 일이며, 모든 factor의 오차가 가우시안을 따르면 곧바로 비선형 최소자승 문제와 같아진다.
 
-여기서 Dellaert와 Kaess가 꺼낸 핵심 도구는 $J^T J$를 직접 구하지 않고 Jacobian 행렬 $J$ 자체를 **QR 분해**해 상삼각 행렬 $R$을 얻는 방식이었다. $R^T R = J^T J = \Omega$를 만족하는 이 행렬 $R$을 논문은 **square root information matrix**라 불렀다. $R$이 얼마나 비어 있는가(희소성)는 변수를 어떤 순서로 소거하는지(variable elimination ordering)와 그래프의 연결 위상에 달려 있는데, AMD나 COLAMD 같은 그래프 기반 순서 정렬 알고리즘을 쓰면 분해 과정에서 0이던 자리가 채워지는 현상(fill-in)을 극적으로 억제할 수 있었다. 게다가 $J^T J$를 제곱해 만들지 않고 $J$에서 곧장 $R$을 뽑아내니 조건수(condition number)가 나빠지지 않아, EKF의 공분산 갱신보다 수치적으로도 훨씬 단단했다.
+여기서 Dellaert와 Kaess는 **QR 분해**라는 핵심 도구를 꺼내, $J^T J$를 직접 구하지 않고 Jacobian 행렬 $J$ 자체를 분해해 상삼각 행렬 $R$을 얻었다. $R^T R = J^T J = \Omega$를 만족하는 이 행렬 $R$을 논문에서는 **square root information matrix**라 불렀다. $R$이 얼마나 비어 있는가(희소성)는 변수를 어떤 순서로 소거하는지(variable elimination ordering)와 그래프의 연결 위상에 달려 있는데, AMD나 COLAMD 같은 그래프 기반 순서 정렬 알고리즘을 쓰면 분해 과정에서 0이던 자리가 채워지는 현상(fill-in)을 극적으로 억제할 수 있었다. 게다가 $J^T J$를 제곱해 만들지 않고 $J$에서 곧장 $R$을 뽑아내니 조건수(condition number)가 나빠지지 않아, EKF의 공분산 갱신보다 수치적으로도 훨씬 단단했다.
 
 <!-- DEMO: factor_graph_sparse.html -->
 
@@ -58,7 +58,7 @@ Square Root SAM은 그래프 SLAM의 아름다운 표준형을 세웠지만, 결
 
 Kaess, Ranganathan, Dellaert는 2008년 *IEEE TRO*에 발표한 [**iSAM**(incremental Smoothing and Mapping)](https://www.cs.cmu.edu/~kaess/pub/Kaess08tro.pdf)에서 이 병목을 선형대수의 고전 기법인 **Givens rotation**으로 풀었다. 새 변수와 factor가 들어오면 기존 상삼각 행렬 $R$을 버리지 않고 새 행만 아래에 붙인 뒤, Givens rotation으로 대각선 아래의 원소만 국소적으로 지워 $R$의 상삼각 형태를 증분(incremental) 방식으로 복구한 것이다.
 
-하지만 iSAM에도 어쩔 수 없는 타협이 남아 있었다. 비선형 factor를 선형화해 얻은 행렬 $R$은 특정 시점의 추정치 주변에서만 유효한 1차 근사였기에, 로봇이 움직이며 추정값이 처음 선형화 지점에서 멀어지면 근사 오차가 누적됐다. 게다가 루프가 여러 개 얽히면 $R$ 내부에 fill-in이 야금야금 번져 희소성이 무너졌다. 그래서 iSAM은 실험에서 100스텝마다 변수 순서를 다시 정하고 전체 관측을 다시 선형화해 $R$을 처음부터 새로 분해하는 주기적 배치 재계산(periodic batch reordering & relinearization)을 치러야 했다.
+하지만 iSAM에도 어쩔 수 없는 타협이 남아 있었다. 비선형 factor를 선형화해 얻은 행렬 $R$은 특정 시점의 추정치 주변에서만 유효한 1차 근사였기에, 로봇이 움직이며 추정값이 처음 선형화 지점에서 멀어지면 근사 오차가 누적됐다. 게다가 루프가 여러 개 얽히면 $R$ 내부에 fill-in이 야금야금 번져 희소성이 무너졌다. 그래서 iSAM은 실험에서 100스텝마다 주기적 배치 재계산(periodic batch reordering & relinearization)으로 변수 순서를 다시 정하고 전체 관측을 다시 선형화해 $R$을 처음부터 새로 분해해야 했다.
 
 이 마지막 주기적 리셋마저 완전히 지워 낸 결정판이 2012년 *IJRR*의 [**iSAM2**](https://doi.org/10.1177/0278364911430419)다. Kaess와 동료들은 행렬 $R$ 대신 **Bayes tree**라는 새로운 자료구조를 고안했다. factor graph에 변수 소거를 적용해 얻는 chordal Bayes net의 clique들을 노드로, clique 사이에 공유되는 변수(separator)를 엣지로 삼아 트리 구조를 만든 것이다. 이제 새 factor가 추가되면 Bayes tree에서 그 factor의 영향을 받는 일부 clique만 찾아내 잠깐 factor graph로 되돌려 풀고 트리에 다시 꽂으면 끝난다. 여기에 **fluid relinearization**을 얹어, 전체 변수를 주기적으로 다 뜯어고치는 대신 추정치가 선형화 지점에서 임계값 $\beta$ 이상 움직인 변수만 콕 집어 그 변수가 걸친 clique만 국소적으로 재선형화했다. 덕분에 거대한 loop closure가 터져도 실제 영향권에 드는 clique만 부분적으로 갱신하면 되므로, 진정한 의미의 상시 증분 추론이 완성됐다.
 
@@ -70,9 +70,9 @@ Kaess, Ranganathan, Dellaert는 2008년 *IEEE TRO*에 발표한 [**iSAM**(increm
 
 ## 6.5 g2o: ROS 생태계의 범용 그래프 최적화기
 
-미국에서 Dellaert와 Kaess가 GTSAM을 다듬던 같은 시기, 유럽과 캘리포니아의 또 다른 연합군은 조금 다른 실용적 철학으로 그래프 최적화의 표준 도구를 빚어냈다. 2011년 ICRA에서 Freiburg 대학의 Rainer Kümmerle, Giorgio Grisetti, Wolfram Burgard, Imperial College London의 Hauke Strasdat, 그리고 Willow Garage의 Kurt Konolige가 함께 발표한 [**g2o**(general graph optimization)](https://doi.org/10.1109/ICRA.2011.5979949)다.
+미국에서 Dellaert와 Kaess가 GTSAM을 다듬던 같은 시기, 유럽과 캘리포니아의 또 다른 연합군은 조금 다른 실용적 철학으로 그래프 최적화의 표준 도구를 빚어냈다. 2011년 ICRA에서 Freiburg 대학의 Rainer Kümmerle·Giorgio Grisetti·Wolfram Burgard, Imperial College London의 Hauke Strasdat, 그리고 Willow Garage의 Kurt Konolige가 함께 [**g2o**(general graph optimization)](https://doi.org/10.1109/ICRA.2011.5979949)를 발표했다.
 
-g2o의 목표는 이름처럼 "범용성"이었다. 2D 포즈 그래프든, 3D landmark bundle adjustment든, Sim(3) 스케일 드리프트 보정이든, 사용자가 그래프의 노드(`vertex`)와 제약(`edge`), 그리고 오차 함수와 Jacobian만 플러그인처럼 정의해 끼워 넣으면, 내부 엔진이 Gauss-Newton이나 Levenberg-Marquardt로 희소 선형 시스템을 풀어 주는 유연한 프레임워크를 지향했다. 실제 선형 대수 계산도 CHOLMOD, CSparse, Eigen 등 검증된 희소 solver 가운데 입맛에 맞게 바꿔 끼울 수 있게 설계했다.
+이름처럼 "범용성"이 목표였던 g2o는 2D 포즈 그래프든, 3D landmark bundle adjustment든, Sim(3) 스케일 드리프트 보정이든 아우르는 유연한 프레임워크를 지향했다. 사용자가 그래프의 노드(`vertex`)와 제약(`edge`), 그리고 오차 함수와 Jacobian만 플러그인처럼 정의해 끼워 넣으면, 내부 엔진이 Gauss-Newton이나 Levenberg-Marquardt로 희소 선형 시스템을 풀어 준다. 실제 선형대수 계산도 CHOLMOD, CSparse, Eigen 등 검증된 희소 solver 가운데 입맛에 맞게 바꿔 끼울 수 있게 설계했다.
 
 타이밍도 절묘했다. 2010년대 초반 ROS(Robot Operating System)가 전 세계 로봇 연구실의 공통 운영체제로 번져 나가던 시점에, g2o는 곧바로 ROS 기반 SLAM의 대표 backend로 안착했다. 이후 컴퓨터 비전 SLAM의 양대 산맥이 된 ORB-SLAM과 LSD-SLAM이 모두 g2o를 심장으로 택했다(같은 시기 ROS에서 2D 라이다 매핑의 표준이 된 gmapping은 particle filter 계열을, Google의 Cartographer는 Ceres Solver를 썼다).
 
@@ -84,9 +84,9 @@ g2o의 목표는 이름처럼 "범용성"이었다. 2D 포즈 그래프든, 3D l
 
 첫째는 **과거를 대하는 태도**다. EKF-SLAM은 현재 상태만을 유지하기 위해 지나간 로봇 자세들을 매 스텝 주변화(marginalization)로 지워 버린다. 일단 지워진 과거 자세의 선형화 오차는 현재 공분산 속에 영구히 박제돼, 나중에 loop closure가 일어나도 과거 궤적을 펴낼 방법이 마땅치 않다. 반면 그래프 SLAM은 지나온 자세와 관측을 그래프 안에 고스란히 살려 둔다. 덕분에 수백 미터 뒤에서 루프가 닫히더라도 전체 궤적과 과거 자세까지 한꺼번에 되돌려 고칠 수 있다(→ 10장).
 
-둘째는 **계산 구조와 수치 확장성**이다. landmark가 $N$개일 때 EKF는 조밀한 공분산 행렬 때문에 무조건 $O(N^2)$ 비용을 물어야 했다. 그래프 SLAM은 희소 Cholesky나 QR 분해를 통해 실제 연결된 이웃만 건드리므로 계산 부담이 극적으로 줄어든다(물론 정확한 복잡도는 그래프의 위상, 분해 시 발생하는 fill-in, 소거 순서, 재선형화 범위에 따라 달라지므로 좁은 공간을 돈다는 이유만으로 무조건 $O(N \log N)$이 보장되는 것은 아니다).
+둘째는 **계산 구조와 수치 확장성**이다. landmark가 $N$개일 때 EKF는 조밀한 공분산 행렬 때문에 무조건 $O(N^2)$ 비용을 물어야 했다. 그래프 SLAM은 희소 Cholesky나 QR 분해로 실제 연결된 이웃만 건드리므로 계산 부담이 극적으로 줄어든다(물론 정확한 복잡도는 그래프의 위상, 분해 시 발생하는 fill-in, 소거 순서, 재선형화 범위에 따라 달라지므로 좁은 공간을 돈다는 이유만으로 무조건 $O(N \log N)$이 보장되는 것은 아니다).
 
-셋째는 **주변화(marginalization)의 투명성**이다. 변수가 끝없이 늘어나면 그래프 SLAM 역시 오래된 자세를 적분해 없애고 그 정보를 남은 변수들을 잇는 factor로 압축해야 한다. 이때 정보가 엉키면서 생기는 근사와 재선형화 제약을 어느 선에서 타협할지—예컨대 sliding window 크기나 keyframe 선택 전략—엔지니어가 그래프 구조를 보며 훨씬 명시적으로 통제할 수 있었다.
+셋째는 **주변화(marginalization)의 투명성**이다. 변수가 끝없이 늘어나면 그래프 SLAM 역시 오래된 자세를 적분해 없애고 그 정보를 남은 변수들을 잇는 factor로 압축해야 한다. 이때 정보가 엉키면서 생기는 근사와 재선형화 제약을 놓고 어느 선에서 타협할지를, 엔지니어가 그래프 구조를 보며 예컨대 sliding window 크기나 keyframe 선택 전략으로 훨씬 명시적으로 통제할 수 있었다.
 
 ---
 
@@ -94,7 +94,7 @@ g2o의 목표는 이름처럼 "범용성"이었다. 2D 포즈 그래프든, 3D l
 
 물론 수학이 깔끔하다고 실전 시스템이 저절로 돌아가지는 않는다. 이론적 그래프 최적화를 움직이는 로봇에 올리자마자 세 가지 현실의 벽이 나타났다.
 
-가장 먼저 부딪힌 것은 **초기값 의존성**이다. Gauss-Newton과 Levenberg-Marquardt는 본질적으로 국소 최적화기(local optimizer)이므로, 오도메트리에서 넘어온 초기 자세가 참값에서 크게 벗어나 있으면 엉뚱한 지역 최솟값(local minimum)에 빠져 헤어나지 못한다. 여기에 단 하나의 잘못된 loop closure 엣지(outlier)라도 섞여 들어가면, 최소자승의 제곱 오차가 그 가짜 엣지를 맞추려고 멀쩡한 지도 전체를 기괴하게 비틀어 놓는다. 결국 backend에 데이터를 넘기기 전 frontend 단계에서 오매칭을 철저히 걸러 내는 검증 장치가 사활을 걸 문제로 떠올랐다(→ 7장).
+가장 먼저 부딪힌 것은 **초기값 의존성**이다. Gauss-Newton과 Levenberg-Marquardt는 본질적으로 국소 최적화기(local optimizer)이므로, 오도메트리에서 넘어온 초기 자세가 참값에서 크게 벗어나 있으면 엉뚱한 지역 최솟값(local minimum)에 빠져 헤어나지 못한다. 여기에 단 하나의 잘못된 loop closure 엣지(outlier)라도 섞여 들어가면, 최소자승의 제곱 오차가 그 가짜 엣지를 맞추려고 멀쩡한 지도 전체를 기괴하게 비틀어 놓는다. 결국 backend에 데이터를 넘기기 전 frontend 단계에서 오매칭을 철저히 걸러 내는 검증 장치가 사활이 걸린 문제로 떠올랐다(→ 7장).
 
 두 번째 방어막은 **robust kernel**이었다. 표준 이차 손실이 outlier에 맥없이 무너진다는 사실이 드러나면서, 오차가 일정 수준을 넘어서면 가중치를 깎아 내리는 Huber나 Cauchy 같은 강건 비용 함수가 필수로 자리 잡았다. 오늘날 g2o와 GTSAM 모두 다양한 robust kernel을 기본 내장하고 있으며, 센서 특성과 환경에 맞춰 선택해 쓴다.
 

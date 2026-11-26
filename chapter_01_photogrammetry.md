@@ -12,7 +12,7 @@
 
 사진으로 공간을 재는 기술은 20세기에 들어 하늘로 올라갔다. 비행기에서 서로 겹치게 찍은 여러 장의 항공 사진과 지상의 기준점 몇 개를 엮어 촬영 위치와 지상 점의 좌표를 한꺼번에 구하는 기법을 aerotriangulation(항공 삼각측량)이라 불렀다. 물론 당시 계산을 수행하는 주체는 컴퓨터가 아니라 손과 기계식 계산기를 붙든 사람이었다.
 
-> 🔗 **차용.** 현대 SLAM의 스테레오 깊이 추정은 Pulfrich의 stereocomparator와 같은 기하 원리에 서 있다. 두 카메라 사이의 거리(baseline)와 시차로 깊이를 역산한다는 점은 변함이 없다. 다만 Pulfrich가 유리 건판 위에서 눈으로 읽어 내던 좌표를 오늘날에는 이미지 센서의 픽셀 좌표가 대신할 뿐이다.
+> 🔗 **차용.** 현대 SLAM의 스테레오 깊이 추정은 Pulfrich의 stereocomparator와 같은 기하 원리 위에 서 있다. 두 카메라 사이의 거리(baseline)와 시차로 깊이를 역산한다는 점은 변함이 없다. 다만 Pulfrich가 유리 건판 위에서 눈으로 읽어 내던 좌표를 오늘날에는 이미지 센서의 픽셀 좌표가 대신할 뿐이다.
 
 ---
 
@@ -20,9 +20,9 @@
 
 [Duane C. Brown](https://digital.hagley.org/08206139_solution)은 RCA 소속 엔지니어로, 플로리다 Patrick 공군기지의 미 공군 미사일 시험장(Air Force Missile Test Center)에서 측량 업무를 맡고 있었다. 그에게 떨어진 과제는 여러 관측 지점에서 찍은 카메라 자세와 여러 지상 점의 3차원 좌표를 동시에 추정하는 일이었다. Triggs et al.(1999)의 부록에 따르면, Brown과 동료들은 바로 이 미 공군 프로젝트를 위해 1957년부터 1959년 사이에 기본적인 bundle 방법의 뼈대를 세웠다.
 
-1958년에 나온 보고서 "A Solution to the General Problem of Multiple Station Analytical Stereotriangulation"(RCA-MTP Data Reduction Technical Report No. 43, AFMTC-TR-58-8)은 **bundle adjustment**를 수치 계산 문제로 정식화한 기념비적 문헌이다. 비슷한 시기 해석적 사진측량을 연구하던 Helmut Schmid 역시 bundle adjustment의 공동 창시자로 나란히 꼽힌다. 다만 이 1958년 초기 정식화는 카메라 내부가 이미 교정돼 있다고 가정하고, 카메라 자세와 3차원 점 좌표만을 최적화 변수로 삼았다.
+1958년에 나온 보고서 "A Solution to the General Problem of Multiple Station Analytical Stereotriangulation"(RCA-MTP Data Reduction Technical Report No. 43, AFMTC-TR-58-8)은 **bundle adjustment**를 수치 계산 문제로 정식화한 기념비적 문헌이다. 비슷한 시기 해석적 사진측량을 연구하던 Helmut Schmid 역시 bundle adjustment의 공동 창시자로 나란히 꼽힌다. 다만 이 1958년 초기 정식화에서는 카메라 내부가 이미 교정돼 있다고 가정하고, 카메라 자세와 3차원 점 좌표만을 최적화 변수로 삼았다.
 
-핵심 목표는 **reprojection error**를 줄이는 데 있다. 카메라 $i$가 실제로 관측한 2D 이미지 좌표 $x_{ij} \in \mathbb{R}^2$와, 3D 점 $X_j \in \mathbb{R}^3$을 카메라 내부 행렬 $K_i$와 외부 행렬 $[R_i | t_i]$로 이미지 평면에 투영한 예측 좌표 $\pi(K_i, R_i, t_i, X_j)$ 사이의 거리를 재고, 모든 관측에 대한 제곱합을 최소화한다.
+핵심 목표는 **reprojection error**를 줄이는 데 있다. 카메라 $i$가 실제로 관측한 2D 이미지 좌표는 $x_{ij} \in \mathbb{R}^2$이고, 3D 점 $X_j \in \mathbb{R}^3$을 카메라 내부 행렬 $K_i$와 외부 행렬 $[R_i | t_i]$로 이미지 평면에 투영한 예측 좌표는 $\pi(K_i, R_i, t_i, X_j)$이다. 이 두 좌표 사이의 거리를 재고, 모든 관측에 걸쳐 그 거리의 제곱합을 최소화한다.
 
 $$E = \sum_{i,j} \| x_{ij} - \pi(K_i, R_i, t_i, X_j) \|^2$$
 
@@ -44,9 +44,9 @@ Brown이 세운 reprojection error 최소화는 비선형 최소자승 문제다
 
 사진측량의 bundle adjustment와 수치 최적화의 LM 알고리즘이 컴퓨터 비전의 주류 문제와 정면으로 만난 결정적 계기는 1999년 ICCV와 함께 열린 Vision Algorithms Workshop이었다. 이 자리에서 Bill Triggs, Philip McLauchlan, Richard Hartley, Andrew Fitzgibbon이 발표한 ["Bundle Adjustment — A Modern Synthesis"](https://link.springer.com/chapter/10.1007/3-540-44480-7_21)는 측량학과 항공 사진측량 문헌 곳곳에 흩어져 있던 bundle adjustment(BA) 이론을 컴퓨터 비전의 언어로 집대성했다.
 
-이 논문은 BA 문제가 지닌 희소 구조(sparsity)의 중요성을 낱낱이 파헤쳤다. 장면 속 한 3D 점은 전체 카메라 중 일부에만 찍히기 때문에, 선형화한 정규방정식의 행렬은 빈 칸이 대부분인 희소 블록 구조를 띤다. 여기서 점 변수를 먼저 대수적으로 소거하고(Schur complement) 카메라 변수만 남긴 작은 연립방정식을 풀면 계산량이 극적으로 줄어든다. 놀랍게도 논문에 따르면 1958년의 Brown이 이미 점 변수를 소거한 뒤 남은 카메라 방정식을 가우스 소거법으로 푸는 이 구조를 쓰고 있었다. 논문은 여기에 더해 기준 좌표계를 임의로 잡을 수 있기 때문에 생기는 자유도, 즉 gauge freedom 문제까지 체계적으로 정리했다.
+이 논문은 BA 문제가 지닌 희소 구조(sparsity)의 중요성을 낱낱이 파헤쳤다. 장면 속 한 3D 점은 전체 카메라 중 일부에만 찍히기 때문에, 선형화한 정규방정식의 행렬은 빈 칸이 대부분인 희소 블록 구조를 띤다. 여기서 점 변수를 먼저 대수적으로 소거하고(Schur complement) 카메라 변수만 남긴 작은 연립방정식을 풀면 계산량이 극적으로 줄어든다. 놀랍게도 논문에 따르면, Brown은 이미 1958년에 점 변수를 소거한 뒤 남은 카메라 방정식을 가우스 소거법으로 푸는 이 구조를 쓰고 있었다. 논문은 여기에 더해 기준 좌표계를 임의로 잡을 수 있기 때문에 생기는 자유도, 즉 gauge freedom 문제까지 체계적으로 정리했다.
 
-이 이론적 번역은 곧 거대한 공학적 도약으로 이어졌다. 발표 7년 뒤인 2006년, Noah Snavely, Steven Seitz, Richard Szeliski는 [Photo Tourism(SIGGRAPH 2006)](https://phototour.cs.washington.edu/Photo_Tourism.pdf)을 통해 인터넷에서 긁어모은 불특정 다수의 사진만으로 노트르담 대성당이나 트레비 분수 같은 랜드마크를 자동 복원해 보였다. 다시 10년이 흐른 2016년, Johannes Schönberger와 Jan-Michael Frahm은 사진을 한 장씩 덧붙여 가며 재구성하는 incremental SfM을 한층 견고하게 다듬은 [COLMAP(CVPR 2016)](https://openaccess.thecvf.com/content_cvpr_2016/papers/Schonberger_Structure-From-Motion_Revisited_CVPR_2016_paper.pdf)을 공개했고, 비슷한 시기 대규모 연구 시스템들은 수백만 장에서 많게는 1억 장에 이르는 사진까지 한꺼번에 다루는 단계에 이르렀다.
+이 이론적 번역은 곧 거대한 공학적 도약으로 이어졌다. 발표 7년 뒤인 2006년, Noah Snavely, Steven Seitz, Richard Szeliski는 [Photo Tourism(SIGGRAPH 2006)](https://phototour.cs.washington.edu/Photo_Tourism.pdf)을 통해 인터넷에서 긁어모은 불특정 다수의 사진만으로 노트르담 대성당이나 트레비 분수 같은 랜드마크를 자동 복원해 보였다. 다시 10년이 흐른 2016년, Johannes Schönberger와 Jan-Michael Frahm은 사진을 한 장씩 덧붙여 가며 재구성하는 incremental SfM을 한층 견고하게 다듬어 [COLMAP(CVPR 2016)](https://openaccess.thecvf.com/content_cvpr_2016/papers/Schonberger_Structure-From-Motion_Revisited_CVPR_2016_paper.pdf)을 공개했다. 비슷한 시기 대규모 연구 시스템들은 수백만 장에서 많게는 1억 장에 이르는 사진까지 한꺼번에 다루는 단계에 이르렀다.
 
 ---
 
@@ -54,9 +54,9 @@ Brown이 세운 reprojection error 최소화는 비선형 최소자승 문제다
 
 오늘날 우리에게 너무도 당연해 보이는 reprojection error 역시 처음부터 그 모습은 아니었다. 20세기 초 항공 삼각측량에서는 오차를 3D 지상 좌표계의 거리 차이로 재는 일이 흔했다. 그런데 3차원 공간에서 직접 거리를 비교하면 렌즈 왜곡이나 카메라 내부 교정에서 비롯된 오차가 지상 좌표 잔차 속에 뒤섞여, 어디서 문제가 생겼는지 가려내기가 어려웠다.
 
-Brown은 1958년 보고서에서 이 비교의 기준을 3D 지상 좌표에서 2D 이미지 평면으로 옮겼다. 3차원 점을 이미지에 투영한 예측 위치와 실제 사진에서 측정한 픽셀 좌표를 같은 평면 위에서 맞대어 보자는 발상이었다. Triggs et al.(1999)의 부록에 따르면, 카메라 내부 파라미터까지 BA 안에서 함께 추정하는 self-calibration은 1964년 무렵 논의가 시작돼 1968년에 실제 구현으로 이어졌고, 렌즈 왜곡을 정교하게 묘사하는 카메라 모델 역시 1970년대 초에 크게 발전했다. 이 일련의 진전을 이끈 주역 역시 상당 부분 Brown과 그의 동료들이었다.
+Brown은 1958년 보고서에서 이 비교의 기준을 3D 지상 좌표에서 2D 이미지 평면으로 옮겼다. 3차원 점을 이미지에 투영한 예측 위치와 실제 사진에서 측정한 픽셀 좌표를 같은 평면 위에서 맞대어 보자는 발상이었다. Triggs et al.(1999)의 부록에 따르면, 카메라 내부 파라미터까지 BA 안에서 함께 추정하는 self-calibration은 1964년 무렵 논의가 시작돼 1968년에 실제 구현으로 이어졌고, 렌즈 왜곡을 정교하게 묘사하는 카메라 모델 역시 1970년대 초에 크게 발전했다. 이 일련의 진전을 이끈 주역도 상당 부분 Brown과 동료들이었다.
 
-여기에 통계적 해석이 더해지면서 공식은 완벽한 자리를 잡았다. 이미지 측정 노이즈가 등방성 가우시안 분포를 따른다고 가정하면, reprojection error 제곱합을 최소화하는 일은 정확히 최대우도 추정(MLE)과 일치한다. Triggs et al.(1999)이 이 공식을 컴퓨터 비전 연구자에게 익숙한 표기로 정리해 내면서, reprojection error는 다중 시점 기하와 SLAM의 공통 언어로 굳어졌다.
+여기에 통계적 해석이 더해지면서 공식은 완벽히 자리를 잡았다. 이미지 측정 노이즈가 등방성 가우시안 분포를 따른다고 가정하면, reprojection error 제곱합을 최소화하는 일은 정확히 최대우도 추정(MLE)과 일치한다. Triggs et al.(1999)이 이 공식을 컴퓨터 비전 연구자에게 익숙한 표기로 정리해 내면서, reprojection error는 다중 시점 기하와 SLAM의 공통 언어로 굳어졌다.
 
 > 🔗 **차용.** 현대 SLAM에서 visual landmark의 관측 모델 $z = \pi(K, T, p) + \epsilon$은 Brown(1958)의 reprojection 공식을 그대로 물려받았다. Gauss-Newton으로 이 관측 잔차를 줄여 나가는 SLAM backend는 1958년 미 공군 기지의 항공 삼각측량 solver와 수학적으로 같은 골격을 공유한다.
 
@@ -64,7 +64,7 @@ Brown은 1958년 보고서에서 이 비교의 기준을 3D 지상 좌표에서 
 
 ## 1.6 오늘의 SLAM backend
 
-반세기가 지난 지금도 그 뼈대는 건재하다. ORB-SLAM3는 g2o를 이용해 SE(3) 카메라 자세와 3D landmark 좌표를 한꺼번에 최적화하고, LIO-SAM은 GTSAM의 factor graph 위에서 비선형 최적화를 푼다. 딥러닝 시대의 대표 주자인 DROID-SLAM조차 GRU(gated recurrent unit) 기반 업데이트 연산자로 optical flow 보정량을 예측한 뒤, 맨 마지막에는 미분 가능한 dense bundle adjustment 층을 통과시켜 기하학적 정합성을 맞춘다.
+반세기가 지난 지금도 그 뼈대는 건재하다. ORB-SLAM3는 g2o를 이용해 SE(3) 카메라 자세와 3D landmark 좌표를 한꺼번에 최적화하고, LIO-SAM은 GTSAM의 factor graph 위에서 비선형 최적화를 푼다. 딥러닝 시대의 대표 주자인 DROID-SLAM조차 GRU(gated recurrent unit) 기반 업데이트 연산자로 optical flow 보정량을 예측한 뒤, 맨 마지막에는 미분 가능한 dense bundle adjustment 층을 거쳐 기하학적 정합성을 맞춘다.
 
 1999년의 투박한 행렬 표기는 Lie group과 factor graph라는 세련된 언어로 갈아입었고, 사람이 손으로 짜던 계산 일부는 신경망이 대신 맡게 됐다. 그럼에도 backend가 하는 본질적인 일은 여전히 관측 잔차를 최소화하는 것이다. 시각 BA는 여러 시점에 걸친 reprojection error로 자세와 지도를 깎아내고, LiDAR 시스템은 점과 점, 또는 점과 평면 사이의 거리처럼 센서의 물리적 특성에 맞는 잔차를 세울 뿐이다.
 
@@ -78,7 +78,7 @@ Brown은 1958년 보고서에서 이 비교의 기준을 3D 지상 좌표에서 
 
 ## 아직 열린 문제
 
-**비선형 BA의 전역 최적해 보장.** LM 알고리즘은 본질적으로 국소 최솟값(local minimum)을 찾는 방법이라 초기값이 참값에서 멀면 엉뚱한 3차원 구조에 갇힌다. 이 함정을 피하려고 epipolar geometry 추정, PnP(Perspective-n-Point, 3D 점과 영상 좌표로 카메라 자세를 복원하는 문제), 5-point algorithm 같은 기하 solver가 개발됐다. 실전에서는 이런 solver를 RANSAC 같은 강건 추정 틀 안에서 돌려 초기값을 얻고, 그 결과를 반복 최적화로 다듬는다. 대규모 환경에서 전역 최적해 자체를 수학적으로 보장하려는 convex relaxation 연구도 활발하지만(→ 7장), 실시간 SLAM이 요구하는 속도와 규모 안에서 이를 풀어내는 일은 여전히 과제로 남아 있다.
+**비선형 BA의 전역 최적해 보장.** LM 알고리즘은 본질적으로 국소 최솟값(local minimum)을 찾는 방법이라 초기값이 참값에서 멀면 엉뚱한 3차원 구조에 갇힌다. 이 함정을 피하려고 epipolar geometry 추정, PnP(Perspective-n-Point, 3D 점과 영상 좌표로 카메라 자세를 복원하는 문제), 5-point algorithm 같은 기하 solver가 개발됐다. 실전에서는 이런 solver를 RANSAC 같은 강건 추정 틀 안에서 돌려 초기값을 얻고, 그 결과를 반복 최적화로 다듬는다. 대규모 환경에서 전역 최적해 자체를 수학적으로 보장하려는 convex relaxation 연구도 활발하지만(→ 7장), 실시간 SLAM이 요구하는 속도와 규모를 충족하며 이를 풀어내는 일은 여전히 과제로 남아 있다.
 
 **사진측량의 정밀도와 Visual SLAM의 차이.** 항공 사진측량의 정확도는 엄격히 통제된 촬영 조건과 산출물 규격에 맞춰 관리된다. 잘 교정된 카메라와 정밀한 GCP(지상 기준점)를 동원하고, 최적화는 시간 제약 없는 오프라인에서 돌린다. 반면 실시간 Visual SLAM은 똑같은 수식을 들고나와 GPS도, 고해상도 계측 카메라도, 사후 계산의 여유도 없는 현장에서 매 프레임 답을 내놓아야 한다.
 

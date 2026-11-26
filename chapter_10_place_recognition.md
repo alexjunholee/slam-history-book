@@ -1,6 +1,6 @@
 # 13장 장소 인식: FAB-MAP에서 AnyLoc까지
 
-Oxford 모바일 로보틱스 그룹의 Mark Cummins와 Paul Newman이 파고든 질문은 단순하면서도 치명적이었다. "로봇이 방금 지나친 이 장소를 예전에 본 적이 있는가?" 영상만으로 이동량을 쌓아 가는 visual odometry에는 어쩔 수 없이 drift가 누적되므로, feature 기반이든 direct든 dense든 모든 SLAM 시스템이 큰 오차를 털어 내려면 결국 loop를 닫아야 한다. 지금 카메라에 비친 장면이 수천 장의 과거 기록 중 어디와 같은지 가려내는 이 역할은 **장소 인식**(place recognition)이 도맡았고, 흥미롭게도 이 분야는 tracking·mapping과 사뭇 다른 궤적을 그리며 독자적으로 발전했다. 특히 장소 인식은 손으로 깎아 만든 visual word 통계에서 출발해 딥러닝 기반 전역 서술자로 가장 먼저, 그리고 깊숙이 옮겨 간 영역이기도 하다.
+Oxford 모바일 로보틱스 그룹의 Mark Cummins와 Paul Newman이 파고든 질문은 단순하면서도 치명적이었다. "로봇이 방금 지나친 이 장소를 예전에 본 적이 있는가?" 영상만으로 이동량을 쌓아 가는 visual odometry에는 어쩔 수 없이 drift가 누적되므로, feature 기반이든 direct든 dense든 모든 SLAM 시스템이 큰 오차를 털어 내려면 결국 loop를 닫아야 한다. **장소 인식**(place recognition)은 지금 카메라에 비친 장면이 수천 장의 과거 기록 중 어디와 같은지 가려내는 역할을 도맡았다. 흥미롭게도 이 분야는 tracking·mapping과 사뭇 다른 궤적을 그리며 독자적으로 발전했다. 특히 장소 인식은 손으로 깎아 만든 visual word 통계에서 출발해 딥러닝 기반 전역 서술자로 가장 먼저, 그리고 깊숙이 옮겨 간 영역이기도 하다.
 
 ---
 
@@ -16,7 +16,7 @@ GPS 신호가 닿지 않는 실내나 터널, 고층 빌딩 숲에서 로봇이 
 
 하지만 영화 속 물체를 찾는 것과 로봇의 loop closure는 무게가 달랐다. 2008년 Cummins와 Newman은 [Cummins & Newman. FAB-MAP: Probabilistic Localization and Mapping in the Space of Appearance](https://doi.org/10.1177/0278364908090961)에서 단순한 유사도 점수만으로는 왜 충분하지 않은지를 분명히 짚었다. 비슷한 구조물이 반복되는 환경에서는 가장 높은 유사도 점수를 받은 후보조차 가짜일 수 있으며, SLAM에서 잘못된 loop closure(false positive)가 단 하나라도 그래프에 끼어들면 지도 전체가 산산조각 나기 때문이다.
 
-두 사람은 유사도 순위 매기기 대신 엄밀한 베이즈 추론으로 문제를 다시 세웠다. 현재 관측 $z_t$(어떤 visual word들이 나타났는지에 대한 집합)가 주어졌을 때, 데이터베이스의 각 장소 $\ell_i$에 있을 사후 확률은 다음과 같다.
+두 사람은 유사도 순위를 매기는 대신 엄밀한 베이즈 추론으로 문제를 다시 세웠다. 현재 관측 $z_t$(어떤 visual word들이 나타났는지 담은 집합)가 주어졌을 때, 데이터베이스의 각 장소 $\ell_i$에 있을 사후 확률은 다음과 같다.
 
 $$P(\ell_i \mid z_t) \propto P(z_t \mid \ell_i) P(\ell_i)$$
 
@@ -30,9 +30,9 @@ $$I(e_i; e_j) = \sum_{e_i, e_j} P(e_i, e_j) \log \frac{P(e_i, e_j)}{P(e_i)P(e_j)
 
 $$P(z_t \mid \ell_i) = \prod_k P(z_t^k \mid z_t^{\text{pa}(k)}, \ell_i)$$
 
-여기서 $z_t^k \in \{0,1\}$은 $k$번째 word의 출현 여부, $\text{pa}(k)$는 트리에서 $k$의 부모 노드다. 단어들이 함께 등장하는 공존 패턴을 확률 모델 안에 녹여 낸 덕분에 복도처럼 닮은 장소가 줄지어 있어도 false positive를 크게 걸러 낼 수 있었다(vocabulary와 tree는 대량의 별도 학습 영상에서 미리 구해 둔다). 여기에 FAB-MAP은 현재 위치가 기존 데이터베이스에 없는 전혀 새로운 장소일 확률까지 "new place" 가설로 명시적으로 계산해 넣음으로써 오탐의 틈을 한 번 더 막았다.
+여기서 $z_t^k \in \{0,1\}$은 $k$번째 word의 출현 여부, $\text{pa}(k)$는 트리에서 $k$의 부모 노드다. 단어들이 함께 등장하는 패턴을 확률 모델 안에 녹여 낸 덕분에 복도처럼 닮은 장소가 줄지어 있어도 false positive를 상당 부분 걸러 낼 수 있었다(vocabulary와 tree는 대량의 별도 학습 영상에서 미리 구해 둔다). 여기에 FAB-MAP은 현재 위치가 기존 데이터베이스에 없는 전혀 새로운 장소일 확률까지 "new place" 가설로 명시적으로 계산해 넣어 오탐의 틈을 한 번 더 막았다.
 
-그 위력은 2011년 발표된 [FAB-MAP 2.0](https://www.robots.ox.ac.uk/~mjc/Papers/cummins_newman_ijrr_fabmap2_2010_preprint.pdf)에서 증명됐다. FAB-MAP 2.0은 무려 1,000 km에 달하는 도로 주행 경로에서 오직 영상의 겉모습(appearance)만으로 loop closure를 성공적으로 검출해 냈다.
+그 위력은 2011년 발표된 [FAB-MAP 2.0](https://www.robots.ox.ac.uk/~mjc/Papers/cummins_newman_ijrr_fabmap2_2010_preprint.pdf)에서 증명됐다. FAB-MAP 2.0은 무려 1,000 km에 달하는 도로 주행 경로에서 오직 영상의 겉모습(appearance)만으로 loop closure를 검출해 냈다.
 
 > 🔗 **차용.** FAB-MAP이 visual word로 장면을 요약하는 뼈대는 Sivic & Zisserman의 "Video Google"(2003)에서 왔다. Cummins와 Newman은 문서 검색용 BoW 기법을 베이즈 확률과 Chow-Liu 트리 위에서 로봇 항법의 안전 기준에 맞게 재탄생시켰다.
 
@@ -60,7 +60,7 @@ $$s(\mathbf{v}_a, \mathbf{v}_b) = 1 - \frac{1}{2} \left\| \frac{\mathbf{v}_a}{|\
 
 ## 13.4 NetVLAD — CNN 기반 VPR (2016)
 
-BoW 방식은 빠르고 가벼웠지만 근본적인 약점이 있었다. 미리 학습해 둔 vocabulary가 특정 환경과 특정 수작업 서술자에 묶여 있어, 밤낮이 바뀌거나 계절이 변하고 카메라 시점이 크게 틀어지면 visual word 분포 자체가 무너져 버린 것이다.
+BoW 방식은 빠르고 가벼웠지만 근본적인 약점이 있었다. 미리 학습해 둔 vocabulary가 특정 환경과 특정 수작업 서술자에 묶여 있어, 밤낮이 바뀌거나 계절이 변하고 카메라 시점이 크게 틀어지면 visual word 분포 자체가 무너져 버린다.
 
 2016년 CVPR에서 Relja Arandjelović, Petr Gronat, Akihiko Torii, Tomáš Pajdla, Josef Sivic이 발표한 [NetVLAD: CNN Architecture for Weakly Supervised Place Recognition](https://doi.org/10.1109/CVPR.2016.572)은 딥러닝으로 이 장벽을 넘었다. 공저자 Sivic이 13년 전 "Video Google"을 썼던 바로 그 연구자라는 점도 시대의 전환을 상징한다.
 
@@ -82,9 +82,9 @@ $$\mathbf{V}(k) = \sum_i \bar{a}_k(\mathbf{x}_i)\,(\mathbf{x}_i - \boldsymbol{\m
 
 학습 데이터의 병목도 영리하게 우회했다. 저자들은 같은 거리를 서로 다른 해와 계절에 찍은 Google Street View Time Machine 이미지와 GPS 태그를 활용해, 가까운 위치의 다른 시점 사진은 양성 쌍으로, 먼 위치의 사진은 음성 쌍으로 묶는 weakly supervised triplet loss를 썼다. 사람이 일일이 정밀한 대응 레이블을 달아 주지 않아도 강건한 장소 표현을 학습할 수 있었던 비결이다.
 
-Pittsburgh 250k와 Tokyo 24/7 벤치마크에서 NetVLAD는 기존 VLAD와 비학습 CNN 특징을 큰 격차로 따돌렸고, 특히 낮과 밤이 뒤바뀌는 가혹한 조건에서도 잘 버텼다. 다만 DBoW2에 비해 추론 속도가 무겁고 메모리 요구량이 컸기에, 당시 실시간 SLAM 파이프라인에 곧장 갈아 끼워지기보다는 주로 대규모 VPR과 후처리 재위치 추정 영역에서 표준으로 자리 잡았다.
+Pittsburgh 250k와 Tokyo 24/7 벤치마크에서 NetVLAD는 기존 VLAD와 비학습 CNN 특징을 큰 격차로 따돌렸고, 특히 낮과 밤이 뒤바뀌는 가혹한 조건에서도 잘 버텼다. 다만 DBoW2에 비해 추론 속도가 느리고 메모리 요구량이 컸기에, 당시 실시간 SLAM 파이프라인에 곧장 갈아 끼워지기보다는 주로 대규모 VPR과 후처리 재위치 추정 영역에서 표준으로 자리 잡았다.
 
-> 🔗 **차용.** NetVLAD의 집계 계층은 Jégou 등이 CVPR 2010에 발표한 "Aggregating Local Descriptors into a Compact Image Representation"의 VLAD 설계를 그대로 계승하되, hard assignment를 softmax soft assignment로 치환해 종단간 역전파 학습의 길을 열었다.
+> 🔗 **차용.** NetVLAD의 집계 계층은 Jégou 등이 CVPR 2010에 발표한 "Aggregating Local Descriptors into a Compact Image Representation"의 VLAD 설계를 그대로 계승하되, hard assignment를 softmax soft assignment로 치환해 종단 간 역전파 학습의 길을 열었다.
 
 ---
 
@@ -92,11 +92,11 @@ Pittsburgh 250k와 Tokyo 24/7 벤치마크에서 NetVLAD는 기존 VLAD와 비�
 
 NetVLAD 이후 VPR 연구는 계절과 날씨, 시점 변화가 극단으로 치닫는 조건에서도 무너지지 않는 표현을 찾는 데 집중했고, 평가 무대도 Mapillary Street Level Sequences(MSLS)나 노르웨이 철도의 여름·겨울을 담은 Nordland 같은 데이터셋으로 옮겨 갔다.
 
-2021년 Hausler 등의 [Patch-NetVLAD](https://arxiv.org/abs/2103.01486)는 global NetVLAD 서술자로 후보를 빠르게 추린 뒤, 이미지를 패치 단위로 쪼개 뽑은 다중 스케일 NetVLAD 특징들의 공간적 일치도를 따져 순위를 재정렬함으로써 Tokyo 24/7의 Recall@1을 NetVLAD의 64.8%에서 86.0%까지 끌어올렸다. 2023년 Ali-bey 등의 [MixVPR](https://arxiv.org/abs/2303.02190)는 사전 학습된 backbone의 feature map을 MLP 블록(Feature-Mixer)으로 통째로 섞어 전역 특징을 빚어냈고, NetVLAD의 절반도 안 되는 파라미터 수로 Pitts250k, MSLS, Nordland에서 기존 기록을 경신했다.
+2021년 Hausler 등의 [Patch-NetVLAD](https://arxiv.org/abs/2103.01486)는 global NetVLAD 서술자로 후보를 빠르게 추린 뒤, 이미지를 패치 단위로 쪼개 다중 스케일 NetVLAD 특징을 뽑고 공간적 일치도를 따져 순위를 다시 매겼다. 이로써 Tokyo 24/7의 Recall@1을 NetVLAD의 64.8%에서 86.0%까지 끌어올렸다. 2023년 Ali-bey 등의 [MixVPR](https://arxiv.org/abs/2303.02190)는 사전 학습된 backbone의 feature map을 MLP 블록(Feature-Mixer)으로 통째로 섞어 전역 특징을 빚어냈고, NetVLAD의 절반도 안 되는 파라미터 수로 Pitts250k, MSLS, Nordland에서 기존 기록을 경신했다.
 
-더 큰 전환점은 foundation model의 등판이었다. Keetha 등의 [AnyLoc: Towards Universal Visual Place Recognition](https://arxiv.org/abs/2308.00688)(arXiv 2023, RA-L 2024)은 대규모 인터넷 이미지로 자기지도 학습된 Vision Transformer(ViT)인 DINOv2의 특징을 아무런 fine-tuning 없이 VPR에 곧바로 투입했다. 연구진은 ViT 계층 내부의 **facet**—곧 query(Q), key(K), value(V), token(patch feature)—을 꼼꼼히 비교한 끝에 value facet이 장소 인식에서 평균적으로 가장 뛰어나다는 사실을 확인했고, 여기에 비지도 VLAD 집계를 결합하자 재학습 없이도 도시, 실외, 실내, 항공, 수중, 지하까지 단일 방법으로 작동하며 기존 대비 최대 4배 높은 Recall@1을 달성했다.
+더 큰 전환점은 foundation model의 등판이었다. Keetha 등의 [AnyLoc: Towards Universal Visual Place Recognition](https://arxiv.org/abs/2308.00688)(arXiv 2023, RA-L 2024)은 대규모 인터넷 이미지로 자기지도 학습된 Vision Transformer(ViT)인 DINOv2의 특징을 아무런 fine-tuning 없이 VPR에 곧바로 투입했다. 연구진은 ViT 계층 내부의 **facet**—곧 query(Q), key(K), value(V), token(patch feature)—을 꼼꼼히 비교한 끝에 value facet이 장소 인식에서 평균적으로 가장 뛰어나다는 사실을 확인했다. 여기에 비지도 VLAD 집계를 결합하자, 재학습 없이도 도시, 실외, 실내, 항공, 수중, 지하까지 단일 방법으로 작동하며 기존 대비 최대 4배 높은 Recall@1을 달성했다.
 
-한편 카메라와 LiDAR처럼 서로 다른 센서 사이의 장벽을 허무는 교차 모달(cross-modal) 장소 인식도 열렸다. Lee 등의 [(LC)²](https://arxiv.org/abs/2304.08660)(RA-L 2023)는 스테레오 카메라에서 얻은 disparity 영상과 LiDAR range 영상을 똑같은 2.5D 깊이 이미지 공간으로 옮겨 서로 매칭함으로써, 사전 구축된 3D point cloud 지도 없이도 카메라–LiDAR 간 loop 제약을 걸어 위치 추정을 해냈다. 또 Lee 등이 만든 [ViViD++](https://arxiv.org/abs/2204.06183)(RA-L 2022)처럼 RGB, 열화상(thermal), event, depth 카메라와 관성 센서를 한 몸에 싣고 같은 경로를 낮과 밤을 바꿔 반복 기록한 데이터셋도 등장해 악천후·저조도 평가의 토대를 놓았다.
+한편 카메라와 LiDAR처럼 서로 다른 센서 사이의 장벽을 허무는 교차 모달(cross-modal) 장소 인식도 열렸다. Lee 등의 [(LC)²](https://arxiv.org/abs/2304.08660)(RA-L 2023)는 스테레오 카메라에서 얻은 disparity 영상과 LiDAR range 영상을 똑같은 2.5D 깊이 이미지 공간으로 옮겨 서로 매칭해, 사전 구축된 3D point cloud 지도 없이도 카메라–LiDAR 간 loop 제약을 걸어 위치를 추정해 냈다. 또 Lee 등이 만든 [ViViD++](https://arxiv.org/abs/2204.06183)(RA-L 2022)처럼 RGB, 열화상(thermal), event, depth 카메라와 관성 센서를 한 몸에 싣고 낮과 밤을 바꿔 가며 같은 경로를 반복 기록한 데이터셋도 등장해 악천후·저조도 평가의 토대를 놓았다.
 
 > 🔗 **차용.** AnyLoc의 특징 추출기는 Meta AI가 공개한 [DINOv2](https://arxiv.org/abs/2304.07193)(Oquab et al., 2023)다. 흥미롭게도 2000–2010년대 BoW와 VLAD 시절의 고전적 집계 기법이 2023년 foundation model의 범용 ViT 특징과 만나 '학습 없는 범용 VPR'로 다시 태어난 셈이다.
 
@@ -104,7 +104,7 @@ NetVLAD 이후 VPR 연구는 계절과 날씨, 시점 변화가 극단으로 치
 
 ## 13.6 place recognition과 metric localization의 통합 시도 (2023-2024)
 
-오랫동안 장소 인식은 SLAM의 나머지 단계와 분리된 별동대처럼 움직였다. ORB-SLAM 안의 DBoW2만 보더라도 mapping이나 tracking 상태를 살피는 대신 이미지를 받아 "이전에 본 몇 번 keyframe과 비슷하다"는 후보 ID만 뱉어 낼 뿐, 실제 기하 정합은 뒤따르는 RANSAC과 PnP에 넘겼다.
+오랫동안 장소 인식은 SLAM의 나머지 단계와 분리된 별동대처럼 움직였다. ORB-SLAM 안의 DBoW2만 보더라도 mapping이나 tracking 상태는 살피지 않고 이미지를 받아 "이전에 본 몇 번 keyframe과 비슷하다"는 후보 ID만 뱉어 낼 뿐, 실제 기하 정합은 뒤따르는 RANSAC과 PnP에 넘겼다.
 
 2023–2024년에는 Berton 등의 [EigenPlaces](https://arxiv.org/abs/2308.10832)(2023)와 Izquierdo·Civera의 [SALAD](https://arxiv.org/abs/2311.15937)(arXiv 2023 / CVPR 2024)가 시점 변화에 한층 강한 전역 서술자와 최적 수송(optimal transport) 기반 국소 특징 집계를 밀어 올렸다. 하지만 이들이 내놓는 결과 역시 데이터베이스 속 가장 닮은 이미지일 뿐이어서, 미터 단위의 정밀한 metric pose를 얻으려면 결국 기하 검증과 별도의 위치 추정 단계를 거쳐야 한다. 2024년에는 3D Gaussian Splatting(3DGS)으로 구축한 장면 표현 자체에서 곧바로 장소 인식용 서술자를 끌어내어 지도 표현과 재위치 추정을 하나로 엮으려는 시도도 고개를 들었다.
 
@@ -114,10 +114,10 @@ NetVLAD 이후 VPR 연구는 계절과 날씨, 시점 변화가 극단으로 치
 
 **계절·조명 극변.** 여름과 겨울이 극단적으로 대비되는 Nordland 노르웨이 철도 데이터셋이나 사계절을 1년 내내 기록한 Oxford RobotCar는 10년 넘게 장소 인식 알고리즘을 괴롭혀 왔다. DINOv2 같은 foundation model이 그 간극을 크게 좁히긴 했으나, 눈보라가 치거나 식생이 완전히 뒤바뀐 환경에서도 오탐 없이 작동하는 일은 여전히 쉽지 않다.
 
-**Place recognition과 metric localization의 통합.** 전통적인 ORB-SLAM 계열은 '장소 인식(후보 검색) → 서술자 매칭 → 기하적 자세 추정'이라는 다단계 파이프라인을 밟는다. 검색용 전역 표현과 정밀 자세 추정용 3D 기하 표현을 하나로 통합했을 때, 다양한 센서와 장면·배포 제약 조건 아래에서도 정밀도와 속도를 동시에 지켜 낼 수 있는지는 아직 검증이 진행 중이다.
+**Place recognition과 metric localization의 통합.** 전통적인 ORB-SLAM 계열은 '장소 인식(후보 검색) → 서술자 매칭 → 기하적 자세 추정'이라는 다단계 파이프라인을 밟는다. 검색용 전역 표현과 정밀 자세 추정용 3D 기하 표현을 하나로 통합했을 때, 다양한 센서와 장면·배포 제약 조건 아래에서도 정밀도와 속도를 동시에 지켜 낼 수 있는지는 아직 검증 중이다.
 
-**인식 가능한 장소 표현의 프라이버시.** 위치 추정을 위해 서버나 로봇에 저장하는 지도 자체가 사생활 유출의 통로가 될 수 있다는 경고도 무겁다. [Pittaluga 등(CVPR 2019)](https://arxiv.org/abs/1904.03303)은 서술자가 붙은 3D SfM point cloud만 가지고도 원래 그 장소를 찍었던 카메라 영상을 섬뜩할 만큼 선명하게 복원해 보임으로써, 가정·병원·사무실을 누비는 상용 로봇의 지도가 안고 있는 보안 위험을 드러냈다. 같은 해 [Speciale 등(CVPR 2019)](https://arxiv.org/abs/1903.05572)이 3D 점을 무작위 방향의 직선으로 치환한 line cloud 지도를 대안으로 내놓았으나, 2021년 [Chelani, Kahl, Sattler](https://arxiv.org/abs/2103.05086)은 그 line cloud에서조차 점 위치와 영상 내용을 대략 되살릴 수 있음을 증명했다(선을 극도로 성기게 남길 때만 세부가 가려졌다). 정확히 장소를 알아맞히면서도 원래 모습은 엿볼 수 없게 만드는 프라이버시 보존형 장면 표현은 여전히 풀어야 할 숙제다.
+**인식 가능한 장소 표현의 프라이버시.** 위치 추정을 위해 서버나 로봇에 저장하는 지도 자체가 사생활 유출의 통로가 될 수 있다는 경고도 무겁다. [Pittaluga 등(CVPR 2019)](https://arxiv.org/abs/1904.03303)은 서술자가 붙은 3D SfM point cloud만 가지고도 원래 그 장소를 찍었던 카메라 영상을 섬뜩할 만큼 선명하게 복원해 보여, 가정·병원·사무실을 누비는 상용 로봇의 지도가 안고 있는 보안 위험을 드러냈다. 같은 해 [Speciale 등(CVPR 2019)](https://arxiv.org/abs/1903.05572)이 3D 점을 무작위 방향의 직선으로 치환한 line cloud 지도를 대안으로 내놓았으나, 2021년 [Chelani, Kahl, Sattler](https://arxiv.org/abs/2103.05086)은 그 line cloud에서조차 점 위치와 영상 내용을 대략 되살릴 수 있음을 증명했다(선을 극도로 성기게 남길 때만 세부가 가려졌다). 정확히 장소를 알아맞히면서도 원래 모습은 엿볼 수 없게 만드는 프라이버시 보존형 장면 표현은 여전히 풀어야 할 숙제다.
 
 ---
 
-장소 인식이 신경망을 통해 "여기가 어디인가"라는 전역 기억을 다루기 시작했다면, 거의 같은 시기 딥러닝이 정조준한 또 하나의 고전 난제는 "단 한 장의 사진만 보고 각 픽셀이 얼마나 멀리 떨어져 있는가"를 읽어 내는 일이었다. 다음 장에서는 단일 이미지에서 깊이를 예측하며 단안 SLAM의 고질적 제약을 흔들어 놓은 단안 깊이 추정의 역사를 따라간다(→ 14장).
+장소 인식에서 신경망으로 "여기가 어디인가"라는 전역 기억을 다루기 시작했다면, 거의 같은 시기 딥러닝이 정조준한 또 하나의 고전 난제는 "단 한 장의 사진만 보고 각 픽셀이 얼마나 멀리 떨어져 있는가"를 읽어 내는 일이었다. 다음 장에서는 단일 이미지에서 깊이를 예측하며 단안 SLAM의 고질적 제약을 흔들어 놓은 단안 깊이 추정의 역사를 따라간다(→ 14장).

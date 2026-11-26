@@ -2,7 +2,7 @@
 
 카메라 기반 SLAM과 LiDAR 기반 SLAM이 거대한 주류 고속도로를 닦아 나가는 동안, 로보틱스 연구자 일부는 그 어느 쪽에도 속하지 않는 샛길로 들어섰다. 쥐의 해마를 흉내 낸 생체 모방 지도, 프레임 없이 빛의 변화만 쏘아 대는 이벤트 카메라, 점이 아니라 의자와 탁자를 기본 단위로 삼는 semantic 지도, 복도의 직교성에 기대는 구조적 prior가 그 샛길들이었다.
 
-이들은 모두 한때 굵직한 논문과 인상적인 초기 시연을 내놓고도 주류 파이프라인의 자리를 차지하지 못했다. 그러나 실패의 이유는 저마다 달랐고, 그 가운데 일부는 전혀 다른 이름과 모습으로 2020년대의 연구 속에 다시 모습을 드러냈다.
+이들은 모두 한때 굵직한 논문과 인상적인 초기 시연을 내놓고도 주류 파이프라인의 자리를 차지하지 못했다. 그러나 실패의 이유는 저마다 달랐고, 그 가운데 일부는 전혀 다른 이름과 모습으로 2020년대의 연구 속에 다시 나타났다.
 
 ---
 
@@ -12,7 +12,7 @@
 
 그 야심은 2008년 IEEE TRO 논문 [Milford & Wyeth 2008](https://doi.org/10.1109/TRO.2008.2004520)에서 극적인 야외 시연으로 증명됐다. 연구진은 승용차 지붕에 노트북 내장 웹캠 단 한 대를 올려놓고 브리즈번 St Lucia 교외 도로를 100분 동안 66 km 달렸다. RatSLAM은 초당 10프레임으로 쏟아지는 저화질 영상을 실시간으로 소화하며 길이가 최대 5 km에 달하는 루프를 51개 넘게 닫았다. 결과물로 얻은 반계량 위상 지도(semi-metric topological map)가 덮은 면적은, 2007년까지 레이저 센서 하나로 작성된 가장 넓은 지도라고 보고된 기존 연구진의 지도보다 다섯 배 넘게 넓었다.
 
-그런데도 RatSLAM은 SLAM의 주류가 되지 못했다. 장소가 쌓일수록 탐색 연산이 커진 문제도 있었지만, 더 치명적인 약점은 정밀도였다. RatSLAM이 빚어낸 위상 지도(topological map)는 "여기에 와 본 적이 있다"는 연결 관계는 훌륭하게 기억했지만, 차선을 지키고 물체를 집어 올려야 하는 자율주행과 조작(manipulation)이 요구하는 센티미터·미터 단위의 정확한 metric 좌표는 안정적으로 내주지 못했다.
+그런데도 RatSLAM은 SLAM의 주류가 되지 못했다. 장소가 쌓일수록 탐색 연산이 커진 문제도 있었지만, 더 치명적인 약점은 정밀도였다. RatSLAM이 빚어낸 위상 지도(topological map)는 "여기에 와 본 적이 있다"는 연결 관계를 훌륭하게 기억했다. 하지만 차선을 지켜야 하는 자율주행과 물체를 집어 올려야 하는 조작(manipulation)에서는 센티미터·미터 단위의 정확한 metric 좌표가 필요한데, 위상 지도는 그 좌표를 안정적으로 내주지 못했다.
 
 그럼에도 RatSLAM이 남긴 불씨는 꺼지지 않았다. 정밀한 3D 기하 복원 없이도 장소를 알아볼 수 있다는 통찰은 곧장 장소 인식(place recognition) 연구로 번졌다. 2012년 Milford와 Wyeth가 내놓은 [SeqSLAM](https://doi.org/10.1109/ICRA.2012.6224623)은 단일 이미지 대신 연속된 이미지 시퀀스를 통째로 비교해 계절과 날씨가 뒤바뀐 도로에서도 장소를 찾아냈고, visual place recognition이라는 독립된 갈래의 주춧돌이 됐다.
 
@@ -26,7 +26,7 @@
 
 RatSLAM은 생물 모방 SLAM(biologically-inspired SLAM) 가운데 가장 완성도 높은 시스템이었다. 2000년대 중반부터 2010년대 초반까지 해마의 인지 지도, 내후각 피질(entorhinal cortex)의 grid cell, 수면 중 기억 재생(hippocampal replay)을 본뜬 SLAM 변형들이 뒤를 이었지만, 끝내 비슷한 벽에 부딪혔다.
 
-생물학적 모델은 뇌가 공간을 *어떻게* 표상하는지 설명하려는 과학적 가설이다. 그러나 뇌가 *왜* 그런 근사 방식을 택했는지, 그리고 그 방식이 로봇 공학의 요구 스펙과 맞아떨어지는지는 전혀 다른 문제다. 쥐의 해마가 생존을 위해 굴을 찾아가는 조건과, 로봇 벤치마크가 요구하는 센서·연산·정확도 조건은 애초에 달랐다. 공학적 SLAM이 요구하는 것은 미터 이하의 일관된 정밀도, 예측 가능한 실시간 지연, 낯선 환경에의 즉각적 적응, 그리고 수치적으로 검증 가능한 오차 한계다. 인지 신경과학의 우아한 모델만으로는 그 까다로운 공학 명세를 보장하기 어려웠다.
+생물학적 모델은 뇌가 공간을 *어떻게* 표상하는지 설명하려는 과학적 가설이다. 그러나 뇌가 *왜* 그런 근사 방식을 택했는지, 그리고 그 방식이 로봇 공학의 요구 스펙과 맞아떨어지는지는 전혀 다른 문제다. 쥐의 해마가 생존을 위해 굴을 찾아가는 조건과, 로봇 벤치마크가 요구하는 센서·연산·정확도 조건은 애초에 달랐다. 공학적 SLAM에서는 미터 이하의 일관된 정밀도, 예측 가능한 실시간 지연, 낯선 환경에서의 즉각적 적응, 수치적으로 검증 가능한 오차 한계가 필요하다. 인지 신경과학의 우아한 모델만으로는 그 까다로운 공학 명세를 보장하기 어려웠다.
 
 ---
 
@@ -50,13 +50,13 @@ RatSLAM은 생물 모방 SLAM(biologically-inspired SLAM) 가운데 가장 완�
 
 사실 그 선구는 딥러닝 붐보다 앞선 2013년 CVPR에 이미 나와 있었다. Imperial College London의 Renato Salas-Moreno, Richard Newcombe, Hauke Strasdat, Paul Kelly, Andrew Davison이 발표한 **SLAM++**([Salas-Moreno et al. 2013](https://doi.org/10.1109/CVPR.2013.178))는 점이나 패치 대신 *사물(object)*을 지도의 기본 원자로 삼았다. 미리 스캔해 둔 사물 3D 모델을 데이터베이스에 넣어 두고, 손에 든 RGB-D 카메라 영상에서 GPU 병렬 point pair feature 투표로 사물을 실시간 인식한 뒤 ICP로 자세를 맞추어 카메라와 함께 포즈 그래프에 올려 최적화했다. 의자 두 종류와 둥근 탁자 두 종류로 방 한 칸을 재구성한 실험에서, SLAM++는 같은 부피의 KinectFusion 지도와 견주어 지도 메모리를 약 70분의 1로 압축했다고 추산했다. 점 수천 개를 나열하는 대신 사물 수십 개로 방을 요약하면 지도가 가벼워질 뿐 아니라 장소 인식과 loop closure까지 사물 단위로 풀 수 있다는 매력적인 비전이었다.
 
-뒤이어 [SemanticFusion](https://arxiv.org/abs/1609.05130)(McCormac et al., ICRA 2017)이 dense 지도에 semantic label을 입혔고, [MaskFusion](https://arxiv.org/abs/1804.09194)(Rünz et al., ISMAR 2018)이 움직이는 사물을 인식해 각자 추적했다. 같은 시기 [SuperPoint](https://arxiv.org/abs/1712.07629)(DeTone et al., CVPRW 2018)처럼 신경망으로 keypoint detector와 local descriptor를 함께 학습하는 연구도 등장했지만 이는 여전히 점 단위에 머물렀고, semantic SLAM 연구자들은 사물 단위의 의미 이해를 기하 파이프라인 심장에 넣어야 환경 변화에도 흔들리지 않는 강건한 지도를 얻을 수 있다고 주장했다.
+뒤이어 [SemanticFusion](https://arxiv.org/abs/1609.05130)(McCormac et al., ICRA 2017)이 dense 지도에 semantic label을 입혔고, [MaskFusion](https://arxiv.org/abs/1804.09194)(Rünz et al., ISMAR 2018)이 움직이는 사물을 인식해 개별적으로 추적했다. 같은 시기 [SuperPoint](https://arxiv.org/abs/1712.07629)(DeTone et al., CVPRW 2018)처럼 신경망으로 keypoint detector와 local descriptor를 함께 학습하는 연구도 등장했지만 이는 여전히 점 단위에 머물렀고, semantic SLAM 연구자들은 사물 단위의 의미 이해를 기하 파이프라인의 심장부에 넣어야 환경 변화에도 흔들리지 않는 강건한 지도를 얻을 수 있다고 주장했다.
 
-그러나 2019년까지 벤치마크의 정점을 지킨 것은 ORB-SLAM2와 VINS-Mono였고, 2020년에는 LIO-SAM이 바통을 이어받았다. 당시의 semantic SLAM 시스템들은 저마다 다른 실내 방과 임의의 사물 데이터셋에서 평가돼 공정한 수평 비교 자체가 어려웠고, 미리 학습된 segmentation 모델과 닫힌 class 목록 바깥을 만나면 무력해진다는 한계를 벗어나지 못했다.
+그러나 2019년까지는 ORB-SLAM2와 VINS-Mono가 벤치마크의 정점을 지켰고, 2020년에는 LIO-SAM이 바통을 이어받았다. 당시의 semantic SLAM 시스템들은 저마다 다른 실내 방과 임의의 사물 데이터셋에서 평가돼 공정한 수평 비교 자체가 어려웠고, 미리 학습된 segmentation 모델과 닫힌 class 목록 바깥을 만나면 무력해진다는 한계를 벗어나지 못했다.
 
 무엇보다 결정적인 걸림돌은 **의존성의 방향**이었다. 사물을 landmark로 세운 SLAM은 segmentation이 빗나가면 지도 전체가 오염되는 취약점을 안고 있었다. 반면 고전적인 기하 파이프라인은 특징점 매칭 일부가 틀려도 RANSAC과 robust kernel로 묵묵히 버텨 냈다. 특정 사물 범주로 훈련된 semantic prior는 훈련 데이터 밖의 세계로 나가자마자 빛을 잃었다.
 
-흥미로운 것은 그다음에 일어난 자리바꿈이다. 사물을 기하 landmark로 쓰려는 시도는 주류에서 물러났지만, semantic 자체는 사라지지 않고 파이프라인의 *바깥과 위층*으로 옮겨 가며 꽃을 피웠다. [SuMa++](https://doi.org/10.1109/IROS40897.2019.8967704)(Chen et al., IROS 2019)는 LiDAR 스캔에서 움직이는 물체를 걸러 내는 필터로 semantic을 썼고, [Kimera](https://doi.org/10.1109/ICRA40945.2020.9196885)(Rosinol et al., ICRA 2020)와 [3D Dynamic Scene Graphs](https://doi.org/10.15607/RSS.2020.XVI.079)(Rosinol et al., RSS 2020), [Hydra](https://doi.org/10.15607/RSS.2022.XVIII.050)(Hughes et al., RSS 2022)는 실시간 metric-semantic mesh 위에 계층적 3D scene graph를 얹었으며, [ConceptGraphs](https://doi.org/10.1109/ICRA57147.2024.10610243)(Gu et al., ICRA 2024)와 [Clio](https://doi.org/10.1109/LRA.2024.3451395)(Maggio et al., RA-L 2024)는 그 위에 open-vocabulary foundation feature를 얹었다. 기하를 대체하는 대신 기하 위에 의미를 쌓아 올리는 이 흐름은 2026년에도 계속되고 있다(→ [19장](chapter_15b_dynamic.md), [20장](chapter_16_foundation_3d.md), [23장 §23.7](chapter_19_open_problems.md#237-semantic-표현과-open-world)).
+흥미롭게도 그다음에는 자리바꿈이 일어났다. 사물을 기하 landmark로 쓰려는 시도는 주류에서 물러났지만, semantic 자체는 사라지지 않고 파이프라인의 *바깥과 위층*으로 옮겨 가며 꽃을 피웠다. [SuMa++](https://doi.org/10.1109/IROS40897.2019.8967704)(Chen et al., IROS 2019)는 LiDAR 스캔에서 움직이는 물체를 걸러 내는 필터로 semantic을 썼고, [Kimera](https://doi.org/10.1109/ICRA40945.2020.9196885)(Rosinol et al., ICRA 2020)와 [3D Dynamic Scene Graphs](https://doi.org/10.15607/RSS.2020.XVI.079)(Rosinol et al., RSS 2020), [Hydra](https://doi.org/10.15607/RSS.2022.XVIII.050)(Hughes et al., RSS 2022)는 실시간 metric-semantic mesh 위에 계층적 3D scene graph를 구축했으며, [ConceptGraphs](https://doi.org/10.1109/ICRA57147.2024.10610243)(Gu et al., ICRA 2024)와 [Clio](https://doi.org/10.1109/LRA.2024.3451395)(Maggio et al., RA-L 2024)는 그 위에 open-vocabulary foundation feature를 얹었다. 기하를 대체하는 대신 기하 위에 의미를 쌓아 올리는 이 흐름은 2026년에도 계속되고 있다(→ [19장](chapter_15b_dynamic.md), [20장](chapter_16_foundation_3d.md), [23장 §23.7](chapter_19_open_problems.md#237-semantic-표현과-open-world)).
 
 > 🔗 **차용.** SLAM++의 사물 인식 엔진은 컴퓨터 비전의 model-based recognition 계보에서 왔다. 구체적인 3D 투표 기법은 Drost 등이 제안한 point pair feature 매칭 알고리즘을 GPU로 옮겨 구현한 것이다.
 
@@ -82,7 +82,7 @@ RatSLAM은 생물 모방 SLAM(biologically-inspired SLAM) 가운데 가장 완�
 
 ## 아직 열린 문제
 
-**Biologically-inspired SLAM.** 대규모 비지도 학습을 거친 foundation model이 내부에 빚어내는 공간 표현을 신경과학의 인지 지도와 나란히 놓고 바라보는 시각이 다시 고개를 들고 있다. transformer의 어텐션 패턴이나 잠재 공간이 실제로 해마의 place cell과 닮은 기제를 학습하는지 검증하는 일은 아직 풀리지 않았으며, RatSLAM이 꿈꿨던 생물 모방 공간 기억이 전혀 다른 이름으로 돌아올지도 흥미로운 가설로 남아 있다.
+**Biologically-inspired SLAM.** 대규모 비지도 학습을 거친 foundation model이 내부에 빚어내는 공간 표현을 신경과학의 인지 지도와 나란히 놓고 바라보는 시각이 다시 고개를 들고 있다. transformer의 어텐션 패턴이나 잠재 공간이 실제로 해마의 place cell과 닮은 기제를 학습하는지 검증하는 과제는 아직 풀리지 않았으며, RatSLAM이 꿈꿨던 생물 모방 공간 기억이 전혀 다른 이름으로 돌아올지도 흥미로운 가설로 남아 있다.
 
 **Event camera SLAM의 주류화.** 고해상도 상용 event camera가 손에 닿으면서 연구의 토양은 한결 넓어졌다(§22.6). 그럼에도 전통적인 프레임 기반 파이프라인과 매끄럽게 엮는 하이브리드 구조, 이벤트 스트림을 다루는 보편적 표현, 그리고 실제 환경에서의 공정한 표준 벤치마크를 세우는 일은 여전히 진행 중이다.
 
