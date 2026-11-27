@@ -6,7 +6,7 @@ In 2015, Javier Fuentes-Pacheco, Ruiz-Ascencio, and Rendón-Mancha closed their 
 
 ---
 
-## 19.1 Three axes
+## 19.1 Three Axes of Dynamic and Deformable SLAM
 
 In Handbook Ch.15 §15.1, Schmid et al. overturn the conventional definition of "dynamic SLAM." Rather than treating dynamism as an intrinsic property of the environment, they define a scene as static or dynamic *relative to the observation*—specifically, the ratio between observation rate $\text{Obs}$ and scene change rate $\text{Dyn}$. When $\text{Dyn} \ll \text{Obs}$, motion unfolds continuously between consecutive frames; when $\text{Dyn} \gg \text{Obs}$, objects shift unnoticed between separate visits.
 

@@ -530,7 +530,7 @@ mark.search-highlight {
   font-size: 12px;
   font-weight: 700;
   color: var(--accent);
-  margin-right: 10px;
+  margin-right: 6px;
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
@@ -1151,7 +1151,7 @@ MonoSLAM은 바로 그 장벽을 뚫었다. 추가 하드웨어도, 까다로운
 
 ---
 
-## 5.3 2007년, 같은 해
+## 5.3 2007년, 같은 해에 두 해법이 갈라지다
 
 2007년은 단안 Visual SLAM 역사에서 가장 극적인 해였다. 한쪽에서는 MonoSLAM의 집대성인 PAMI 논문이 출간돼 EKF 기반 단안 SLAM의 정점을 찍었고, 같은 해 열린 증강현실 학회 ISMAR에서는 Georg Klein과 David Murray가 전혀 다른 패러다임의 논문 [Parallel Tracking and Mapping for Small AR Workspaces](https://doi.org/10.1109/ISMAR.2007.4538852)(**PTAM**)를 발표했다.
 
@@ -1183,7 +1183,7 @@ $$\min_{\{\mathbf{T}_k\}, \{\mathbf{p}_j\}} \sum_{k \in \mathcal{K}} \sum_{j \in
 
 ---
 
-## 5.5 새 구조가 퍼지다
+## 5.5 추적–매핑 분리 구조의 확산
 
 논문 제목에 박힌 "Small AR Workspaces"라는 문구처럼 PTAM은 원래 책상 위 증강현실(AR)을 겨냥해 태어났다. Tracking 스레드가 흔들림 없이 실시간 궤적을 뱉어 주니 가상 물체를 실제 책상 위에 올려놓는 데 손색이 없었다. 이 실용성 덕분에 tracking과 mapping을 나누는 2-스레드 아키텍처는 연구실 담장을 넘어 순식간에 산업계와 후속 SLAM 전반으로 번져 나갔다.
 
@@ -1636,7 +1636,7 @@ Forster의 preintegration은 본질적으로 이산적이다. 인접한 IMU 표�
 
 ---
 
-## 9.7 가져온 것
+## 9.7 빌려온 수학 도구 정리
 
 > 🔗 **차용.** IMU factor를 factor graph 안에서 평가하고 최적화하는 골격은 [Dellaert의 GTSAM](https://gtsam.org/) 설계를 그대로 따른다. `ImuFactor`가 GTSAM의 `NoiseModelFactor` 인터페이스를 구현하기 때문에, 개발자는 visual reprojection factor와 inertial factor를 하나의 `Values` 객체 안에 나란히 넣고 함께 최적화할 수 있다.
 
@@ -2238,7 +2238,7 @@ KITTI 시퀀스 00, 02, 08, 09로 학습하고 03–07과 10에서 시험한 결
 
 ---
 
-## 15.4 그 뒤
+## 15.4 종단간 자세 추정의 재평가
 
 흥미롭게도 이 시기의 선구적 시도들은 이후 전혀 다른 영역으로 뻗어 나가며 큰 유산을 남겼다. Kendall은 2017년 케임브리지에서 박사학위를 마친 뒤 그해 자율주행 스타트업 Wayve를 창업했고, 이후 [그의 연구 행보](https://alexgkendall.com/)는 end-to-end 자율주행 모방 학습과 대규모 주행 월드 모델(GAIA-1)로 이어졌다.
 
@@ -2607,7 +2607,7 @@ tracking은 GS-SLAM·SplaTAM과 같이 렌더링 영상과 관측 영상의 phot
 
 ---
 
-## 19.1 세 개의 축
+## 19.1 동적·비강체 장면의 세 가지 문제 축
 
 무엇을 "동적"이라 부를 것인가. Schmid 등은 *The SLAM Handbook* 15장 §15.1에서 Looper et al.(2023)의 정의를 빌려, 동적 여부가 물리 현상 자체가 아니라 *관측*과의 관계에서 갈린다고 설명한다. 똑같은 물리적 이동이라도 어떤 로봇에게는 프레임이 흘러가는 동안 눈에 보이는 **short-term dynamic**이 되고, 다른 로봇에게는 두 번의 방문 사이에 묵묵히 쌓여 버린 **long-term dynamic**이 된다. 둘을 가르는 기준은 장면의 변화율 $\text{Dyn}$과 로봇의 관측률 $\text{Obs}$의 비율이다. $\text{Dyn} \ll \text{Obs}$이면 로봇은 움직이는 물체를 매 프레임 연속해서 목격하지만, $\text{Dyn} \gg \text{Obs}$이면 로봇이 다시 돌아왔을 때 이미 의자가 옮겨지고 상자가 치워진 뒤다.
 
@@ -2904,7 +2904,7 @@ LeGO-LOAM을 냈던 Tixiao Shan은 후속작 [Shan et al. 2020. LIO-SAM](https:/
 
 ---
 
-# 22장 사라진 방법들
+# 22장 사라지거나 축소된 SLAM 계보
 
 카메라 기반 SLAM과 LiDAR 기반 SLAM이 거대한 주류 고속도로를 닦아 나가는 동안, 로보틱스 연구자 일부는 그 어느 쪽에도 속하지 않는 샛길로 들어섰다. 쥐의 해마를 흉내 낸 생체 모방 지도, 프레임 없이 빛의 변화만 쏘아 대는 이벤트 카메라, 점이 아니라 의자와 탁자를 기본 단위로 삼는 semantic 지도, 복도의 직교성에 기대는 구조적 prior가 그 샛길들이었다.
 
@@ -2978,7 +2978,7 @@ RatSLAM은 생물 모방 SLAM(biologically-inspired SLAM) 가운데 가장 완�
 
 ---
 
-## 22.6 사라진 방법의 그 뒤
+## 22.6 사라진 방법이 되살아나는 패턴
 
 "사라졌다"는 한마디로 묶기에는 각 갈래의 뒷모습이 저마다 다르다. RatSLAM의 위상 지도 발상은 SeqSLAM을 거쳐 오늘날 visual place recognition 연구의 혈관 속에 남아 있다. SLAM++와 [LERF](https://arxiv.org/abs/2303.09553)(Kerr et al., ICCV 2023)·[LangSplat](https://arxiv.org/abs/2312.16084)(Qin et al., CVPR 2024)은 지도에 의미를 싣는다는 목표를 공유하지만, 후자가 SLAM++의 직접적인 인용 계보를 이었다기보다는 새로운 3D 표현 위에서 같은 염원이 독립적으로 되살아난 경우에 가깝다.
 
@@ -3748,7 +3748,7 @@ Even as they acknowledged that ceiling by pointing toward submapping as future w
 
 ---
 
-## 5.3 2007, the same year
+## 5.3 2007, the Same Year Two Approaches Diverged
 
 Maintaining only a dozen active features laid bare the EKF's fundamental bottleneck—and at Oxford, Georg Klein was confronting that exact same limit.
 
@@ -3756,7 +3756,7 @@ In 2007, the very year Davison's definitive MonoSLAM paper appeared in TPAMI, Kl
 
 ---
 
-## 5.4 The split
+## 5.4 Splitting Tracking and Mapping
 
 PTAM's defining insight was to decouple camera pose **tracking** from 3D **mapping** and execute them in two separate, parallel threads.
 
@@ -4257,7 +4257,7 @@ Forster's discrete formulation assumes piecewise-constant inertial measurements 
 
 ---
 
-## 9.7 Terrain of borrowings
+## 9.7 Borrowed Mathematical Foundations
 
 > 🔗 **Borrowed.** The computational scaffolding that evaluates and optimizes an IMU factor comes directly from Chapter 6's [Dellaert GTSAM](https://gtsam.org/) ecosystem. Forster's `ImuFactor` plugs into GTSAM's `NoiseModelFactor` interface and coexists inside a single `Values` state container alongside visual reprojection factors—a direct inheritance of software architecture rather than mathematical equations.
 
@@ -4369,7 +4369,7 @@ Third were event cameras. After struggling through the 2010s with brittle frame-
 
 ---
 
-## Borrowed (summary)
+## Borrowed Foundations (summary)
 
 Three foundational borrowings anchor this chapter's trajectory mathematics. De Boor's 1978 spline treatise supplied Furgale (2012) with local-support basis functions; Särkkä's 2013 SDE–GP formulation gave Barfoot, Tong, and Särkkä (2014) a sparse block-tridiagonal precision matrix; and Anderson and Barfoot's 2015 local-variable construction embedded Gaussian processes cleanly on Lie groups. Together, they fused numerical approximation theory, stochastic processes, and differential geometry inside SLAM.
 
@@ -5274,7 +5274,7 @@ In 2015, Javier Fuentes-Pacheco, Ruiz-Ascencio, and Rendón-Mancha closed their 
 
 ---
 
-## 19.1 Three axes
+## 19.1 Three Axes of Dynamic and Deformable SLAM
 
 In Handbook Ch.15 §15.1, Schmid et al. overturn the conventional definition of "dynamic SLAM." Rather than treating dynamism as an intrinsic property of the environment, they define a scene as static or dynamic *relative to the observation*—specifically, the ratio between observation rate $\text{Obs}$ and scene change rate $\text{Dyn}$. When $\text{Dyn} \ll \text{Obs}$, motion unfolds continuously between consecutive frames; when $\text{Dyn} \gg \text{Obs}$, objects shift unnoticed between separate visits.
 
@@ -5595,7 +5595,7 @@ Camera SLAM and LiDAR SLAM each matured into formidable engineering traditions, 
 
 ---
 
-# Chapter 22. Lost Lineages
+# Chapter 22. Lost and Narrowed Lineages
 
 While camera and LiDAR researchers built their respective mainstreams, others struck out along very different paths—some beginning with RatSLAM in 2004, well before LOAM, and others unfolding across the 2010s. Though none became the dominant paradigm, they left lasting imprints on SLAM's trajectory.
 
@@ -5943,7 +5943,7 @@ graph TD
         { label: '2부 필터와 그래프',       chapters: [4, 5, 6, 7, 8, 9, 10] },
         { label: '3부 직접법과 조밀 재구성', chapters: [11, 12] },
         { label: '4부 학습 기반 방법',      chapters: [13, 14, 15, 16, 17, 18, 19, 20] },
-        { label: '5부 LiDAR와 남은 문제',   chapters: [21, 22, 23] }
+        { label: '5부 LiDAR SLAM과 열린 문제',   chapters: [21, 22, 23] }
       ]
     },
     en: {
@@ -5959,7 +5959,7 @@ graph TD
         { label: 'Part 2. Filters and Graphs',               chapters: [4, 5, 6, 7, 8, 9, 10] },
         { label: 'Part 3. Direct Methods and Dense Reconstruction', chapters: [11, 12] },
         { label: 'Part 4. Learning-Based Methods',           chapters: [13, 14, 15, 16, 17, 18, 19, 20] },
-        { label: 'Part 5. LiDAR and Open Problems',          chapters: [21, 22, 23] }
+        { label: 'Part 5. LiDAR SLAM and Open Problems',          chapters: [21, 22, 23] }
       ]
     }
   };
@@ -6259,7 +6259,7 @@ graph TD
         numSpan.className = 'overview-chapter-num';
         numSpan.textContent = ch.num;
         chLink.appendChild(numSpan);
-        chLink.appendChild(document.createTextNode(ch.title));
+        chLink.appendChild(document.createTextNode(' ' + ch.title));
         chWrap.appendChild(chLink);
 
         if (ch.sections.length) {

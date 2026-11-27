@@ -1,4 +1,4 @@
-# Chapter 22. Lost Lineages
+# Chapter 22. Lost and Narrowed Lineages
 
 While camera and LiDAR researchers built their respective mainstreams, others struck out along very different paths—some beginning with RatSLAM in 2004, well before LOAM, and others unfolding across the 2010s. Though none became the dominant paradigm, they left lasting imprints on SLAM's trajectory.
 

@@ -74,7 +74,7 @@ Forster's discrete formulation assumes piecewise-constant inertial measurements 
 
 ---
 
-## 9.7 Terrain of borrowings
+## 9.7 Borrowed Mathematical Foundations
 
 > 🔗 **Borrowed.** The computational scaffolding that evaluates and optimizes an IMU factor comes directly from Chapter 6's [Dellaert GTSAM](https://gtsam.org/) ecosystem. Forster's `ImuFactor` plugs into GTSAM's `NoiseModelFactor` interface and coexists inside a single `Values` state container alongside visual reprojection factors—a direct inheritance of software architecture rather than mathematical equations.
 

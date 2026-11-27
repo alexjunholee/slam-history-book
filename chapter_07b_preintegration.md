@@ -70,7 +70,7 @@ Forster의 preintegration은 본질적으로 이산적이다. 인접한 IMU 표�
 
 ---
 
-## 9.7 가져온 것
+## 9.7 빌려온 수학 도구 정리
 
 > 🔗 **차용.** IMU factor를 factor graph 안에서 평가하고 최적화하는 골격은 [Dellaert의 GTSAM](https://gtsam.org/) 설계를 그대로 따른다. `ImuFactor`가 GTSAM의 `NoiseModelFactor` 인터페이스를 구현하기 때문에, 개발자는 visual reprojection factor와 inertial factor를 하나의 `Values` 객체 안에 나란히 넣고 함께 최적화할 수 있다.
 

@@ -126,7 +126,7 @@ OVERVIEW_CSS = """\
   font-size: 12px;
   font-weight: 700;
   color: var(--accent);
-  margin-right: 10px;
+  margin-right: 6px;
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
@@ -230,7 +230,7 @@ OVERVIEW_JS = r"""
         numSpan.className = 'overview-chapter-num';
         numSpan.textContent = ch.num;
         chLink.appendChild(numSpan);
-        chLink.appendChild(document.createTextNode(ch.title));
+        chLink.appendChild(document.createTextNode(' ' + ch.title));
         chWrap.appendChild(chLink);
 
         if (ch.sections.length) {
@@ -876,7 +876,7 @@ mark.search-highlight {{
         {{ label: '2부 필터와 그래프',       chapters: [4, 5, 6, 7, 8, 9, 10] }},
         {{ label: '3부 직접법과 조밀 재구성', chapters: [11, 12] }},
         {{ label: '4부 학습 기반 방법',      chapters: [13, 14, 15, 16, 17, 18, 19, 20] }},
-        {{ label: '5부 LiDAR와 남은 문제',   chapters: [21, 22, 23] }}
+        {{ label: '5부 LiDAR SLAM과 열린 문제',   chapters: [21, 22, 23] }}
       ]
     }},
     en: {{
@@ -892,7 +892,7 @@ mark.search-highlight {{
         {{ label: 'Part 2. Filters and Graphs',               chapters: [4, 5, 6, 7, 8, 9, 10] }},
         {{ label: 'Part 3. Direct Methods and Dense Reconstruction', chapters: [11, 12] }},
         {{ label: 'Part 4. Learning-Based Methods',           chapters: [13, 14, 15, 16, 17, 18, 19, 20] }},
-        {{ label: 'Part 5. LiDAR and Open Problems',          chapters: [21, 22, 23] }}
+        {{ label: 'Part 5. LiDAR SLAM and Open Problems',          chapters: [21, 22, 23] }}
       ]
     }}
   }};

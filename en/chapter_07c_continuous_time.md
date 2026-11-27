@@ -88,7 +88,7 @@ Third were event cameras. After struggling through the 2010s with brittle frame-
 
 ---
 
-## Borrowed (summary)
+## Borrowed Foundations (summary)
 
 Three foundational borrowings anchor this chapter's trajectory mathematics. De Boor's 1978 spline treatise supplied Furgale (2012) with local-support basis functions; Särkkä's 2013 SDE–GP formulation gave Barfoot, Tong, and Särkkä (2014) a sparse block-tridiagonal precision matrix; and Anderson and Barfoot's 2015 local-variable construction embedded Gaussian processes cleanly on Lie groups. Together, they fused numerical approximation theory, stochastic processes, and differential geometry inside SLAM.
 

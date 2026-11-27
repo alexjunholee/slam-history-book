@@ -26,7 +26,7 @@ MonoSLAM은 바로 그 장벽을 뚫었다. 추가 하드웨어도, 까다로운
 
 ---
 
-## 5.3 2007년, 같은 해
+## 5.3 2007년, 같은 해에 두 해법이 갈라지다
 
 2007년은 단안 Visual SLAM 역사에서 가장 극적인 해였다. 한쪽에서는 MonoSLAM의 집대성인 PAMI 논문이 출간돼 EKF 기반 단안 SLAM의 정점을 찍었고, 같은 해 열린 증강현실 학회 ISMAR에서는 Georg Klein과 David Murray가 전혀 다른 패러다임의 논문 [Parallel Tracking and Mapping for Small AR Workspaces](https://doi.org/10.1109/ISMAR.2007.4538852)(**PTAM**)를 발표했다.
 
@@ -58,7 +58,7 @@ $$\min_{\{\mathbf{T}_k\}, \{\mathbf{p}_j\}} \sum_{k \in \mathcal{K}} \sum_{j \in
 
 ---
 
-## 5.5 새 구조가 퍼지다
+## 5.5 추적–매핑 분리 구조의 확산
 
 논문 제목에 박힌 "Small AR Workspaces"라는 문구처럼 PTAM은 원래 책상 위 증강현실(AR)을 겨냥해 태어났다. Tracking 스레드가 흔들림 없이 실시간 궤적을 뱉어 주니 가상 물체를 실제 책상 위에 올려놓는 데 손색이 없었다. 이 실용성 덕분에 tracking과 mapping을 나누는 2-스레드 아키텍처는 연구실 담장을 넘어 순식간에 산업계와 후속 SLAM 전반으로 번져 나갔다.
 

@@ -34,7 +34,7 @@ Even as they acknowledged that ceiling by pointing toward submapping as future w
 
 ---
 
-## 5.3 2007, the same year
+## 5.3 2007, the Same Year Two Approaches Diverged
 
 Maintaining only a dozen active features laid bare the EKF's fundamental bottleneck—and at Oxford, Georg Klein was confronting that exact same limit.
 
@@ -42,7 +42,7 @@ In 2007, the very year Davison's definitive MonoSLAM paper appeared in TPAMI, Kl
 
 ---
 
-## 5.4 The split
+## 5.4 Splitting Tracking and Mapping
 
 PTAM's defining insight was to decouple camera pose **tracking** from 3D **mapping** and execute them in two separate, parallel threads.
 
